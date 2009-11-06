@@ -99,7 +99,7 @@ class Game:
 		print params
 		if len(params)!=1:
 			return "NOT_OK"
-		return self.players[int(params[1])].info()
+		return self.players[int(params[0])].info()
 
 	def login(self, connection, params):
 		print params
