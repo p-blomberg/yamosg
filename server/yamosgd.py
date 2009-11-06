@@ -1,21 +1,6 @@
-# Generic classes
-#import serversocket
-
-# yamosg-specific networking
-import connection
-#import server
-
-# game classes
-import game
-from object import Object
-
-# Objects
-import planet
-import player
-import ship
-import staion
+# the actual game server
+import server
 
 if __name__ == "__main__":
-	#s=Server("0.0.0.0", 1234, 5)
-	#s.main()
-	print("hello world")
+	s=server.Server("0.0.0.0", 1234, 5)
+	s.main()

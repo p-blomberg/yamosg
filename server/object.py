@@ -9,3 +9,13 @@ class Object:
 	def __str__(self):
 		return str(self.__class__)+", position: "+str(self.position)+", owner: "+str(self.owner_id)
 
+class Planet(Object):
+	max_speed = 0
+
+class Ship(Object):
+	max_speed = 10
+	cost = 150
+
+class Station(Object):
+	max_speed = 0
+	cost = 800
