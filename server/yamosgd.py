@@ -49,7 +49,7 @@ class Game:
 			return "NOT_OK: User already exists"
 		else:
 			self.logins[name]=password
-			return "Ok"
+			return "OK"
 
 	def NewPlayer(self, name):
 		id=len(self.players)
@@ -60,7 +60,7 @@ class Game:
 	def playerinfo(self, connection, params):
 		print connection
 		print params
-		if len(params)!=2:
+		if len(params)!=1:
 			return "NOT_OK"
 		return self.players[int(params[1])].info()
 

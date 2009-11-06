@@ -5,6 +5,11 @@ PING <STRING>
 	PONG <STRING>
 Standard PING command, is the server still alive?
 
+NEWUSER <UNAME> <PASS>
+	OK
+	NOT_OK
+Register a new user. Client must do LOGIN after this.
+
 LOGIN <UNAME> <PASS>
 	PLAYERID
 	NOT_OK
