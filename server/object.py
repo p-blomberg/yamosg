@@ -1,9 +1,9 @@
 class Object:
-	owner_id=None
+	owner=None
 	position=None
 
-	def __init__(self, owner_id, position):
-		self.owner_id=owner_id
+	def __init__(self, owner, position):
+		self.owner=owner
 		self.position=position
 
 	def __str__(self):

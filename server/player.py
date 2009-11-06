@@ -9,7 +9,7 @@ class Player:
 		self.name = name
 		self.cash = 1000
 		self.objects = list()
-		self.objects.append(object.Gateway(self.id, [4,6]))
+		self.objects.append(object.Gateway(self, [4,6]))
 		game.objects.append(self.objects[0])
 
 	def can_afford(self, amount):
