@@ -19,3 +19,6 @@ class Ship(Object):
 class Station(Object):
 	max_speed = 0
 	cost = 800
+
+class Gateway(Station):
+	cost = 1500
