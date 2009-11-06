@@ -1,0 +1,70 @@
+Lists have the form "ITEM1:VALUE1 ITEM2:VALUE2 ITEM3:VALUE3 ..."
+
+Client initiated:
+PING <STRING>
+	PONG <STRING>
+Standard PING command, is the server still alive?
+
+LOGIN <UNAME> <PASS>
+	PLAYERID
+	NOT_OK
+Try to login.
+
+OBJS
+	(List of visible OBJIDs)
+	NOT_OK
+Ask the server for a visible object list.
+
+MOVE	POS
+	(Difference list, objects to forget, new objects)
+	NOT_OK
+Tell the server that we are now interested in objects close to POS.
+
+OBJINFO <OBJID>
+	INFO1 VAL1
+	INFO2 VAL2
+	...
+Get info of specified object
+
+GAMEINFO
+	(gameinfo list)
+Get info about the game, like "who's online", "How much do I pwn" and so forth.
+
+PLAYERINFO <PLAYERID>
+	(Playerinfo list)
+Get info on specified player, including oneself.
+
+OBJACTION <OBJID> <ACTIONID> <OPTIONAL PARAM>
+	RET_VAL
+	NOT_OK
+Objects may have actions, do a specific one.
+
+ACTION <ACTION> <OPTIONAL PARAM>
+	RET_VAL
+	NOT_OK
+The game has a few actions, like "leave", "message player", and so forth. Do one such action.
+
+Server initiated:
+PING <STRING>
+	PONG <STRING>
+Is the player still connected?
+
+MOVE <POS>
+	OK
+Ask the client to move to POS, where it will likely be more interesting to be.
+
+GAMEINFO_UPDATE <INFONAME> <VAL>
+	OK
+Things like players joining, The game being over and so on. The clients may want to request info on all other players to show a pretty scoreboard or sth.
+
+NEWOBJ <ID> <POS>
+	OK
+A new object shall be visible to the player. 
+
+DELOBJ	<OBJID>
+	OK
+This object is no longer interesting
+
+UPDOBJ	<OBJID> <OBJINFONAME> <VAL>
+	OK
+Update some property of OBJ.
