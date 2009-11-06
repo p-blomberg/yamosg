@@ -90,7 +90,7 @@ class Game:
 
 	def NewPlayer(self, name):
 		id=len(self.players)
-		self.players.append(player.Player(id, name))
+		self.players.append(player.Player(id, name, self))
 		# Might want to push info to all players here.
 		return id
 

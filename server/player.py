@@ -1,12 +1,16 @@
+import object
+
 class Player:
 	name=''
 	id=None
 	cash=0
-	def __init__(self, id, name):
+	def __init__(self, id, name, game):
 		self.id=id
 		self.name = name
 		self.cash = 1000
 		self.objects = list()
+		self.objects.append(object.Gateway(self.id, [4,6]))
+		game.objects.append(self.objects[0])
 
 	def can_afford(self, amount):
 		if(self.cash >= amount):
