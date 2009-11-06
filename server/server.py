@@ -1,4 +1,4 @@
-class Server(sockets.ServerSocket):
+class Server(gnitset_sockets.ServerSocket):
 	def __init__(self, host, port, timeout=30, split="\n", debug=False):
 		sockets.ServerSocket.__init__(self, host, port, timeout, split, debug)
 
