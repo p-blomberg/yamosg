@@ -50,7 +50,8 @@ class Connection:
 			"PLAYERINFO": self.game.playerinfo,
 			"ACTION": self.game.action,
 			"NEWUSER": self.game.NewUser,
-			"LIST_OF_OBJECTS": self.game.list_of_objects
+			"LIST_OF_OBJECTS": self.game.list_of_objects,
+			"OBJACTION": self.game.ObjAction
 		}
 		del parts[0]
 		try:
@@ -141,4 +142,13 @@ class Game:
 			response=subcommands[params[0].strip()](player,params[1:])
 		except KeyError:
 			response="I don't know the command ACTION '"+params[0]+"'"
+		return response
+
+	def ObjAction(self, connection, params):
+		obj_id=int(params[0])
+		try:
+			obj=self.objects[obj_id]
+			response=obj.action(params[1:])
+		except KeyError:
+			response="I don't know the object '"+obj_id+"'"
 		return response

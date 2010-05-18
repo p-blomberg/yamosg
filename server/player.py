@@ -9,8 +9,12 @@ class Player:
 		self.name = name
 		self.cash = 1000
 		self.objects = list()
-		self.objects.append(object.Gateway(self, [4,6]))
+		id=len(game.objects)
+		self.objects.append(object.Gateway(self, id, [4,6], game))
 		game.objects.append(self.objects[0])
+
+	def __str__(self):
+		return self.name
 
 	def can_afford(self, amount):
 		if(self.cash >= amount):
