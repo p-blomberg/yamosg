@@ -39,6 +39,7 @@ class ServerSocket:
 				clientsocket.setblocking(False)
 				self._socketlist.add(clientsocket)
 				read.remove(self._socket)
+				self.write(clientsocket,"Hello"+self._split)
 
 			for socket_ in write:
 				assert self._socketwrite[socket_]		

@@ -17,7 +17,6 @@ class Server(ServerSocket):
 				del self.clients[sock]
 			else:
 				self.game.clients[sock]=Connection(sock, self.game)
-				self.write(sock,"Hello"+self._split)
 			
 		print clientsocket, lines
 		for line in lines:
