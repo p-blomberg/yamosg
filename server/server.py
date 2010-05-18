@@ -6,7 +6,7 @@ class Server(ServerSocket):
 	def __init__(self, host, port, timeout=30, split="\n", debug=False):
 		ServerSocket.__init__(self, host, port, timeout, split, debug)
 
-		self.game=Game()
+		self.game=Game(split)
 		self.sockets=self._socketlist.copy()
 		
 	def readCall(self, clientsocket, lines):
@@ -50,7 +50,8 @@ class Connection:
 			"ACTION": self.game.action,
 			"NEWUSER": self.game.NewUser,
 			"LIST_OF_OBJECTS": self.game.list_of_objects,
-			"OBJACTION": self.game.ObjAction
+			"OBJACTION": self.game.ObjAction,
+			"PLAYERS": self.game.Players
 		}
 		del parts[0]
 		try:
@@ -69,6 +70,8 @@ class Game:
 	clients={}
 	players=[]
 	objects=[]
+	def __init__(self, split):
+		self.split=split
 
 	def list_of_objects(self, useless, useless2):
 		foo=""
@@ -100,6 +103,12 @@ class Game:
 		if len(params)!=1:
 			return "NOT_OK"
 		return self.players[int(params[0])].info()
+
+	def Players(self, connection, selection):
+		playerlist=str()
+		for player in self.players:
+			playerlist+=str(player.id)+":"+player.name+self.split
+		return playerlist
 
 	def login(self, connection, params):
 		print params
