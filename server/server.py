@@ -15,7 +15,7 @@ import player
 from common.vector import Vector
 from common.command import Command
 from common import command
-from socket import error
+import socket
 
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
