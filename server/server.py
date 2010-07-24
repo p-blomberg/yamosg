@@ -16,7 +16,6 @@ from common import command
 class Server(ServerSocket):
 	def __init__(self, host, port, timeout=30, split="\n", debug=False):
 		ServerSocket.__init__(self, host, port, timeout, split, debug)
-
 		self.game=Game(split)
 		self.sockets=self._socketlist.copy()
 		
@@ -32,7 +31,7 @@ class Server(ServerSocket):
 		print clientsocket, lines
 		for line in lines:
 			try:
-				response=self.game.clients[clientsocket].command(line)+self._split
+				response=str(self.game.clients[clientsocket].command(line))+self._split
 			except KeyError:
 				self.game.clients[clientsocket]=Connection(clientsocket)
 				response=self.game.clients[clientsocket].command(line)+self._split
@@ -52,7 +51,7 @@ class Connection:
 			return "ERR_BAD_PARAMS"
 
 	def command(self, line):
-		cmd, parts = command.parse(line)
+		counter, cmd, parts = command.parse(line)
 		commands = {
 			"LOGIN": self.game.login,
 			"PING": self.ping,
@@ -64,11 +63,10 @@ class Connection:
 			"PLAYERS": self.game.Players
 		}
 		try:
-			response=commands[cmd](self, parts)
+			response=str(commands[cmd](self, parts))
 		except KeyError:
 			response="I don't know the command "+cmd
-		return response
-
+		return str(counter)+' '+response
 
 class Game:
 	logins={}
@@ -81,7 +79,7 @@ class Game:
 	def list_of_objects(self, useless, useless2):
 		foo=""
 		for obj in self.objects:
-			foo=foo+str(obj)
+			foo=foo+str(obj)+self.split
 		return foo
 
 	def NewUser(self, connection, params):
@@ -99,7 +97,9 @@ class Game:
 	def NewPlayer(self, name):
 		id=len(self.players)
 		self.players.append(player.Player(id, name, self))
-		# Might want to push info to all players here.
+		# push info to all players.
+		for c in self.clients:
+			c.send("BROADCAST NEW_PLAYER "+str(id)+" "+name+"\n")
 		return id
 
 	def playerinfo(self, connection, params):
@@ -133,6 +133,9 @@ class Game:
 		# insert some code to take command of existing player if same login.
 		id=self.NewPlayer(name)
 		connection.player=self.players[id]
+		# Send info to all players
+		for c in self.clients:
+			c.send("BROADCAST USER_LOGIN "+str(id)+" "+name+"\n")
 		return str(id)
 	
 	def build(self,player,params):
@@ -164,10 +167,19 @@ class Game:
 		return response
 
 	def ObjAction(self, connection, params):
-		obj_id=int(params[0])
+		try:
+			obj_id=int(params[0])
+		except ValueError:
+			response="NOT_OK: Invalid ID"
+			return response
 		try:
 			obj=self.objects[obj_id]
+			player=connection.player
+			if not obj in player.objects:
+				return "NOT_OK: Belongs to other player"
+
 			response=obj.action(params[1:])
+			print response
 		except KeyError:
 			response="I don't know the object '"+obj_id+"'"
 		return response

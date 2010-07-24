@@ -10,7 +10,7 @@ class Player:
 		self.cash = 1000
 		self.objects = list()
 		id=len(game.objects)
-		self.objects.append(object.Gateway(self, id, [4,6], game))
+		self.objects.append(object.Gateway(id, self, [4,6], game))
 		game.objects.append(self.objects[0])
 
 	def __str__(self):
