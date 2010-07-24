@@ -11,6 +11,9 @@ import time
 import collections
 import traceback
 
+def have_trailing_newline(line):
+	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
+
 class ServerSocket:
 	def __init__(self, host, port, timeout=30, split="\n", debug=False):
 		signal.signal(signal.SIGINT,self.quit)
@@ -78,9 +81,13 @@ class ServerSocket:
 						self._socketlist.remove(socket_)
 					continue
 
-				split_data=data.split(self._split)
-				self._socketinbuf[socket_]=split_data[-1]
-				lines=split_data[:-1]
+				lines = data.splitlines()
+				
+				# store tail
+				if not have_trailing_newline(data):
+					tail = lines.pop()
+					self._socketinbuf[socket_] = tail
+				
 				if self._debug:
 					if self._socketinbuf[socket_]:
 						print ">>> halva rader"
