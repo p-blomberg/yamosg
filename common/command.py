@@ -17,6 +17,10 @@ def parse(line, split="\n"):
 	# Tokenize
 	tokens = shlex.split(line)
 	
+	# Extract counter
+	counter = tokens.pop(0)
+
 	# Extract command
 	cmd = tokens.pop(0)
-	return cmd, tuple(tokens)
+
+	return counter, cmd, tuple(tokens)
