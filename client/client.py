@@ -14,6 +14,8 @@ sys.path.append(root)
 import socket, traceback
 from select import select
 from common import command
+from common.vector import Vector
+from state import Initial, StateManager
 
 import pygame
 from pygame.locals import *
@@ -31,9 +33,12 @@ def setup_opengl():
 class Client:
 	def __init__(self, resolution=(800,600), host='localhost', port=1234, split="\n"):
 		self._split = split
+		self._running = False
+		self._state = StateManager()
+		self._state.push(Initial())
+		
 		self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self._s.connect((host, port))
-		self._running = False
 		
 		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
@@ -77,6 +82,7 @@ class Client:
 			elif event.type == pygame.MOUSEMOTION:
 				pass
 			elif event.type == pygame.MOUSEBUTTONDOWN:
+				self._state.on_buttondown(Vector(event.pos), event.button)
 				pass
 			elif event.type == pygame.MOUSEBUTTONUP:
 				pass
@@ -89,6 +95,7 @@ class Client:
 	
 	def _render(self):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		self._state.render()
 		pygame.display.flip()
 	
 	def _dispatch(self, cmd, args):
