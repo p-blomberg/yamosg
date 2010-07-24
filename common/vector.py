@@ -47,3 +47,6 @@ class Vector:
 	def normalize(self):
 		len = self.length()
 		return Vector(self.x / len, self.y / len, self.z / len)
+
+	def __iter__(self):
+		return [self.x, self.y, self.z].__iter__()
