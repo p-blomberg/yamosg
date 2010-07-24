@@ -44,10 +44,11 @@ class Command:
 	
 	def __str__(self):
 		def quote(x):
+			x = str(x)
 			if ' ' in x:
-				return '"%s"' % str(x)
+				return '"%s"' % x
 			else:
-				return str(x)
+				return x
 		
 		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=[quote(x) for x in self.args])
 	
