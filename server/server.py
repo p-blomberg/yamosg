@@ -141,8 +141,7 @@ class Game:
 		id=len(self.players)
 		self.players.append(player.Player(id, name, self))
 		# push info to all players.
-		for c in self.clients:
-			c.send("BROADCAST NEW_PLAYER "+str(id)+" "+name+"\n")
+		self.broadcast('NEW_PLAYER', id, name)
 		return id
 
 	def playerinfo(self, connection, params):
@@ -177,8 +176,7 @@ class Game:
 		id=self.NewPlayer(name)
 		connection.player=self.players[id]
 		# Send info to all players
-		for c in self.clients:
-			c.send("BROADCAST USER_LOGIN "+str(id)+" "+name+"\n")
+		self.broadcast('USER_LOGIN', id, name)
 		return str(id)
 
 	def EntAction(self, connection, params):
