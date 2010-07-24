@@ -15,6 +15,7 @@ import player
 from common.vector import Vector
 from common.command import Command
 from common import command
+from socket import error
 
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
@@ -106,7 +107,12 @@ class Game:
 		""" Send a message to all connected clients """
 		cmd = Command(command, *args, id='BROADCAST')
 		for c in self.clients:
-			c.send(str(cmd) + self.split)
+			try:
+				c.send(str(cmd) + self.split)
+			except socket.error:
+				traceback.print_exc()
+				self.clients.remove(c)
+				
 
 	def tick(self):
 		self.tick_counter+=1
