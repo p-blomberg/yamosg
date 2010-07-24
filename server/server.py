@@ -102,7 +102,14 @@ class Game:
 		print params
 		if len(params)!=1:
 			return "NOT_OK"
-		return self.players[int(params[0])].info()
+		
+		id = int(params[0])
+		
+		# verify that ID actually exists.
+		if id not in self.players:
+			return "NOT_OK"
+		
+		return self.players[id].info()
 
 	def Players(self, connection, selection):
 		playerlist=str()
