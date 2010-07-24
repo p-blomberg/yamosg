@@ -16,6 +16,7 @@ from common.vector import Vector
 from common.command import Command
 from common import command
 import socket
+import traceback
 
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
@@ -111,7 +112,7 @@ class Game:
 				c.send(str(cmd) + self.split)
 			except socket.error:
 				traceback.print_exc()
-				self.clients.remove(c)
+				del self.clients[c]
 				
 
 	def tick(self):
