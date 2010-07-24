@@ -152,9 +152,11 @@ class Client:
 			
 		except AttributeError:
 			print 'Malformed or bad command:', cmd, args
+			return
 		except:
 			print 'Unhandled exception when running command:', cmd, args
 			traceback.print_exc()
+			return
 		
 		func(*args)
 
