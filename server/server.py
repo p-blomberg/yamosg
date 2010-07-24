@@ -1,6 +1,17 @@
+import os.path, sys
+
+# relative path to this script
+scriptfile = sys.modules[__name__].__file__
+scriptpath = os.path.dirname(scriptfile) or '.'
+root = os.path.normpath(os.path.join(scriptpath, '..'))
+
+# add rootdir to pythonpath
+sys.path.append(root)
+
 from serversocket import ServerSocket
 import object
 import player
+from common import command
 
 class Server(ServerSocket):
 	def __init__(self, host, port, timeout=30, split="\n", debug=False):
@@ -41,8 +52,7 @@ class Connection:
 			return "ERR_BAD_PARAMS"
 
 	def command(self, line):
-		parts=line.split(' ')
-		command=parts[0]
+		cmd, parts = command.parse(line)
 		commands = {
 			"LOGIN": self.game.login,
 			"PING": self.ping,
@@ -53,11 +63,10 @@ class Connection:
 			"OBJACTION": self.game.ObjAction,
 			"PLAYERS": self.game.Players
 		}
-		del parts[0]
 		try:
-			response=commands[command](self, parts)
+			response=commands[cmd](self, parts)
 		except KeyError:
-			response="I don't know the command "+command
+			response="I don't know the command "+cmd
 		return response
 
 
