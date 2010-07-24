@@ -13,6 +13,7 @@ from serversocket import ServerSocket
 import entity
 import player
 from common.vector import Vector
+from common.command import Command
 from common import command
 
 class Server(ServerSocket):
