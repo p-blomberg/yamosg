@@ -29,81 +29,80 @@ class ServerSocket:
 		self._socketlist.add(self._socket)
 
 
-	def main(self):
-		while True:
-			try:
-				(read, write, error)=select.select(self._socketlist, self._socketwrite.keys(), self._socketlist, self._timeout)
-				if self._debug: print read, write, error
+	def checkSockets(self):
+		try:
+			(read, write, error)=select.select(self._socketlist, self._socketwrite.keys(), self._socketlist, self._timeout)
+			if self._debug: print read, write, error
 
-				if self._socket in read:
-					(clientsocket, address) = self._socket.accept()
-					if self._debug: print address
-					clientsocket.setblocking(False)
-					self._socketlist.add(clientsocket)
-					read.remove(self._socket)
-					self.write(clientsocket,"100 Hello"+self._split)
+			if self._socket in read:
+				(clientsocket, address) = self._socket.accept()
+				if self._debug: print address
+				clientsocket.setblocking(False)
+				self._socketlist.add(clientsocket)
+				read.remove(self._socket)
+				self.write(clientsocket,"100 Hello"+self._split)
 
-				for socket_ in write:
-					assert self._socketwrite[socket_]		
+			for socket_ in write:
+				assert self._socketwrite[socket_]		
+				try:
+					while self._socketwrite[socket_]:
+						send_data=self._socketwrite[socket_].popleft()
+						data_sent=socket_.send(send_data)
+
+						if self._debug: print time.ctime(), socket_.getpeername(), "out", send_data[:data_sent]
+
+						if len(send_data) > data_sent:
+							self._socketwrite[socket_].appendleft(send_data[data_sent:])
+							if self._debug: print "try again, wrote %s" % data_sent
+
+					del self._socketwrite[socket_]
+				except socket.error, se:
+					if se.errno == 11:
+						self._socketwrite[socket_].appendleft(send_data)
+						pass
+					else:
+						raise
+
+			for socket_ in read:
+				try:
+					data=self._socketinbuf[socket_]+socket_.recv(8192)
+				except:
+					self._socketinbuf[socket_]=""
+					data=socket_.recv(8192)
+
+				if not data:
 					try:
-						while self._socketwrite[socket_]:
-							send_data=self._socketwrite[socket_].popleft()
-							data_sent=socket_.send(send_data)
-
-							if self._debug: print time.ctime(), socket_.getpeername(), "out", send_data[:data_sent]
-
-							if len(send_data) > data_sent:
-								self._socketwrite[socket_].appendleft(send_data[data_sent:])
-								if self._debug: print "try again, wrote %s" % data_sent
-
-						del self._socketwrite[socket_]
-					except socket.error, se:
-						if se.errno == 11:
-							self._socketwrite[socket_].appendleft(send_data)
-							pass
-						else:
-							raise
-
-				for socket_ in read:
-					try:
-						data=self._socketinbuf[socket_]+socket_.recv(8192)
-					except:
-						self._socketinbuf[socket_]=""
-						data=socket_.recv(8192)
-
-					if not data:
-						try:
-							socket_.close()
-						finally:
-							self._socketlist.remove(socket_)
-						continue
-
-					split_data=data.split(self._split)
-					self._socketinbuf[socket_]=split_data[-1]
-					lines=split_data[:-1]
-					if self._debug:
-						if self._socketinbuf[socket_]:
-							print ">>> halva rader"
-						else:
-							print ">>> hela rader"
-
-					if self._debug:
-						for line in lines:
-							print time.ctime(), socket_.getpeername(), "in", line.strip()
-
-					if lines: self.readCall(socket_, lines)
-
-				for socket_ in error:
-					try:
-						socket_.shutdown(socket.SHUT_RDWR)
+						socket_.close()
 					finally:
 						self._socketlist.remove(socket_)
-			except SystemExit:
-				raise
-			except socket.error:
-				raise
-			except:
-				traceback.print_exc()
+					continue
+
+				split_data=data.split(self._split)
+				self._socketinbuf[socket_]=split_data[-1]
+				lines=split_data[:-1]
+				if self._debug:
+					if self._socketinbuf[socket_]:
+						print ">>> halva rader"
+					else:
+						print ">>> hela rader"
+
+				if self._debug:
+					for line in lines:
+						print time.ctime(), socket_.getpeername(), "in", line.strip()
+
+				if lines: self.readCall(socket_, lines)
+
+			for socket_ in error:
+				try:
+					socket_.shutdown(socket.SHUT_RDWR)
+				finally:
+					self._socketlist.remove(socket_)
+		except SystemExit:
+			raise
+		except socket.error:
+			raise
+		except:
+			traceback.print_exc()
 
 	def readCall(self, clientsocket, lines):
 		raise NotImplemented

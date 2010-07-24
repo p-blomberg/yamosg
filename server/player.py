@@ -1,4 +1,5 @@
-import object
+import entity
+from common.vector import Vector
 
 class Player:
 	name=''
@@ -8,10 +9,10 @@ class Player:
 		self.id=id
 		self.name = name
 		self.cash = 100000
-		self.objects = list()
-		id=len(game.objects)
-		self.objects.append(object.Gateway(id, self, [4,6], game))
-		game.objects.append(self.objects[0])
+		self.entities = list()
+		id=len(game.entities)
+		self.entities.append(entity.Gateway(id, self, Vector(4,6,0), game))
+		game.entities.append(self.entities[0])
 
 	def __str__(self):
 		return self.name
@@ -30,3 +31,5 @@ class Player:
 	def info(self):
 		return "Name:%s Cash:%i" % (self.name, self.cash)
 
+	def tick(self, key_tick):
+		pass

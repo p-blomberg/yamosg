@@ -1,4 +1,5 @@
 import os.path, sys
+from time import sleep, clock, time
 
 # relative path to this script
 scriptfile = sys.modules[__name__].__file__
@@ -9,13 +10,13 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 sys.path.append(root)
 
 from serversocket import ServerSocket
-import object
+import entity
 import player
 from common import command
 
 class Server(ServerSocket):
-	def __init__(self, host, port, timeout=1, split="\n", debug=False):
-		ServerSocket.__init__(self, host, port, timeout, split, debug)
+	def __init__(self, host, port, split="\n", debug=False):
+		ServerSocket.__init__(self, host, port, 0, split, debug)
 		self.game=Game(split)
 		self.sockets=self._socketlist.copy()
 		print "ready"
@@ -38,6 +39,26 @@ class Server(ServerSocket):
 				response=self.game.clients[clientsocket].command(line)+self._split
 			self.write(clientsocket,[response])
 
+	def tick(self):
+		bajs=0
+		skit=2
+		while(bajs<10000):
+			bajs=bajs+1
+			skit=skit*skit*skit
+			skit=2
+		self.game.tick()
+
+	def main(self):
+		t=clock()
+		while True:
+			self.tick()
+			self.checkSockets()
+			new_time=clock()
+			st=(1.0/15)-(new_time-t)
+			if(st>0):
+				sleep(st)
+			t=new_time
+
 class Connection:
 	player=None
 	def __init__(self, socket, game):
@@ -57,10 +78,9 @@ class Connection:
 			"LOGIN": self.game.login,
 			"PING": self.ping,
 			"PLAYERINFO": self.game.playerinfo,
-			"ACTION": self.game.action,
 			"NEWUSER": self.game.NewUser,
-			"LIST_OF_OBJECTS": self.game.list_of_objects,
-			"OBJACTION": self.game.ObjAction,
+			"LIST_OF_ENTITIES": self.game.list_of_entities,
+			"ENTACTION": self.game.EntAction,
 			"PLAYERS": self.game.Players
 		}
 		try:
@@ -73,14 +93,28 @@ class Game:
 	logins={}
 	clients={}
 	players=[]
-	objects=[]
+	entities=[]
+	tick_counter=0
+
 	def __init__(self, split):
 		self.split=split
 
-	def list_of_objects(self, useless, useless2):
+	def tick(self):
+		self.tick_counter+=1
+		key_tick=False
+		if(self.tick_counter==15):
+			key_tick=True
+			print "key_tick "+str(time())
+			self.tick_counter=0
+		for p in self.players:
+			p.tick(key_tick)
+		for o in self.entities:
+			o.tick(key_tick)
+
+	def list_of_entities(self, useless, useless2):
 		foo=""
-		for obj in self.objects:
-			foo=foo+str(obj)+self.split
+		for ent in self.entities:
+			foo=foo+str(ent)+self.split
 		return foo
 
 	def NewUser(self, connection, params):
@@ -139,20 +173,20 @@ class Game:
 			c.send("BROADCAST USER_LOGIN "+str(id)+" "+name+"\n")
 		return str(id)
 
-	def ObjAction(self, connection, params):
+	def EntAction(self, connection, params):
 		try:
-			obj_id=int(params[0])
+			ent_id=int(params[0])
 		except ValueError:
 			response="NOT_OK: Invalid ID"
 			return response
 		try:
-			obj=self.objects[obj_id]
+			ent=self.entities[ent_id]
 			player=connection.player
-			if not obj in player.objects:
+			if not ent in player.entities:
 				return "NOT_OK: Belongs to other player"
 
-			response=obj.action(params[1:])
+			response=ent.action(params[1:])
 			print response
 		except KeyError:
-			response="I don't know the object '"+obj_id+"'"
+			response="I don't know the entity '"+ent_id+"'"
 		return response
