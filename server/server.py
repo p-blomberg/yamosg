@@ -62,11 +62,7 @@ class Connection:
 
 
 class Game:
-	# Swap this for real login code later.
-	logins={
-		'topace':'god',
-		'slafs':'barfoo'
-	}
+	logins={}
 	clients={}
 	players=[]
 	objects=[]
