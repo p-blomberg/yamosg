@@ -12,6 +12,7 @@ sys.path.append(root)
 from serversocket import ServerSocket
 import entity
 import player
+from common.vector import Vector
 from common import command
 
 class Server(ServerSocket):
@@ -40,12 +41,6 @@ class Server(ServerSocket):
 			self.write(clientsocket,[response])
 
 	def tick(self):
-		bajs=0
-		skit=2
-		while(bajs<10000):
-			bajs=bajs+1
-			skit=skit*skit*skit
-			skit=2
 		self.game.tick()
 
 	def main(self):
@@ -98,6 +93,8 @@ class Game:
 
 	def __init__(self, split):
 		self.split=split
+		# Create world
+		self.entities.append(entity.Planet(len(self.entities), Vector(1,2,3), 20, self, "Copper Ore", 600))
 	
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """
