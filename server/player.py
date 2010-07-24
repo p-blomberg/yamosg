@@ -7,7 +7,7 @@ class Player:
 	def __init__(self, id, name, game):
 		self.id=id
 		self.name = name
-		self.cash = 1000
+		self.cash = 100000
 		self.objects = list()
 		id=len(game.objects)
 		self.objects.append(object.Gateway(id, self, [4,6], game))

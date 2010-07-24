@@ -14,10 +14,11 @@ import player
 from common import command
 
 class Server(ServerSocket):
-	def __init__(self, host, port, timeout=30, split="\n", debug=False):
+	def __init__(self, host, port, timeout=1, split="\n", debug=False):
 		ServerSocket.__init__(self, host, port, timeout, split, debug)
 		self.game=Game(split)
 		self.sockets=self._socketlist.copy()
+		print "ready"
 		
 	def readCall(self, clientsocket, lines):
 		changed_sockets = self._socketlist - self.sockets
