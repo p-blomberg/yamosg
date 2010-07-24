@@ -34,7 +34,7 @@ class Command:
 		self._reply = None
 		
 		if 'id' in kwargs:
-			self.id = id
+			self.id = kwargs['id']
 		else:
 			self.id = Command._id
 			Command._id += 1
@@ -50,7 +50,7 @@ class Command:
 			else:
 				return x
 		
-		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=[quote(x) for x in self.args])
+		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=' '.join([quote(x) for x in self.args]))
 	
 	def reply(self, command, args):
 		self._reply = (command, args)
