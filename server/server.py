@@ -101,11 +101,10 @@ class Game:
 		
 		id = int(params[0])
 		
-		# verify that ID actually exists.
-		if id not in self.players:
+		try:
+			return self.players[id].info()
+		except IndexError:
 			return "NOT_OK"
-		
-		return self.players[id].info()
 
 	def Players(self, connection, selection):
 		playerlist=str()
