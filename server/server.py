@@ -138,34 +138,6 @@ class Game:
 		for c in self.clients:
 			c.send("BROADCAST USER_LOGIN "+str(id)+" "+name+"\n")
 		return str(id)
-	
-	def build(self,player,params):
-		object_type=params[0]
-		object_types = {
-			"Ship": object.Ship(0,(1,2)),
-			"Station": object.Station(0,(3,4))
-		}
-		try:
-			obj=object_types[object_type]
-		except KeyError:
-			response="I don't know how to build a "+object_type
-			return response
-		if(player.can_afford(obj.cost)):
-			self.objects.append(obj) # Perhaps some way to connect the object to the player?
-			player.buy(obj.cost)
-			return "Ok"
-		raise NotEnoughCashError("Not Enough Cash")
-
-	def action(self, connection, params):
-		player=connection.player
-		subcommands = {
-			"BUILD": self.build
-		}
-		try:
-			response=subcommands[params[0].strip()](player,params[1:])
-		except KeyError:
-			response="I don't know the command ACTION '"+params[0]+"'"
-		return response
 
 	def ObjAction(self, connection, params):
 		try:
