@@ -64,7 +64,12 @@ class ServerSocket:
 						raise
 
 			for socket_ in read:
-				data=self._socketinbuf.get(socket_,"")+socket_.recv(8192)
+				try:
+					data=self._socketinbuf.get(socket_,"")+socket_.recv(8192)
+				except socket.error:
+					print 'socket unexpectedly closed'
+					self._socketlist.remove(socket_)
+					continue
 
 				if not data:
 					try:
