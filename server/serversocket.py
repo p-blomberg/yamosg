@@ -98,6 +98,10 @@ class ServerSocket:
 						socket_.shutdown(socket.SHUT_RDWR)
 					finally:
 						self._socketlist.remove(socket_)
+			except SystemExit:
+				raise
+			except socket.error:
+				raise
 			except:
 				traceback.print_exc()
 
