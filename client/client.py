@@ -1,8 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import shlex, socket, traceback
+import os.path, sys
+
+# relative path to this script
+scriptfile = sys.modules[__name__].__file__
+scriptpath = os.path.dirname(scriptfile) or '.'
+root = os.path.normpath(os.path.join(scriptpath, '..'))
+
+# add rootdir to pythonpath
+sys.path.append(root)
+
+import socket, traceback
 from select import select
+from common import command
 
 def expose(func):
 	""" Exposes a method, eg is callable by server """
@@ -22,16 +33,8 @@ class Client:
 			(rlist, wlist, xlist) = select([self._s], [], [], 0.0)
 			
 			if len(rlist) > 0:
-				cmd, args = self._parse(self._s.recv(8192))
+				cmd, args = command.parse(self._s.recv(8192))
 				self._dispatch(cmd, args)
-	
-	def _parse(self, line):
-		""" Parse a server reply """
-		n = len(self._split)
-		line = line[:-n]
-		tokens = shlex.split(line)
-		cmd = tokens.pop(0)
-		return cmd, tokens
 	
 	def _dispatch(self, cmd, args):
 		""" Run command """
