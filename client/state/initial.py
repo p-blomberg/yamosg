@@ -3,6 +3,7 @@
 
 from state import State
 from state.login import Login
+from state.game import Game
 
 from OpenGL.GL import *
 
@@ -12,4 +13,4 @@ class Initial (State):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 	def on_buttondown(self, pos, button):
-		self.replace(Login())
+		self.replace(Game())

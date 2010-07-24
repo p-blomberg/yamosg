@@ -40,7 +40,7 @@ class ServerSocket:
 				clientsocket.setblocking(False)
 				self._socketlist.add(clientsocket)
 				read.remove(self._socket)
-				self.write(clientsocket,"100 Hello"+self._split)
+				self.write(clientsocket,"UNICAST Hello"+self._split)
 
 			for socket_ in write:
 				assert self._socketwrite[socket_]		

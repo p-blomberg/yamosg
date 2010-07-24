@@ -98,6 +98,17 @@ class Game:
 
 	def __init__(self, split):
 		self.split=split
+	
+	def unicast(self, socket, command, *args):
+		""" Send a message to a specific client """
+		cmd = Command(command, *args, id='UNICAST')
+		socket.send(socket, str(cmd) + self._split)
+	
+	def broadcast(self, command, *args):
+		""" Send a message to all connected clients """
+		cmd = Command(command, *args, id='BROADCAST')
+		for c in self.clients:
+			c.send(str(cmd) + self.split)
 
 	def tick(self):
 		self.tick_counter+=1
