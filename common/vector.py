@@ -14,8 +14,11 @@ class Vector:
 			self.y = float(y)
 			self.z = float(z)
 
-	def tuple(self):
+	def xyz(self):
 		return (self.x, self.y, self.z)
+	
+	def xy(self):
+		return (self.x, self.y)
 
 	def __add__(self, rhs):
 		return Vector(self.x + rhs.x, self.y + rhs.y, self.z+rhs.z)
