@@ -112,7 +112,6 @@ class Game:
 		key_tick=False
 		if(self.tick_counter==15):
 			key_tick=True
-			print "key_tick "+str(time())
 			self.tick_counter=0
 		for p in self.players:
 			p.tick(key_tick)
