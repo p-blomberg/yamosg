@@ -3,16 +3,11 @@
 
 import shlex
 
-def parse(line, split="\n"):
+def parse(line):
 	"""
 	parse(line) -> (command, ([arg0], ...))
 	Parse a protocol command.
 	"""
-	
-	# Remove split
-	# @todo verify that split is actually there.
-	n = len(split)
-	line = line[:-n]
 	
 	# Tokenize
 	tokens = shlex.split(line)
