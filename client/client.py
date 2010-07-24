@@ -41,6 +41,7 @@ class Client:
 		self._s.connect((host, port))
 		
 		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
+		self._resize(resolution[0], resolution[1])
 		pygame.display.set_caption('yamosg')
 		
 		setup_opengl()
@@ -66,7 +67,7 @@ class Client:
 		(rlist, wlist, xlist) = select([self._s], [], [], 0.0)
 			
 		if len(rlist) > 0:
-			cmd, args = command.parse(self._s.recv(8192))
+			id, cmd, args = command.parse(self._s.recv(8192))
 			self._dispatch(cmd, args)
 	
 	def _logic(self):
@@ -76,7 +77,7 @@ class Client:
 			elif event.type == pygame.VIDEOEXPOSE:
 				pass
 			elif event.type == pygame.VIDEORESIZE:
-				self._resize(event.width, event.height)
+				self._resize(event.w, event.h)
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
