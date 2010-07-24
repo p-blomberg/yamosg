@@ -5,11 +5,16 @@ import math
 
 class Vector:
 	def __init__(self, x=0.0, y=0.0, z=0.0):
-		try:
+		if isinstance(x, tuple):
 			# try to unpack 'x' as a tuple
 			# allows us to convert a tuple to vector.
-			self.x, self.y, self.z = x
-		except:
+			
+			if len(x) == 2: # xy
+				self.x, self.y = x
+				self.z = 0.0
+			if len(x) == 3: # xyz
+				self.x, self.y, self.z = x
+		else:
 			self.x = float(x)
 			self.y = float(y)
 			self.z = float(z)
