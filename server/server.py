@@ -178,7 +178,7 @@ class Game:
 		connection.player=self.players[id]
 		# Send info to all players
 		self.broadcast('USER_LOGIN', id, name)
-		return "OK ID=".str(id)
+		return "OK ID="+str(id)
 
 	def EntAction(self, connection, id, action, *args):
 		try:
