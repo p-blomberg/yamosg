@@ -19,8 +19,8 @@ import socket
 import traceback
 import json
 
-OK = 'OK'
-NOT_OK = 'NOT_OK'
+class CommandError (Exception):
+	pass
 
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
@@ -89,6 +89,8 @@ class Connection:
 		func = commands.get(cmd, lambda *args: "I don't know the command " + cmd)
 		try:
 			reply = func(self, *args)
+		except CommandError, e:
+			reply = 'NOT_OK ' + str(e)
 		except TypeError, e:
 			traceback.print_exc()
 			reply = 'NOT_OK ' + str(e)
@@ -142,7 +144,7 @@ class Game:
 
 	def NewUser(self, connection, name, password):
 		if name in self.logins:
-			return "NOT_OK: User already exists"
+			raise CommandError, 'Username already exists'
 		else:
 			self.logins[name]=password
 			return "OK"
@@ -158,12 +160,12 @@ class Game:
 		try:
 			id = int(id)
 		except ValueError:
-			return "NOT_OK: Invalid ID"
+			raise CommandError, 'Invalid ID'
 		
 		try:
 			return self.players[id].info()
 		except IndexError:
-			return "NOT_OK"
+			raise CommandError, 'Invalid ID'
 
 	def Players(self, connection):
 		playerlist=str()
@@ -173,9 +175,10 @@ class Game:
 
 	def login(self, connection, name, passwd):
 		if not name in self.logins:
-			return (NOT_OK, )
+			raise CommandError, 'Invalid username or password'
 		if not self.logins[name] == passwd:
-			return (NOT_OK, )
+			raise CommandError, 'Invalid username or password'
+		
 		# insert some code to take command of existing player if same login.
 		id=self.NewPlayer(name)
 		connection.player=self.players[id]
@@ -187,17 +190,19 @@ class Game:
 		try:
 			id = int(id)
 		except ValueError:
-			return "NOT_OK: Invalid ID"
+			raise CommandError, 'Invalid ID'
 		
 		try:
 			ent = self.entities[id]
-			player = connection.player
-			if not ent in player.entities:
-				return "NOT_OK: Belongs to other player"
-
-			response = ent.action(action, args)
-			print response
-			return response
 		except KeyError:
-			return "I don't know the entity '" + id + "'"
+			raise CommandError, 'Invalid ID'
+		
+		player = connection.player
+		if not ent in player.entities:
+			raise CommandError, 'Belongs to other player'
+
+		response = ent.action(action, args)
+		print response
+		return response
+		
 		
