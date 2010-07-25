@@ -38,7 +38,7 @@ class Server(ServerSocket):
 			else:
 				self.game.clients[sock]=Connection(sock, self.game)
 			
-		print clientsocket, lines
+		print clientsocket.getpeername(), lines
 		for line in lines:
 			try:
 				response=str(self.game.clients[clientsocket].command(line))+self._split
