@@ -17,6 +17,8 @@ from common.command import parse, parse_tokens, Command
 from common.vector import Vector
 from state import Initial, StateManager
 from entity import Entity
+from ui import Widget
+from state.game import Game as GameState
 
 import pygame
 from pygame.locals import *
@@ -59,22 +61,52 @@ class Network(threading.Thread):
 	
 	def send(self, str):
 		self._s.send(str)
+
+class Game(Widget):
+	def __init__(self, size):
+		Widget.__init__(self, Vector(0,0,0), size)
+		self.entities = []
 	
+	def on_buttondown(self, pos, button):
+		pass
+	
+	def render(self):
+		for e in self.entities:
+			glPushMatrix()
+			glTranslate(e._position.x, e._position.y, e._position.z)
+			
+			glColor4f(1,0,1,1)
+			glBegin(GL_QUADS)
+			glTexCoord2f(0, 1)
+			glVertex2f(0, 0)
+			
+			glTexCoord2f(0, 0)
+			glVertex2f(0, 50)
+			
+			glTexCoord2f(1, 0)
+			glVertex2f(50, 50)
+			
+			glTexCoord2f(1, 1)
+			glVertex2f(50, 0)
+			glEnd()
+			
+			glPopMatrix()
+
 class Client:
-	def __init__(self, resolution=(800,600), host='localhost', port=1234, split="\n"):
+	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
 		self._split = split
 		self._running = False
 		self._state = StateManager()
-		self._state.push(Initial())
+		self._game = Game(resolution)
+		self._state.push(GameState(self._game))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
-		self._entities = []
 		
-		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
-		self._resize(resolution[0], resolution[1])
+		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
+		self._resize(resolution.x, resolution.y)
 		pygame.display.set_caption('yamosg')
 		
 		setup_opengl()
@@ -151,27 +183,6 @@ class Client:
 	def _render(self):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		self._state.render()
-				
-		for e in self._entities:
-			glPushMatrix()
-			glTranslate(e._position.x, e._position.y, e._position.z)
-			
-			glColor4f(1,0,1,1)
-			glBegin(GL_QUADS)
-			glTexCoord2f(0, 1)
-			glVertex2f(0, 0)
-			
-			glTexCoord2f(0, 0)
-			glVertex2f(0, 50)
-			
-			glTexCoord2f(1, 0)
-			glVertex2f(50, 50)
-			
-			glTexCoord2f(1, 1)
-			glVertex2f(50, 0)
-			glEnd()
-			
-			glPopMatrix()
 		
 		pygame.display.flip()
 	
@@ -245,8 +256,7 @@ class Client:
 		if status == 'NOT_OK':
 			return
 		
-		self._entities = [Entity(**x) for x in json.loads(line)]
-		print [str(x) for x in self._entities]
+		self._game.entities = [Entity(**x) for x in json.loads(line)]
 	
 	@expose
 	def Hello(self):
