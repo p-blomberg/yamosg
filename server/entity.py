@@ -33,7 +33,7 @@ class Entity:
 		d={
 			"Type" : self.__class__.__name__,
 			"Id": self.id,
-			"Owner": str(self.owner),
+			"Owner": str(self.owner.id),
 			"Position": str(self.position),
 			"Speed": str(self.speed),
 			"Minable": self.minable,
