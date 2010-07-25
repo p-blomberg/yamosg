@@ -16,6 +16,7 @@ from select import select
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector
 from state import Initial, StateManager
+from entity import Entity
 
 import pygame
 from pygame.locals import *
@@ -27,6 +28,14 @@ def expose(func):
 	""" Exposes a method, eg is callable by server """
 	func.exposed = True
 	return func
+
+def server_call(alias):
+	def wrap(f):
+		def wrapped_f(self, *args, **kwargs):
+			status, args2, line = self.call(alias, *args, **kwargs)
+			f(self, status, line, *args2)
+		return wrapped_f
+	return wrap
 
 def setup_opengl():
 	glClearColor(1,0,1,0)
@@ -138,6 +147,28 @@ class Client:
 	def _render(self):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		self._state.render()
+		
+		for e in self._entities:
+			glPushMatrix()
+			glTranslate(e._position.x, e._position.y, e._position.z)
+			
+			glColor4f(1,0,1,1)
+			glBegin(GL_QUADS)
+			glTexCoord2f(0, 1)
+			glVertex2f(0, 0)
+			
+			glTexCoord2f(0, 0)
+			glVertex2f(0, 50)
+			
+			glTexCoord2f(1, 0)
+			glVertex2f(50, 50)
+			
+			glTexCoord2f(1, 1)
+			glVertex2f(50, 0)
+			glEnd()
+			
+			glPopMatrix()
+		
 		pygame.display.flip()
 	
 	def _dispatch(self, cmd, args):
@@ -173,7 +204,11 @@ class Client:
 				id, command, args = parse(line)
 				self._command_queue.append((command, args))
 			elif id in self._command_store:
-				self._command_store[id].reply(tuple(tokens[1:]), line[len(id)+1:])
+				status = tokens[1]
+				args = tuple(tokens[2:])
+				data = line[len(id)+len(status)+2:]
+
+				self._command_store[id].reply(status, args, data)
 			else:
 				raise RuntimeError, 'Got a reply for ID ' + id + ' but no matching request'
 		except:
@@ -201,11 +236,20 @@ class Client:
 		
 		return reply
 	
+	@server_call('LIST_OF_ENTITIES')
+	def list_of_entities(self, status, line, *args):
+		if status == 'NOT_OK':
+			return
+		
+		self._entities = [Entity(**x) for x in json.loads(line)]
+		print [str(x) for x in entities]
+	
 	@expose
 	def Hello(self):
-		self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
-		_, entities = self.call('LIST_OF_ENTITIES')
-		print json.loads(entities)
+		_, self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
+		self.list_of_entities()
+		#_, entities = self.call('LIST_OF_ENTITIES')
+		#print json.loads(entities)
 
 if __name__ == '__main__':
 	pygame.display.init()

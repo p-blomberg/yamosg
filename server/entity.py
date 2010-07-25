@@ -33,9 +33,9 @@ class Entity:
 		d={
 			"Type" : self.__class__.__name__,
 			"Id": self.id,
-			"Owner": str(self.owner.id),
-			"Position": str(self.position),
-			"Speed": str(self.speed),
+			"Owner": self.owner and self.owner.id or None,
+			"Position": self.position and self.position.xyz() or None,
+			"Speed": self.speed.xyz(),
 			"Minable": self.minable,
 			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
 		}

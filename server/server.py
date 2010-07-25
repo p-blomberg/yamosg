@@ -19,6 +19,9 @@ import socket
 import traceback
 import json
 
+OK = 'OK'
+NOT_OK = 'NOT_OK'
+
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
 		ServerSocket.__init__(self, host, port, 0, split, debug)
@@ -88,7 +91,7 @@ class Connection:
 			reply = func(self, *args)
 		except TypeError, e:
 			traceback.print_exc()
-			reply = str(e)
+			reply = 'NOT_OK ' + str(e)
 		return '{id} {reply}'.format(id=counter, reply=reply)
 
 class Game:
@@ -170,9 +173,9 @@ class Game:
 
 	def login(self, connection, name, passwd):
 		if not name in self.logins:
-			return "NOT_OK"
+			return (NOT_OK, )
 		if not self.logins[name] == passwd:
-			return "NOT_OK"
+			return (NOT_OK, )
 		# insert some code to take command of existing player if same login.
 		id=self.NewPlayer(name)
 		connection.player=self.players[id]
