@@ -15,6 +15,7 @@ import socket, threading, traceback
 from select import select
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector
+from common.rect import Rect
 from state import Initial, StateManager
 from entity import Entity
 from ui import Widget
@@ -79,17 +80,36 @@ class Game(Widget):
 	def __init__(self, size):
 		Widget.__init__(self, Vector(0,0,0), size)
 		self.entities = []
+		self._scale = 1.0
+		self._rect = Rect(0,0,0,0)
+		
+		self._calc_rect()
+	
+	def _calc_rect(self):
+		self._rect.w = self.size.x * self._scale
+		self._rect.h = self.size.y * self._scale
+		print self._rect
 	
 	def on_buttondown(self, pos, button):
-		for e in self.entities:
-			if pos.x < e.position.x or pos.y < e.position.y:
-				continue
-			
-			if pos.x > e.position.x + 50 or pos.y > e.position.y + 50:
-				continue
-			
-			print e
-			break
+		if button == 1:
+			for e in self.entities:
+				if pos.x < e.position.x or pos.y < e.position.y:
+					continue
+				
+				if pos.x > e.position.x + 50 or pos.y > e.position.y + 50:
+					continue
+				
+				print e
+				break
+		elif button == 4:
+			if self._scale > 0.2:
+				self.on_zoom(-0.1)
+		elif button == 5:
+			self.on_zoom(0.1)
+	
+	def on_zoom(self, amount):
+		self._scale += amount
+		self._calc_rect()
 	
 	def do_render(self):
 		glClearColor(0,0,1,0)
