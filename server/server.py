@@ -107,7 +107,7 @@ class Game:
 	def broadcast(self, command, *args):
 		""" Send a message to all connected clients """
 		cmd = Command(command, *args, id='BROADCAST')
-		for c in self.clients:
+		for c in self.clients.keys():
 			try:
 				c.send(str(cmd) + self.split)
 			except socket.error:
