@@ -72,7 +72,7 @@ class Connection:
 			return "ERR_BAD_PARAMS"
 
 	def command(self, line):
-		counter, cmd, parts = command.parse(line)
+		counter, cmd, args = command.parse(line)
 		commands = {
 			"LOGIN": self.game.login,
 			"PING": self.ping,
@@ -83,8 +83,12 @@ class Connection:
 			"PLAYERS": self.game.Players
 		}
 		
-		func = commands.get(cmd, lambda x,y: "I don't know the command " + cmd)
-		return '{id} {reply}'.format(id=counter, reply=func(self, parts))
+		func = commands.get(cmd, lambda *args: "I don't know the command " + cmd)
+		try:
+			reply = func(self, *args)
+		except TypeError, e:
+			reply = str(e)
+		return '{id} {reply}'.format(id=counter, reply=reply)
 
 class Game:
 	logins={}
@@ -129,15 +133,10 @@ class Game:
 		for o in self.entities:
 			o.tick(key_tick)
 
-	def list_of_entities(self, useless, useless2):
+	def list_of_entities(self, connection):
 		return json.dumps([x.dinmamma() for x in self.entities])
 
-	def NewUser(self, connection, params):
-		try:
-			name=params[0]
-			password=params[1]
-		except KeyError:
-			return "NOT_OK: Invalid number of arguments"
+	def NewUser(self, connection, name, password):
 		if name in self.logins:
 			return "NOT_OK: User already exists"
 		else:
@@ -151,30 +150,24 @@ class Game:
 		self.broadcast('NEW_PLAYER', id, name)
 		return id
 
-	def playerinfo(self, connection, params):
-		print connection
-		print params
-		if len(params)!=1:
-			return "NOT_OK"
-		
-		id = int(params[0])
+	def playerinfo(self, connection, id):
+		try:
+			id = int(id)
+		except ValueError:
+			return "NOT_OK: Invalid ID"
 		
 		try:
 			return self.players[id].info()
 		except IndexError:
 			return "NOT_OK"
 
-	def Players(self, connection, selection):
+	def Players(self, connection):
 		playerlist=str()
 		for player in self.players:
 			playerlist+=str(player.id)+":"+player.name+self.split
 		return playerlist
 
-	def login(self, connection, params):
-		print params
-		if len(params)!= 2:
-			return "NOT_OK"
-		(name, passwd) = (params[0], params[1])
+	def login(self, connection, name, passwd):
 		if not name in self.logins:
 			return "NOT_OK"
 		if not self.logins[name] == passwd:
@@ -186,20 +179,21 @@ class Game:
 		self.broadcast('USER_LOGIN', id, name)
 		return str(id)
 
-	def EntAction(self, connection, params):
+	def EntAction(self, connection, id, *args):
 		try:
-			ent_id=int(params[0])
+			id = int(id)
 		except ValueError:
-			response="NOT_OK: Invalid ID"
-			return response
+			return "NOT_OK: Invalid ID"
+		
 		try:
-			ent=self.entities[ent_id]
-			player=connection.player
+			ent = self.entities[id]
+			player = connection.player
 			if not ent in player.entities:
 				return "NOT_OK: Belongs to other player"
 
-			response=ent.action(params[1:])
+			response = ent.action(params[1:])
 			print response
+			return response
 		except KeyError:
-			response="I don't know the entity '"+ent_id+"'"
-		return response
+			return "I don't know the entity '" + id + "'"
+		
