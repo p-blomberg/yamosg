@@ -178,14 +178,24 @@ class Client:
 			self._command_lock.release()
 	
 	def call(self, command, *args):
+		"""
+			Synchronously call and get reply
+		"""
 		cmd = Command(command, *args)
-		self._command_lock.acquire()
-		self._command_store[cmd.id] = cmd
-		print str(cmd)
-		self._network.send(str(cmd) + self._split)
-		self._command_lock.release()
+		
+		# send command
+		with self._command_lock:
+			self._command_store[cmd.id] = cmd
+			self._network.send(str(cmd) + self._split)
+		
+		# await reply
 		reply = cmd.wait()
-		print 'cmd reply:', reply
+		
+		# delete command
+		with self._command_lock:
+			del self._command_store[cmd.id]
+		
+		return reply
 	
 	@expose
 	def Hello(self):
