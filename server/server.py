@@ -97,7 +97,12 @@ class Game:
 	def __init__(self, split):
 		self.split=split
 		# Create world
-		self.entities.append(entity.Planet(len(self.entities), Vector(1,2,3), 20, self, "Copper Ore", 600))
+		p=entity.Planet(len(self.entities), Vector(1,2,3), 20, self)
+		cargo={
+			entity.CopperOre(p, None, self):600
+		}
+		p.cargo=cargo
+		self.entities.append(p)
 	
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """

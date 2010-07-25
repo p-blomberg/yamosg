@@ -1,16 +1,20 @@
 from common.vector import Vector
+from copy import copy
+import json
 
 class Entity:
 	id=None
 	owner=None
+	container=None
 	position=None
 	game=None
 	max_speed=None
 	size=None
+	mass=None
 	speed=None
 	actions={}
 	minable=False
-	max_cargo = 0
+	max_cargo=0
 
 	def __init__(self, id, owner, position, game):
 		self.id=id
@@ -21,7 +25,23 @@ class Entity:
 		self.cargo = {}
 
 	def __str__(self):
+		return self.encode()
 		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", speed: "+str(self.speed)+", cargo: "+str(self.cargo);
+
+	def dinmamma(self):
+		d={
+			"Type" : self.__class__.__name__,
+			"Id": self.id,
+			"Owner": str(self.owner),
+			"Position": str(self.position),
+			"Speed": str(self.speed),
+			"Minable": self.minable,
+			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
+		}
+		return d
+
+	def encode(self):
+		return json.dumps(self.dinmamma())
 
 	def remaining_cargo_space(self):
 		return self.max_cargo - self.cargo_sum()
@@ -29,7 +49,45 @@ class Entity:
 	def cargo_sum(self):
 		return reduce(lambda sum, x: sum+x, self.cargo.values(), 0)
 
+	def retrieve_cargo(self, cargo, amount):
+		""" Attempt to transfer the specified cargo from its container to this entity.
+				If the specified amount is not available in the container,
+				the maximum available amount will be transferred.
+				If the cargo cannot fit in this entity, the maximum amount
+				will be transferred.
+				@return int amount of fetched cargo.
+		"""
+
+		entity=cargo.container
+
+		# Calculate amount
+		if(entity.cargo[cargo] >= amount):
+			if(amount <= self.remaining_cargo_space()):
+				actual_amount=amount
+			else:
+				actual_amount=self.remaining_cargo_space()
+		else:
+			if(amount <= self.remaining_cargo_space()):
+				actual_amount=entity.cargo[cargo]
+			else:
+				actual_amount=self.remaining_cargo_space()
+
+		# Do the transfer
+		entity.cargo[cargo]-=actual_amount
+		try:
+			self.cargo[cargo]+=actual_amount
+		except KeyError:
+			c=copy(cargo)
+			self.cargo[c]=actual_amount
+
+		# Check if remaining amount is zero - delete useless entity
+		if(entity.cargo[cargo]==0):
+			del entity.cargo[cargo]
+			
+		return actual_amount
+
 	def go(self, params):
+		print params
 		speed=Vector(params[0], params[1], params[2])
 		if(speed.length() > self.max_speed):
 			return "NOT_OK: Max speed for "+self.__class__.__name__+" is "+str(self.max_speed)
@@ -50,23 +108,39 @@ class Entity:
 
 class Planet(Entity):
 	minable=True
-	mineral_type=None
-	mineral_amount=0
 
-	def __init__(self, id, position, size, game, mineral_type, mineral_amount):
+	def __init__(self, id, position, size, game):
 		Entity.__init__(self, id, None, position, game)
 		self.size=size
-		self.mineral_type=mineral_type
-		self.mineral_amount=mineral_amount
+		self.mass=2000*size
 
 class Ship(Entity):
 	max_speed = 1
 	cost = 40000
 	size = 0.1
+	mass = 300
 
 class Station(Entity):
 	cost = 250000
 	size = 10
+	mass = 5000
+
+class Mineral(Entity):
+	size = 0.001
+	mass = 1
+
+	def __hash__(self):
+		h="".join([str(ord(i)) for i in self.__class__.__name__])
+		return int(h)
+
+	def __init__(self, container, owner, game):
+		id=None
+		position=None
+		self.container=container
+		Entity.__init__(self, id, owner, position, game)
+
+class CopperOre(Mineral):
+	pass
 
 class Miner(Ship):
 	max_speed=0.1
@@ -74,24 +148,28 @@ class Miner(Ship):
 	cost=50000
 	mining_speed=1.0
 	max_cargo = 50
+	cargo_type=None
+
+	def __init__(self, id, owner, position, game):
+		Ship.__init__(self, id, owner, position, game)
+		self.actions['GO_TO_PLANET']=self.go_to_planet
+		self.actions['SET_CARGO_TYPE']=self.set_cargo_type
+
+	def set_cargo_type(self, type):
+		self.cargo_type=type[0]
+		return "OK"
+
+	def go_to_planet(self, useless):
+		self.position=Vector(1.1, 2.1, 3.1)
+		return "OK"
 
 	def mine(self, entity):
-		if(entity.mineral_amount>0):
-			if(entity.mineral_amount>=self.mining_speed):
-				if(self.mining_speed <= self.remaining_cargo_space()):
-					self.cargo[entity.mineral_type]=self.cargo.get(entity.mineral_type,0)+self.mining_speed
-					entity.mineral_amount-=self.mining_speed
-				else:
-					self.cargo[entity.mineral_type]=self.cargo.get(entity.mineral_type,0)+self.remaining_cargo_space()
-					entity.mineral_amount-=self.remaining_cargo_space()
+		for c in entity.cargo:
+			if(c.__class__.__name__ == self.cargo_type):
+				print "Mining "+self.cargo_type
+				self.retrieve_cargo(entity.cargo[self.cargo_type], self.mining_speed)
 			else:
-				if(entity.mineral_amount <= self.remaining_cargo_space()):
-					self.cargo[entity.mineral_type]+=entity.mineral_amount
-					entity.mineral_amount=0
-					entity.minable=False
-				else:
-					self.cargo[entity.mineral_type]=self.cargo.get(entity.mineral_type,0)+self.remaining_cargo_space()
-					entity.mineral_amount-=self.remaining_cargo_space()
+				print "Not mining - wrong cargo type. Avail cargo: "+c.__class__.__name__+", requested: "+str(self.cargo_type)
 
 	def tick(self, key_tick):
 		Entity.tick(self, key_tick)
