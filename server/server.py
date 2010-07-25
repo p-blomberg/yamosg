@@ -82,11 +82,9 @@ class Connection:
 			"ENTACTION": self.game.EntAction,
 			"PLAYERS": self.game.Players
 		}
-		try:
-			response=str(commands[cmd](self, parts))
-		except KeyError:
-			response="I don't know the command "+cmd
-		return str(counter)+' '+response
+		
+		func = commands.get(cmd, lambda: "I don't know the command " + cmd)
+		return '{id} {reply}'.format(id=counter, reply=func(self, parts))
 
 class Game:
 	logins={}
