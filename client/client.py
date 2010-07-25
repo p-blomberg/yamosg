@@ -41,6 +41,10 @@ def server_call(alias):
 
 def setup_opengl():
 	glClearColor(1,0,1,0)
+	glEnable(GL_TEXTURE_2D)
+
+def have_trailing_newline(line):
+	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
 
 class Network(threading.Thread):
 	def __init__(self, client, host, port):
@@ -50,13 +54,22 @@ class Network(threading.Thread):
 		self._s.connect((host, port))
 	
 	def run(self):
+		tail = ''
 		while self._client.is_running():
 			(rlist, wlist, xlist) = select([self._s], [], [], 1.0)
 			if len(rlist) == 0:
 				continue
 			
-			data = self._s.recv(8192)
-			for line in data.splitlines():
+			data = tail + self._s.recv(8192)
+			tail = ''
+			
+			lines = data.splitlines()
+				
+			# store tail
+			if not have_trailing_newline(data):
+				tail = lines.pop()
+			
+			for line in lines:
 				self._client.push_command(line)
 	
 	def send(self, str):
@@ -70,7 +83,10 @@ class Game(Widget):
 	def on_buttondown(self, pos, button):
 		pass
 	
-	def render(self):
+	def do_render(self):
+		glClearColor(0,0,1,0)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		
 		for e in self.entities:
 			glPushMatrix()
 			glTranslate(e._position.x, e._position.y, e._position.z)
@@ -91,25 +107,28 @@ class Game(Widget):
 			glEnd()
 			
 			glPopMatrix()
+		
+		self.invalidate()
 
 class Client:
 	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
-		self._split = split
-		self._running = False
-		self._state = StateManager()
-		self._game = Game(resolution)
-		self._state.push(GameState(self._game))
-		self._network = Network(self, host, port)
-		self._command_store = {}
-		self._command_queue = []
-		self._command_lock = threading.Lock()
-		self._playerid = None
-		
+		# opengl must be initialized first
 		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
 		self._resize(resolution.x, resolution.y)
 		pygame.display.set_caption('yamosg')
 		
 		setup_opengl()
+		
+		self._split = split
+		self._running = False
+		self._state = StateManager()
+		self._game = Game(resolution)
+		self._state.push(GameState(resolution, self._game))
+		self._network = Network(self, host, port)
+		self._command_store = {}
+		self._command_queue = []
+		self._command_lock = threading.Lock()
+		self._playerid = None
 	
 	def quit(self):
 		self._running = False
@@ -181,6 +200,7 @@ class Client:
 				print 'Unhandled pygame event', event
 	
 	def _render(self):
+		glClearColor(1,0,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		self._state.render()
 		
@@ -257,6 +277,7 @@ class Client:
 			return
 		
 		self._game.entities = [Entity(**x) for x in json.loads(line)]
+		print self._game.entities
 	
 	@expose
 	def Hello(self):

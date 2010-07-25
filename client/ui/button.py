@@ -13,7 +13,7 @@ class Button(Widget):
 	def on_buttondown(self, pos, button):
 		self._callback(pos, button)
 	
-	def render(self):
+	def do_render(self):
 		glTranslate(*self.pos)
 		
 		glColor4f(1,1,1,1)

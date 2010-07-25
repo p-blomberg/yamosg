@@ -4,12 +4,13 @@
 from OpenGL.GL import *
 
 class State:
-	def __init__(self, root=None):
+	def __init__(self, size, root=None):
 		self._owner = None # will be set the StateManager
 		self._root = root
+		self.size = self.width, self.height = size.xy()
 		
 	def render(self):
-		glClearColor(1,1,0,0)
+		glClearColor(0,1,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
 		if self._root is None:
@@ -18,6 +19,25 @@ class State:
 		glPushMatrix()
 		self._root.render()
 		glPopMatrix()
+		
+		glColor4f(1,1,1,1)
+		self._root.bind_texture()
+		
+		glBegin(GL_QUADS)
+		glTexCoord2f(0, 1)
+		glVertex2f(0, 0)
+		
+		glTexCoord2f(0, 0)
+		glVertex2f(0, self.height)
+		
+		glTexCoord2f(1, 0)
+		glVertex2f(self.width, self.height)
+		
+		glTexCoord2f(1, 1)
+		glVertex2f(self.width, 0)
+		glEnd()
+		
+		glBindTexture(GL_TEXTURE_2D, 0)
 
 	def on_buttondown(self, pos, button):
 		if self._root is None:

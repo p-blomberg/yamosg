@@ -8,5 +8,5 @@ from common.vector import Vector
 from OpenGL.GL import *
 
 class Game(State):
-	def __init__(self, widget):
-		State.__init__(self, root=widget)
+	def __init__(self, size, widget):
+		State.__init__(self, size=size, root=widget)
