@@ -55,6 +55,8 @@ class Command:
 			x = str(x)
 			if ' ' in x:
 				return '"%s"' % x
+			if x == '':
+				return '""'
 			else:
 				return x
 		
