@@ -113,7 +113,6 @@ class Game:
 			except socket.error:
 				traceback.print_exc()
 				del self.clients[c]
-				
 
 	def tick(self):
 		self.tick_counter+=1
