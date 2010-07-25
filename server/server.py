@@ -135,7 +135,7 @@ class Game:
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
-		return json.dumps([x.dinmamma() for x in self.entities])
+		return "OK "+json.dumps([x.dinmamma() for x in self.entities])
 
 	def NewUser(self, connection, name, password):
 		if name in self.logins:
