@@ -13,4 +13,4 @@ class Initial (State):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 	def on_buttondown(self, pos, button):
-		self.replace(Game())
+		self.replace(Login())

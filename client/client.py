@@ -90,6 +90,8 @@ class Client:
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 		glOrtho(0, width, 0, height, -1.0, 1.0);
+		glScalef(1, -1.0, 1);
+		glTranslatef(0, -height, 0);
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 	

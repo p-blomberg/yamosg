@@ -21,4 +21,7 @@ class Login(State):
 		glPopMatrix()
 
 	def on_buttondown(self, pos, button):
-		print 'click', pos, button
+		hit = self._button.hit_test(pos)
+		
+		if hit:
+			print hit
