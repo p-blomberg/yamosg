@@ -60,6 +60,7 @@ class Client:
 		self._command_store = {}
 		self._command_queue = []
 		self._command_lock = threading.Lock()
+		self._playerid = None
 		
 		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
 		self._resize(resolution[0], resolution[1])
@@ -199,7 +200,7 @@ class Client:
 	
 	@expose
 	def Hello(self):
-		self.call('LOGIN', 'foo', 'bar')
+		self.playerid = self.call('LOGIN', 'foo', 'bar')
 
 if __name__ == '__main__':
 	pygame.display.init()
