@@ -125,7 +125,6 @@ class Game:
 			try:
 				c.send(str(cmd) + self.split)
 			except socket.error:
-				traceback.print_exc()
 				del self.clients[c]
 
 	def tick(self):
