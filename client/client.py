@@ -13,7 +13,7 @@ sys.path.append(root)
 
 import socket, threading, traceback
 from select import select
-from common.command import parse, Command
+from common.command import parse, parse_tokens, Command
 from common.vector import Vector
 from state import Initial, StateManager
 
@@ -43,12 +43,16 @@ class Network(threading.Thread):
 			if len(rlist) == 0:
 				continue
 			
-			id, cmd, args = parse(self._s.recv(8192))
+			data = self._s.recv(8192)
+			print 'raw data:', [data]
+			lines = data.splitlines()
+			print lines
 			
-			try:
-				self._client.push_command(id, cmd, args)
-			except:
-				traceback.print_exc()
+			for line in lines:
+				try:
+					self._client.push_command(line)
+				except:
+					traceback.print_exc()
 	
 	def send(self, str):
 		self._s.send(str)
@@ -160,18 +164,19 @@ class Client:
 		
 		func(*args)
 
-	def push_command(self, id, command, args):
+	def push_command(self, line):
 		# Run from network thread
-		
-		print id, command, args
 		
 		try:
 			self._command_lock.acquire()
 			
+			tokens = parse_tokens(line)
+			id = tokens[0]
 			if id == 'UNICAST' or id == 'BROADCAST':
+				id, command, args = parse(line)
 				self._command_queue.append((command, args))
 			elif id in self._command_store:
-				self._command_store[id].reply(command, args)
+				self._command_store[id].reply(tuple(tokens[:1]))
 			else:
 				raise RuntimeError, 'Got a reply for ID ' + id + ' but no matching request'
 		finally:

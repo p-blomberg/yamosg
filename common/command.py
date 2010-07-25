@@ -20,6 +20,9 @@ def parse(line):
 
 	return counter, cmd, tuple(tokens)
 
+def parse_tokens(line):
+	return shlex.split(line)
+
 class Command:
 	""" Represents a protocol command """
 	_id = 0
@@ -56,9 +59,9 @@ class Command:
 		
 		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=' '.join([quote(x) for x in self.args]))
 	
-	def reply(self, command, args):
+	def reply(self, args):
 		""" Mark that this command has recieved a reply """
-		self._reply = (command, args)
+		self._reply = args
 	
 	def get_reply(self):
 		return self._reply
