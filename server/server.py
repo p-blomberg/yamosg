@@ -100,7 +100,7 @@ class Game:
 	def __init__(self, split):
 		self.split=split
 		# Create world
-		p=entity.Planet(len(self.entities), Vector(1,2,3), 20, self)
+		p=entity.Planet(len(self.entities), Vector(30,30,0), 20, self)
 		cargo={
 			entity.CopperOre(p, None, self):600
 		}
@@ -191,7 +191,7 @@ class Game:
 			if not ent in player.entities:
 				return "NOT_OK: Belongs to other player"
 
-			response = ent.action(params[1:])
+			response = ent.action(args)
 			print response
 			return response
 		except KeyError:

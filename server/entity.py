@@ -74,9 +74,12 @@ class Entity:
 
 		# Do the transfer
 		entity.cargo[cargo]-=actual_amount
-		try:
+		if(cargo in self.cargo):
 			self.cargo[cargo]+=actual_amount
-		except KeyError:
+			print "Adding "+str(actual_amount)+" of "+cargo.__class__.__name__+" to "+str(self.id)
+		else:
+			#print cargo.hash()+" is not "+self.cargo[0].hash()
+			print str(self.id)+" now also contains "+cargo.__class__.__name__
 			c=copy(cargo)
 			self.cargo[c]=actual_amount
 
@@ -133,6 +136,12 @@ class Mineral(Entity):
 		h="".join([str(ord(i)) for i in self.__class__.__name__])
 		return int(h)
 
+	def __cmp__(self, other):
+		if (self.__hash__()==other.__hash__()):
+			return 0
+		else:
+			return 1
+
 	def __init__(self, container, owner, game):
 		id=None
 		position=None
@@ -160,14 +169,14 @@ class Miner(Ship):
 		return "OK"
 
 	def go_to_planet(self, useless):
-		self.position=Vector(1.1, 2.1, 3.1)
+		self.position=Vector(30, 9.6, 0)
 		return "OK"
 
 	def mine(self, entity):
 		for c in entity.cargo:
 			if(c.__class__.__name__ == self.cargo_type):
 				print "Mining "+self.cargo_type
-				self.retrieve_cargo(entity.cargo[self.cargo_type], self.mining_speed)
+				self.retrieve_cargo(c, self.mining_speed)
 			else:
 				print "Not mining - wrong cargo type. Avail cargo: "+c.__class__.__name__+", requested: "+str(self.cargo_type)
 
