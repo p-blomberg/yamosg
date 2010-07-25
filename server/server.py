@@ -83,7 +83,7 @@ class Connection:
 			"PLAYERS": self.game.Players
 		}
 		
-		func = commands.get(cmd, lambda: "I don't know the command " + cmd)
+		func = commands.get(cmd, lambda x,y: "I don't know the command " + cmd)
 		return '{id} {reply}'.format(id=counter, reply=func(self, parts))
 
 class Game:
