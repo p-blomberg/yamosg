@@ -87,6 +87,7 @@ class Connection:
 		try:
 			reply = func(self, *args)
 		except TypeError, e:
+			traceback.print_exc()
 			reply = str(e)
 		return '{id} {reply}'.format(id=counter, reply=reply)
 
@@ -177,9 +178,9 @@ class Game:
 		connection.player=self.players[id]
 		# Send info to all players
 		self.broadcast('USER_LOGIN', id, name)
-		return str(id)
+		return "OK ID=".str(id)
 
-	def EntAction(self, connection, id, *args):
+	def EntAction(self, connection, id, action, *args):
 		try:
 			id = int(id)
 		except ValueError:
@@ -191,7 +192,7 @@ class Game:
 			if not ent in player.entities:
 				return "NOT_OK: Belongs to other player"
 
-			response = ent.action(args)
+			response = ent.action(action, args)
 			print response
 			return response
 		except KeyError:

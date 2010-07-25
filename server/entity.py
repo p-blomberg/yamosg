@@ -23,6 +23,7 @@ class Entity:
 		self.game=game
 		self.speed=Vector(0,0,0)
 		self.cargo = {}
+		self.actions["GO"]=self.go
 
 	def __str__(self):
 		return self.encode()
@@ -97,11 +98,9 @@ class Entity:
 		self.speed=speed
 		return "OK"
 
-	def action(self, params):
-		action=params[0]
-		self.actions["GO"]=self.go
+	def action(self, action, args):
 		try:
-			response=self.actions[action.strip()](params[1:])
+			response=self.actions[action](*args)
 		except KeyError:
 			response="NOT_OK: ENTACTION %s is not valid" %(action)
 		return response
@@ -168,8 +167,12 @@ class Miner(Ship):
 		self.cargo_type=type[0]
 		return "OK"
 
-	def go_to_planet(self, useless):
+	def go_to_planet(self):
 		self.position=Vector(30, 9.6, 0)
+		return "OK"
+	
+	def go_to_gateway(self):
+		self.position=Vector(4, 6, 0)
 		return "OK"
 
 	def mine(self, entity):
@@ -195,7 +198,8 @@ class Gateway(Station):
 	cost = 10000000
 	size = 10
 	
-	def build(self, params):
+	def build(self, type):
+		print type
 		types = {
 			"STATION": Station,
 			"SHIP": Ship,
@@ -203,22 +207,22 @@ class Gateway(Station):
 		}
 		try:
 			id=len(self.game.entities)
-			ent=types[params[0]](id, self.owner, self.position, self.game)
+			ent=types[type](id, self.owner, self.position, self.game)
 			if(self.owner.buy(ent.cost)):
 				self.game.entities.append(ent)
 				self.owner.entities.append(ent)
-				return id
+				return "OK: ID="+str(id)
 			return "NOT_OK: Not enough cash"
 		except KeyError:
-			return "Cannot build entity of type '"+params[0]+"' from Gateway"
+			return "Cannot build entity of type '"+type+"' from Gateway"
 
-	def action(self, params):
-		action=params[0]
-		actions = {
-			"BUILD": self.build
-		}
-		try:
-			response=actions[action.strip()](params[1:])
-		except KeyError:
-			response="ENTACTION %s is not valid for Gateway" %(action)
-		return response
+	def load(self, ship_id):
+		entity=self.game.entities[int(ship_id)]
+		print entity
+		return "OK"
+
+	def __init__(self, id, owner, position, game):
+		Station.__init__(self, id, owner, position, game)
+		self.actions['BUILD']=self.build
+		self.actions['LOAD']=self.load
+
