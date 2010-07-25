@@ -218,7 +218,8 @@ class Gateway(Station):
 
 	def load(self, ship_id):
 		entity=self.game.entities[int(ship_id)]
-		print entity
+		for c in entity.cargo:
+			self.retrieve_cargo(c, entity.cargo[c])
 		return "OK"
 
 	def __init__(self, id, owner, position, game):
