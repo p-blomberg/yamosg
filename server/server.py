@@ -17,6 +17,7 @@ from common.command import Command
 from common import command
 import socket
 import traceback
+import json
 
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
@@ -131,10 +132,7 @@ class Game:
 			o.tick(key_tick)
 
 	def list_of_entities(self, useless, useless2):
-		foo=""
-		for ent in self.entities:
-			foo=foo+str(ent)+self.split
-		return foo
+		return json.dumps([x.dinmamma() for x in self.entities])
 
 	def NewUser(self, connection, params):
 		try:
