@@ -21,6 +21,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import json
 
 def expose(func):
 	""" Exposes a method, eg is callable by server """
@@ -172,7 +173,7 @@ class Client:
 				id, command, args = parse(line)
 				self._command_queue.append((command, args))
 			elif id in self._command_store:
-				self._command_store[id].reply(tuple(tokens[1:]))
+				self._command_store[id].reply(tuple(tokens[1:]), line[len(id)+1:])
 			else:
 				raise RuntimeError, 'Got a reply for ID ' + id + ' but no matching request'
 		except:
@@ -202,7 +203,9 @@ class Client:
 	
 	@expose
 	def Hello(self):
-		self.playerid = self.call('LOGIN', 'foo', 'bar')
+		self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
+		_, entities = self.call('LIST_OF_ENTITIES')
+		print json.loads(entities)
 
 if __name__ == '__main__':
 	pygame.display.init()

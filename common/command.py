@@ -62,9 +62,9 @@ class Command:
 		
 		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=' '.join([quote(x) for x in self.args]))
 	
-	def reply(self, args):
+	def reply(self, args, line):
 		""" Mark that this command has recieved a reply """
-		self._reply = args
+		self._reply = (args, line)
 		if self._event is not None:
 			self._event.set()
 	
