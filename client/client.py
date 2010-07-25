@@ -44,15 +44,8 @@ class Network(threading.Thread):
 				continue
 			
 			data = self._s.recv(8192)
-			print 'raw data:', [data]
-			lines = data.splitlines()
-			print lines
-			
-			for line in lines:
-				try:
-					self._client.push_command(line)
-				except:
-					traceback.print_exc()
+			for line in data.splitlines():
+				self._client.push_command(line)
 	
 	def send(self, str):
 		self._s.send(str)
@@ -176,9 +169,11 @@ class Client:
 				id, command, args = parse(line)
 				self._command_queue.append((command, args))
 			elif id in self._command_store:
-				self._command_store[id].reply(tuple(tokens[:1]))
+				self._command_store[id].reply(tuple(tokens[1:]))
 			else:
 				raise RuntimeError, 'Got a reply for ID ' + id + ' but no matching request'
+		except:
+			traceback.print_exc()
 		finally:
 			self._command_lock.release()
 	
@@ -189,6 +184,8 @@ class Client:
 		print str(cmd)
 		self._network.send(str(cmd) + self._split)
 		self._command_lock.release()
+		reply = cmd.wait()
+		print 'cmd reply:', reply
 	
 	@expose
 	def Hello(self):

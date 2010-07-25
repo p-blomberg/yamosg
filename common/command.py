@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import shlex
+import shlex, threading
 
 def parse(line):
 	"""
@@ -36,6 +36,7 @@ class Command:
 		self.command = command
 		self.args = args
 		self._reply = None
+		self._event = None
 		
 		# check if a specific id was requested, eg broadcast
 		if 'id' in kwargs:
@@ -62,6 +63,13 @@ class Command:
 	def reply(self, args):
 		""" Mark that this command has recieved a reply """
 		self._reply = args
+		if self._event is not None:
+			self._event.set()
+	
+	def wait(self):
+		self._event = threading.Event()
+		self._event.wait()
+		return self.get_reply()
 	
 	def get_reply(self):
 		return self._reply
