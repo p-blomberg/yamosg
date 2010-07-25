@@ -59,10 +59,10 @@ class Server(ServerSocket):
 			t=new_time
 
 class Connection:
-	player=None
 	def __init__(self, socket, game):
 		self.socket=socket
 		self.game=game
+		self.player=None
 	
 	def ping(self, other, parts):
 		print parts
