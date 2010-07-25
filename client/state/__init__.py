@@ -1,15 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from OpenGL.GL import *
+
 class State:
-	def __init__(self):
+	def __init__(self, root=None):
 		self._owner = None # will be set the StateManager
+		self._root = root
 		
 	def render(self):
-		raise NotImplementedError
+		glClearColor(1,1,0,0)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		
+		if self._root is None:
+			return
+		
+		glPushMatrix()
+		self._root.render()
+		glPopMatrix()
 
 	def on_buttondown(self, pos, button):
-		raise NotImplementedError
+		if self._root is None:
+			return
+		
+		self._root._impl_on_buttondown(pos, button)
 	
 	def replace(self, state):
 		return self._owner.replace(state)

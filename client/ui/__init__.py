@@ -30,6 +30,16 @@ class Widget:
 		
 		return self
 	
+	def on_buttondown(self, pos, button):
+		pass
+	
+	def _impl_on_buttondown(self, pos, button):
+		projection = self.project(pos)
+		hit = self.hit_test(projection, False)
+		
+		if hit:
+			self.on_buttondown(projection, button)
+	
 	def render(self):
 		raise NotImplementedError
 

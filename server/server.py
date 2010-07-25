@@ -204,5 +204,4 @@ class Game:
 		response = ent.action(action, args)
 		print response
 		return response
-		
-		
+

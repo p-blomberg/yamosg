@@ -6,6 +6,13 @@ from ui import Widget
 from OpenGL.GL import *
 
 class Button(Widget):
+	def __init__(self, callback=None, *args, **kwargs):
+		Widget.__init__(self, *args, **kwargs)
+		self._callback = callback or (lambda *args: None)
+	
+	def on_buttondown(self, pos, button):
+		self._callback(pos, button)
+	
 	def render(self):
 		glTranslate(*self.pos)
 		

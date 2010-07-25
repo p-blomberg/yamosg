@@ -71,6 +71,7 @@ class Client:
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
+		self._entities = []
 		
 		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
 		self._resize(resolution[0], resolution[1])
@@ -93,6 +94,9 @@ class Client:
 				self._flush_queue()
 				self._logic()
 				self._render()
+			except GLError:
+				traceback.print_exc()
+				self.quit()
 			except:
 				traceback.print_exc()
 	
@@ -147,7 +151,7 @@ class Client:
 	def _render(self):
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		self._state.render()
-		
+				
 		for e in self._entities:
 			glPushMatrix()
 			glTranslate(e._position.x, e._position.y, e._position.z)
@@ -242,7 +246,7 @@ class Client:
 			return
 		
 		self._entities = [Entity(**x) for x in json.loads(line)]
-		print [str(x) for x in entities]
+		print [str(x) for x in self._entities]
 	
 	@expose
 	def Hello(self):
