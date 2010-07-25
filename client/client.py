@@ -81,7 +81,15 @@ class Game(Widget):
 		self.entities = []
 	
 	def on_buttondown(self, pos, button):
-		pass
+		for e in self.entities:
+			if pos.x < e.position.x or pos.y < e.position.y:
+				continue
+			
+			if pos.x > e.position.x + 50 or pos.y > e.position.y + 50:
+				continue
+			
+			print e
+			break
 	
 	def do_render(self):
 		glClearColor(0,0,1,0)
@@ -89,7 +97,7 @@ class Game(Widget):
 		
 		for e in self.entities:
 			glPushMatrix()
-			glTranslate(e._position.x, e._position.y, e._position.z)
+			glTranslate(e.position.x, e.position.y, e.position.z)
 			
 			glColor4f(1,0,1,1)
 			glBegin(GL_QUADS)
@@ -277,7 +285,6 @@ class Client:
 			return
 		
 		self._game.entities = [Entity(**x) for x in json.loads(line)]
-		print self._game.entities
 	
 	@expose
 	def Hello(self):
