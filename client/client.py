@@ -115,8 +115,8 @@ class Game(Widget):
 	def on_mousemove(self, pos, buttons):
 		if buttons[3]:
 			rel = pos - self._panstart
-			self._rect.x = self._panref.x + rel.x
-			self._rect.y = self._panref.y + rel.y
+			self._rect.x = self._panref.x - rel.x
+			self._rect.y = self._panref.y - rel.y
 			print self._rect
 	
 	def on_zoom(self, amount):
