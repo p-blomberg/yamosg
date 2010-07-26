@@ -82,6 +82,8 @@ class Game(Widget):
 		self.entities = []
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
+		self._panstart = None # position where the panning has started
+		self._panref = None
 		
 		self._calc_rect()
 	
@@ -101,11 +103,21 @@ class Game(Widget):
 				
 				print e
 				break
+		elif button == 3:
+			self._panstart = pos
+			self._panref = self._rect.copy()
 		elif button == 4:
 			if self._scale > 0.2:
 				self.on_zoom(-0.1)
 		elif button == 5:
 			self.on_zoom(0.1)
+	
+	def on_mousemove(self, pos, buttons):
+		if buttons[3]:
+			rel = pos - self._panstart
+			self._rect.x = self._panref.x + rel.x
+			self._rect.y = self._panref.y + rel.y
+			print self._rect
 	
 	def on_zoom(self, amount):
 		self._scale += amount
@@ -114,6 +126,9 @@ class Game(Widget):
 	def do_render(self):
 		glClearColor(0,0,1,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+		# camera
+		glTranslate(-self._rect.x, -self._rect.y, 0.0)
 		
 		for e in self.entities:
 			glPushMatrix()
@@ -214,12 +229,11 @@ class Client:
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
-				pass
+				self._state.on_mousemove(Vector(event.pos))
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				self._state.on_buttondown(Vector(event.pos), event.button)
-				pass
 			elif event.type == pygame.MOUSEBUTTONUP:
-				pass
+				self._state.on_buttonup(Vector(event.pos), event.button)
 			elif event.type == pygame.KEYDOWN:
 				pass
 			elif event.type == pygame.KEYUP:

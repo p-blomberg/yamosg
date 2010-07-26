@@ -8,6 +8,7 @@ class State:
 		self._owner = None # will be set the StateManager
 		self._root = root
 		self.size = self.width, self.height = size.xy()
+		self.button = [False] * 12 # assume 12 buttons @todo query or something
 		
 	def render(self):
 		glClearColor(0,1,0,0)
@@ -40,10 +41,15 @@ class State:
 		glBindTexture(GL_TEXTURE_2D, 0)
 
 	def on_buttondown(self, pos, button):
-		if self._root is None:
-			return
-		
-		self._root._impl_on_buttondown(pos, button)
+		self.button[button] = True
+		self._root._impl_on_button(pos, button, True)
+	
+	def on_buttonup(self, pos, button):
+		self.button[button] = False
+		self._root._impl_on_button(pos, button, False)
+	
+	def on_mousemove(self, pos):
+		self._root._impl_on_mousemove(pos, self.button)
 	
 	def replace(self, state):
 		return self._owner.replace(state)

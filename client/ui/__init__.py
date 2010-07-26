@@ -64,15 +64,28 @@ class Widget:
 		
 		return self
 	
-	def on_buttondown(self, pos, button):
+	def on_mousemove(self, pos, buttons):
 		pass
 	
-	def _impl_on_buttondown(self, pos, button):
+	def on_buttondown(self, pos, button):
+		pass
+		
+	def on_buttonup(self, pos, button):
+		pass
+	
+	def _impl_on_button(self, pos, button, state):
 		projection = self.project(pos)
 		hit = self.hit_test(projection, False)
 		
 		if hit:
-			self.on_buttondown(projection, button)
+			if state:
+				hit.on_buttondown(projection, button)
+			else:
+				hit.on_buttonup(projection, button)
+	
+	def _impl_on_mousemove(self, pos, buttons):
+		projection = self.project(pos)
+		self.on_mousemove(projection, buttons)
 	
 	def do_render(self):
 		raise NotImplementedError
