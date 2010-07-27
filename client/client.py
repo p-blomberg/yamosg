@@ -15,7 +15,7 @@ import socket, threading, traceback
 from select import select
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector
-from common.rect import Rect
+import common.rect
 from state import Initial, StateManager
 from entity import Entity
 from ui import Widget
@@ -90,16 +90,18 @@ class Game(Widget):
 		self._panstart = None # position where the panning has started
 		self._panref = None
 		
-		self._background = glGenTextures(1)
+		self._background = [None, None, None]
+		for i, filename in enumerate(['space_0.png', 'space_1.png', 'space_2.png']):
+			self._background[i] = glGenTextures(1)
 		
-		fp = open('../textures/background/space.png', 'rb')
-		surface = pygame.image.load(fp).convert_alpha()
-		data = pygame.image.tostring(surface, "RGBA", 0)
+			fp = open('../textures/background/' + filename, 'rb')
+			surface = pygame.image.load(fp).convert_alpha()
+			data = pygame.image.tostring(surface, "RGBA", 0)
 			
-		glBindTexture(GL_TEXTURE_2D, self._background)
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, surface.get_width(), surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+			glBindTexture(GL_TEXTURE_2D, self._background[i])
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, surface.get_width(), surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 		glBindTexture(GL_TEXTURE_2D, 0)
 		
 		self._calc_rect()
@@ -177,22 +179,28 @@ class Game(Widget):
 		
 		#glTranslate(-self._rect.x, -self._rect.y, 0.0)
 		
-		glBindTexture(GL_TEXTURE_2D, self._background)
-		glColor4f(1,0,1,1)
+		glColor4f(1,1,1,1)
 		glEnable(GL_BLEND)
 		
-		for x in [0.00013, 0.00010]:
+		for i,s in enumerate([0.00010, 0.00007, 0.00004]):
+			glBindTexture(GL_TEXTURE_2D, self._background[i])
+			t = common.rect.Rect(
+				self._rect.x * s,
+				self._rect.y * s,
+				1.0 + i * 0.4,
+				1.0 + i * 0.6)
+
 			glBegin(GL_QUADS)
-			glTexCoord2f(self._rect.x * x, self._rect.y * x)
+			glTexCoord2f(t.x, t.y)
 			glVertex2f(0, 0)
 			
-			glTexCoord2f(self._rect.x * x, self._rect.y * x + 1.0)
+			glTexCoord2f(t.x, t.y + t.h)
 			glVertex2f(0, self.height)
 			
-			glTexCoord2f(self._rect.x * x + 1.0, self._rect.y * x + 1.0)
+			glTexCoord2f(t.x + t.w, t.y + t.h)
 			glVertex2f(self.width, self.height)
 			
-			glTexCoord2f(self._rect.x * x + 1.0, self._rect.y * x)
+			glTexCoord2f(t.x + t.w, t.y)
 			glVertex2f(self.width, 0)
 			glEnd()
 		
