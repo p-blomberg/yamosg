@@ -18,6 +18,9 @@ class Vector:
 			self.x = float(x)
 			self.y = float(y)
 			self.z = float(z)
+	
+	def copy(self):
+		return Vector(self.x, self.y, self.z)
 
 	def xyz(self):
 		return (self.x, self.y, self.z)
