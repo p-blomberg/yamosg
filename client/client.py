@@ -126,6 +126,16 @@ class Game(Widget):
 		p.y += self._rect.y
 		return p
 
+	def _unproject(self, point, view=None):
+		if view is None:
+			view = self._view
+
+		viewport = glGetInteger(GL_VIEWPORT)
+		min = Vector(gluUnProject(point.x, viewport[3]-point.y, 0, view, self._projection, viewport))
+		max = Vector(gluUnProject(point.x, viewport[3]-point.y, 1, view, self._projection, viewport))
+		u = min.z / (min.z - max.z)
+		return min + (max - min) * u
+
 	def on_resize(self, size):
 		glMatrixMode(GL_PROJECTION)
 		glPushMatrix()
@@ -153,8 +163,9 @@ class Game(Widget):
 				print e
 				break
 		elif button == 3:
-			self._panstart = pos
+			self._panstart = self._unproject(pos)
 			self._panref = self._rect.copy()
+			self._panrefview = self._view.copy()
 		elif button == 4:
 			#if self._scale > 0.2:
 			self.on_zoom(-1.1)
@@ -163,7 +174,7 @@ class Game(Widget):
 	
 	def on_mousemove(self, pos, buttons):
 		if buttons[3]:
-			rel = pos - self._panstart
+			rel = self._unproject(pos,self._refview) - self._panstart
 			self._rect.x = self._panref.x - rel.x
 			self._rect.y = self._panref.y - rel.y
 			self._calc_view_matrix()
