@@ -179,9 +179,9 @@ class Game(Widget):
 		
 		glBindTexture(GL_TEXTURE_2D, self._background)
 		glColor4f(1,0,1,1)
-		#glEnable(GL_BLEND)
+		glEnable(GL_BLEND)
 		
-		for x in [0.00030, 0.00010]:
+		for x in [0.00013, 0.00010]:
 			glBegin(GL_QUADS)
 			glTexCoord2f(self._rect.x * x, self._rect.y * x)
 			glVertex2f(0, 0)
