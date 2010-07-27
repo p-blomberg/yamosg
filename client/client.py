@@ -109,14 +109,23 @@ class Game(Widget):
 	def _calc_rect(self):
 		self._rect.w = self.size.x * self._scale
 		self._rect.h = self.size.y * self._scale
-	
+
+	def _transform_position(self, pos):
+		p = pos.copy()
+		p.x += self._rect.x
+		p.y += self._rect.y
+		return p
+
 	def on_buttondown(self, pos, button):
+		# transform position by camera
+		world_pos = self._transform_position(pos)
+
 		if button == 1:
 			for e in self.entities:
-				if pos.x < e.position.x or pos.y < e.position.y:
+				if world_pos.x < e.position.x or world_pos.y < e.position.y:
 					continue
 				
-				if pos.x > e.position.x + 50 or pos.y > e.position.y + 50:
+				if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
 					continue
 				
 				print e
