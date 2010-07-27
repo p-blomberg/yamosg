@@ -9,7 +9,11 @@ class State:
 		self._root = root
 		self.size = self.width, self.height = size.xy()
 		self.button = [False] * 12 # assume 12 buttons @todo query or something
-		
+	
+	def resize(self, size):
+		self.size = self.width, self.height = size.xy()
+		self._root.on_resize(size)
+
 	def render(self):
 		glClearColor(0,1,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

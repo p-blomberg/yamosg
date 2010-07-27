@@ -63,7 +63,10 @@ class Widget:
 			return None
 		
 		return self
-	
+
+	def on_resize(self, size):
+		pass
+
 	def on_mousemove(self, pos, buttons):
 		pass
 	

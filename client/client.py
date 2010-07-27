@@ -25,6 +25,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from OpenGL.GLUT import *
 import json
 
 def expose(func):
@@ -89,6 +90,7 @@ class Game(Widget):
 		self._rect = common.rect.Rect(0,0,0,0)
 		self._panstart = None # position where the panning has started
 		self._panref = None
+		self._foo = 0.0
 		
 		self._background = [None, None, None]
 		for i, filename in enumerate(['space_0.png', 'space_1.png', 'space_2.png']):
@@ -116,6 +118,18 @@ class Game(Widget):
 		p.y += self._rect.y
 		return p
 
+	def on_resize(self, size):
+		glMatrixMode(GL_PROJECTION)
+		glPushMatrix()
+
+		glLoadIdentity()
+		gluPerspective(90.0, 1.3333, 0.1, 1000.0)
+		glScalef(1, -1.0, 1);
+		self._projection = glGetDouble(GL_PROJECTION_MATRIX)
+		glPopMatrix()
+
+		glMatrixMode(GL_MODELVIEW)
+
 	def on_buttondown(self, pos, button):
 		# transform position by camera
 		world_pos = self._transform_position(pos)
@@ -134,10 +148,10 @@ class Game(Widget):
 			self._panstart = pos
 			self._panref = self._rect.copy()
 		elif button == 4:
-			if self._scale > 0.2:
-				self.on_zoom(-0.1)
+			#if self._scale > 0.2:
+			self.on_zoom(-1.1)
 		elif button == 5:
-			self.on_zoom(0.1)
+			self.on_zoom(1.1)
 	
 	def on_mousemove(self, pos, buttons):
 		if buttons[3]:
@@ -147,16 +161,25 @@ class Game(Widget):
 	
 	def on_zoom(self, amount):
 		self._scale += amount
-		self._calc_rect()
+		#self._calc_rect()
 	
 	def do_render(self):
 		glClearColor(0,0,1,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
 		self._render_background()
-		
+
+		# perspective projection
+		glMatrixMode(GL_PROJECTION)
+		glPushMatrix()
+		glLoadMatrixd(self._projection)
+		glMatrixMode(GL_MODELVIEW)
+
+		glDisable(GL_CULL_FACE)
+
 		# camera
-		glTranslate(-self._rect.x, -self._rect.y, 0.0)
+		glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
+		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 		
 		for e in self.entities:
 			glPushMatrix()
@@ -165,20 +188,28 @@ class Game(Widget):
 			glColor4f(1,0,1,1)
 			glBegin(GL_QUADS)
 			glTexCoord2f(0, 1)
-			glVertex2f(0, 0)
+			glVertex3f(0, 0, 0)
 			
 			glTexCoord2f(0, 0)
-			glVertex2f(0, 50)
+			glVertex3f(0, 50, 0)
 			
 			glTexCoord2f(1, 0)
-			glVertex2f(50, 50)
+			glVertex3f(50, 50, 0)
 			
 			glTexCoord2f(1, 1)
-			glVertex2f(50, 0)
+			glVertex3f(50, 0, 0)
 			glEnd()
 			
 			glPopMatrix()
+
+		glColor(1,1,0,1)
+		glutSolidSphere(5, 25, 25)
 		
+		# restore projection
+		glMatrixMode(GL_PROJECTION)
+		glPopMatrix()
+		glMatrixMode(GL_MODELVIEW)
+
 		self.invalidate()
 	
 	def _render_background(self):
@@ -219,10 +250,9 @@ class Client:
 	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
 		# opengl must be initialized first
 		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
-		self._resize(resolution.x, resolution.y)
 		pygame.display.set_caption('yamosg')
-		
 		setup_opengl()
+		glutInit()
 		
 		self._split = split
 		self._running = False
@@ -234,6 +264,9 @@ class Client:
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
+
+		# resizing must be done after state has been created so the event is propagated proper.
+		self._resize(resolution.x, resolution.y)
 	
 	def quit(self):
 		self._running = False
@@ -262,8 +295,11 @@ class Client:
 		glOrtho(0, width, 0, height, -1.0, 1.0);
 		glScalef(1, -1.0, 1);
 		glTranslatef(0, -height, 0);
+		default_projection = glGetDouble(GL_PROJECTION_MATRIX)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
+
+		self._state.resize(Vector(width, height))
 	
 	def _flush_queue(self):
 		while True:
