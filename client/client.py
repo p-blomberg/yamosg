@@ -106,11 +106,19 @@ class Game(Widget):
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
 		glBindTexture(GL_TEXTURE_2D, 0)
 		
-		self._calc_rect()
+		self._calc_view_matrix()
 	
-	def _calc_rect(self):
+	def _calc_view_matrix(self):
 		self._rect.w = self.size.x * self._scale
 		self._rect.h = self.size.y * self._scale
+
+		glPushMatrix()
+
+		glLoadIdentity()
+		glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
+		self._view = glGetDouble(GL_MODELVIEW_MATRIX)
+		
+		glPopMatrix()
 
 	def _transform_position(self, pos):
 		p = pos.copy()
@@ -158,10 +166,11 @@ class Game(Widget):
 			rel = pos - self._panstart
 			self._rect.x = self._panref.x - rel.x
 			self._rect.y = self._panref.y - rel.y
+			self._calc_view_matrix()
 	
 	def on_zoom(self, amount):
 		self._scale += amount
-		#self._calc_rect()
+		self._calc_view_matrix()
 	
 	def do_render(self):
 		glClearColor(0,0,1,0)
@@ -177,8 +186,11 @@ class Game(Widget):
 
 		glDisable(GL_CULL_FACE)
 
-		# camera
-		glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
+		# view matrix
+		glLoadIdentity()
+		glMultMatrixd(self._view)
+
+		#glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 		
 		for e in self.entities:
