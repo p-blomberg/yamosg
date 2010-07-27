@@ -86,7 +86,7 @@ class Game(Widget):
 		Widget.__init__(self, Vector(0,0,0), size)
 		self.entities = []
 		self._scale = 1.0
-		self._rect = Rect(0,0,0,0)
+		self._rect = common.rect.Rect(0,0,0,0)
 		self._panstart = None # position where the panning has started
 		self._panref = None
 		
@@ -109,7 +109,6 @@ class Game(Widget):
 	def _calc_rect(self):
 		self._rect.w = self.size.x * self._scale
 		self._rect.h = self.size.y * self._scale
-		print self._rect
 	
 	def on_buttondown(self, pos, button):
 		if button == 1:
@@ -136,7 +135,6 @@ class Game(Widget):
 			rel = pos - self._panstart
 			self._rect.x = self._panref.x - rel.x
 			self._rect.y = self._panref.y - rel.y
-			print self._rect
 	
 	def on_zoom(self, amount):
 		self._scale += amount
