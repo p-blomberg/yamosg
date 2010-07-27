@@ -43,6 +43,11 @@ def server_call(alias):
 def setup_opengl():
 	glClearColor(1,0,1,0)
 	glEnable(GL_TEXTURE_2D)
+	
+	#glEnable(GL_BLEND);
+	#glDisable(GL_ALPHA_TEST);
+	#glDisable(GL_DEPTH_TEST);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 def have_trailing_newline(line):
 	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
@@ -85,6 +90,18 @@ class Game(Widget):
 		self._panstart = None # position where the panning has started
 		self._panref = None
 		
+		self._background = glGenTextures(1)
+		
+		fp = open('../textures/background/space.png', 'rb')
+		surface = pygame.image.load(fp).convert_alpha()
+		data = pygame.image.tostring(surface, "RGBA", 0)
+			
+		glBindTexture(GL_TEXTURE_2D, self._background)
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, surface.get_width(), surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+		glBindTexture(GL_TEXTURE_2D, 0)
+		
 		self._calc_rect()
 	
 	def _calc_rect(self):
@@ -126,7 +143,9 @@ class Game(Widget):
 	def do_render(self):
 		glClearColor(0,0,1,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
+		
+		self._render_background()
+		
 		# camera
 		glTranslate(-self._rect.x, -self._rect.y, 0.0)
 		
@@ -152,6 +171,34 @@ class Game(Widget):
 			glPopMatrix()
 		
 		self.invalidate()
+	
+	def _render_background(self):
+		glPushMatrix()
+		
+		#glTranslate(-self._rect.x, -self._rect.y, 0.0)
+		
+		glBindTexture(GL_TEXTURE_2D, self._background)
+		glColor4f(1,0,1,1)
+		#glEnable(GL_BLEND)
+		
+		for x in [0.00030, 0.00010]:
+			glBegin(GL_QUADS)
+			glTexCoord2f(self._rect.x * x, self._rect.y * x)
+			glVertex2f(0, 0)
+			
+			glTexCoord2f(self._rect.x * x, self._rect.y * x + 1.0)
+			glVertex2f(0, self.height)
+			
+			glTexCoord2f(self._rect.x * x + 1.0, self._rect.y * x + 1.0)
+			glVertex2f(self.width, self.height)
+			
+			glTexCoord2f(self._rect.x * x + 1.0, self._rect.y * x)
+			glVertex2f(self.width, 0)
+			glEnd()
+		
+		glBindTexture(GL_TEXTURE_2D, 0)
+		glDisable(GL_BLEND)
+		glPopMatrix()
 
 class Client:
 	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
