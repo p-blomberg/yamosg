@@ -127,12 +127,27 @@ class Game(Widget):
 		return p
 
 	def _unproject(self, point, view=None):
+		"""
+		Unprojects a 2D viewport point to a 3D point on the plane <0,0,1,0>
+		"""
+
+		# sometimes it it prefered to use an old viewmatrix (eg while panning)
 		if view is None:
 			view = self._view
 
+		# @todo GL_VIEWPORT is never changed, at least not until resizing.
 		viewport = glGetInteger(GL_VIEWPORT)
-		min = Vector(gluUnProject(point.x, viewport[3]-point.y, 0, view, self._projection, viewport))
-		max = Vector(gluUnProject(point.x, viewport[3]-point.y, 1, view, self._projection, viewport))
+
+		# The view is flipped, so Y must be flipped again.
+		x = point.x
+		y = viewport[3]-point.y # [3] is the height of the viewport
+
+		# Get the min and max points
+		min = Vector(gluUnProject(x, y, 0, view, self._projection, viewport))
+		max = Vector(gluUnProject(x, y, 1, view, self._projection, viewport))
+
+		# This is a simplification of the general line-plane intersection.
+		# Since the plane normal is (0,0,1) and d=0, z is the only variable left.
 		u = min.z / (min.z - max.z)
 		return min + (max - min) * u
 
@@ -174,7 +189,7 @@ class Game(Widget):
 	
 	def on_mousemove(self, pos, buttons):
 		if buttons[3]:
-			rel = self._unproject(pos,self._refview) - self._panstart
+			rel = self._unproject(pos,self._panrefview) - self._panstart
 			self._rect.x = self._panref.x - rel.x
 			self._rect.y = self._panref.y - rel.y
 			self._calc_view_matrix()
