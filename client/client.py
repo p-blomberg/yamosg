@@ -219,6 +219,9 @@ class Game(Widget):
 		self._rect.y = self._panref.y - rel.y
 		self._calc_view_matrix()
 
+	#
+	# Rendering
+	#
 	
 	def do_render(self):
 		glClearColor(0,0,1,0)
