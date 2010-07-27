@@ -39,7 +39,7 @@ class Vector:
 		return Vector(self.x * scalar, self.y * scalar, self.z * scalar)
 
 	def __repr__(self):
-		return '<vector %s, %s, %s>' % (str(self.x), str(self.y), str(self.z))
+		return '<vector (%.3f, %.3f, %.3f)>' % (self.x, self.y, self.z)
 
 	def length_squared(self):
 		return self.x*self.x + self.y*self.y + self.z*self.z
