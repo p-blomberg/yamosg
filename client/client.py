@@ -178,25 +178,47 @@ class Game(Widget):
 				print e
 				break
 		elif button == 3:
-			self._panstart = self._unproject(pos)
-			self._panref = self._rect.copy()
-			self._panrefview = self._view.copy()
+			self.on_pan_start(pos)
 		elif button == 4:
 			#if self._scale > 0.2:
 			self.on_zoom(-1.1)
 		elif button == 5:
 			self.on_zoom(1.1)
+
+	def on_buttonup(self, pos, button):
+		if button == 3:
+			self.on_pan_stop(pos)
 	
 	def on_mousemove(self, pos, buttons):
 		if buttons[3]:
-			rel = self._unproject(pos,self._panrefview) - self._panstart
-			self._rect.x = self._panref.x - rel.x
-			self._rect.y = self._panref.y - rel.y
-			self._calc_view_matrix()
-	
+			self.on_pan_move(pos)
+
+	#
+	# Zooming
+	#
+
 	def on_zoom(self, amount):
 		self._scale += amount
 		self._calc_view_matrix()
+
+	#
+	# Panning
+	#
+
+	def on_pan_start(self, pos):
+		self._panstart = self._unproject(pos)
+		self._panref = self._rect.copy()
+		self._panrefview = self._view.copy()
+
+	def on_pan_stop(self, pos):
+		pass
+
+	def on_pan_move(self, pos):
+		rel = self._unproject(pos,self._panrefview) - self._panstart
+		self._rect.x = self._panref.x - rel.x
+		self._rect.y = self._panref.y - rel.y
+		self._calc_view_matrix()
+
 	
 	def do_render(self):
 		glClearColor(0,0,1,0)
