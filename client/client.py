@@ -181,9 +181,9 @@ class Game(Widget):
 			self.on_pan_start(pos)
 		elif button == 4:
 			#if self._scale > 0.2:
-			self.on_zoom(-1.1)
+			self.on_zoom(-1.1, pos)
 		elif button == 5:
-			self.on_zoom(1.1)
+			self.on_zoom(1.1, pos)
 
 	def on_buttonup(self, pos, button):
 		if button == 3:
@@ -210,8 +210,15 @@ class Game(Widget):
 	# Zooming
 	#
 
-	def on_zoom(self, amount):
+	def on_zoom(self, amount, ref):
+		a = self._unproject(ref)
 		self._scale += amount
+		self._calc_view_matrix()
+		b = self._unproject(ref)
+
+		delta = b-a
+		self._rect.x -= delta.x
+		self._rect.y -= delta.y
 		self._calc_view_matrix()
 
 	#
