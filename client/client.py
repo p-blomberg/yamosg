@@ -190,6 +190,19 @@ class Game(Widget):
 			self.on_pan_stop(pos)
 	
 	def on_mousemove(self, pos, buttons):
+		world_pos = self._unproject(pos)
+
+		for e in self.entities:
+			if world_pos.x < e.position.x or world_pos.y < e.position.y:
+				e.hover = False
+				continue
+			
+			if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
+				e.hover = False
+				continue
+
+			e.hover = True
+
 		if buttons[3]:
 			self.on_pan_move(pos)
 
@@ -243,8 +256,8 @@ class Game(Widget):
 
 		#glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
-		
-		glColor4f(1,1,1,1)
+
+		glColor4f(1,1,1,1)		
 		for e in self.entities:
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
@@ -264,6 +277,19 @@ class Game(Widget):
 			glTexCoord2f(1, 0)
 			glVertex3f(50, 0, 0)
 			glEnd()
+
+			if getattr(e, 'hover', False):
+				glDisable(GL_TEXTURE_2D)
+				glColor4f(1,1,0,1)
+				glBegin(GL_LINE_STRIP)
+				glVertex3f(0, 0, 0)
+				glVertex3f(0, 50, 0)
+				glVertex3f(50, 50, 0)
+				glVertex3f(50, 0, 0)
+				glVertex3f(0, 0, 0)
+				glEnd()
+				glColor4f(1,1,1,1)
+				glEnable(GL_TEXTURE_2D)
 			
 			glPopMatrix()
 
