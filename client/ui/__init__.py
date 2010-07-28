@@ -7,7 +7,7 @@ from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
 
 class Widget:
-	def __init__(self, pos, size, format=GL_RGBA32F, filter=GL_NEAREST):
+	def __init__(self, pos, size, format=GL_RGB8, filter=GL_NEAREST):
 		self.pos = pos
 		self.size = size
 		self.width, self.height = size.xy()

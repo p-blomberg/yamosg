@@ -45,7 +45,7 @@ def setup_opengl():
 	glClearColor(1,0,1,0)
 	glEnable(GL_TEXTURE_2D)
 	
-	#glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
 	#glDisable(GL_ALPHA_TEST);
 	#glDisable(GL_DEPTH_TEST);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -224,7 +224,7 @@ class Game(Widget):
 	#
 	
 	def do_render(self):
-		glClearColor(0,0,1,0)
+		glClearColor(0,0,0,1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
 		self._render_background()
@@ -244,22 +244,24 @@ class Game(Widget):
 		#glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 		
+		glColor4f(1,1,1,1)
 		for e in self.entities:
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
 			
-			glColor4f(1,0,1,1)
+			glBindTexture(GL_TEXTURE_2D, e.sprite)
+
 			glBegin(GL_QUADS)
-			glTexCoord2f(0, 1)
+			glTexCoord2f(0, 0)
 			glVertex3f(0, 0, 0)
 			
-			glTexCoord2f(0, 0)
+			glTexCoord2f(0, 1)
 			glVertex3f(0, 50, 0)
 			
-			glTexCoord2f(1, 0)
+			glTexCoord2f(1, 1)
 			glVertex3f(50, 50, 0)
 			
-			glTexCoord2f(1, 1)
+			glTexCoord2f(1, 0)
 			glVertex3f(50, 0, 0)
 			glEnd()
 			
@@ -281,7 +283,6 @@ class Game(Widget):
 		#glTranslate(-self._rect.x, -self._rect.y, 0.0)
 		
 		glColor4f(1,1,1,1)
-		glEnable(GL_BLEND)
 		
 		for i,s in enumerate([0.00010, 0.00007, 0.00004]):
 			glBindTexture(GL_TEXTURE_2D, self._background[i])
@@ -306,7 +307,6 @@ class Game(Widget):
 			glEnd()
 		
 		glBindTexture(GL_TEXTURE_2D, 0)
-		glDisable(GL_BLEND)
 		glPopMatrix()
 
 class Client:
