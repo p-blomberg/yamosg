@@ -165,7 +165,7 @@ class Game(Widget):
 
 	def on_buttondown(self, pos, button):
 		# transform position by camera
-		world_pos = self._transform_position(pos)
+		world_pos = self._unproject(pos)
 
 		if button == 1:
 			for e in self.entities:
