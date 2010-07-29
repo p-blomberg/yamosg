@@ -90,6 +90,7 @@ class Game(Widget):
 		self._rect = common.rect.Rect(0,0,0,0)
 		self._panstart = None # position where the panning has started
 		self._panref = None
+		self._is_panning = False
 		self._foo = 0.0
 		
 		self._background = [None, None, None]
@@ -203,7 +204,7 @@ class Game(Widget):
 
 			e.hover = True
 
-		if buttons[3]:
+		if buttons[3] and self._is_panning:
 			self.on_pan_move(pos)
 
 	#
@@ -226,12 +227,13 @@ class Game(Widget):
 	#
 
 	def on_pan_start(self, pos):
+		self._is_panning = True
 		self._panstart = self._unproject(pos)
 		self._panref = self._rect.copy()
 		self._panrefview = self._view.copy()
 
 	def on_pan_stop(self, pos):
-		pass
+		self._is_panning = False
 
 	def on_pan_move(self, pos):
 		rel = self._unproject(pos,self._panrefview) - self._panstart
