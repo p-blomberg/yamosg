@@ -13,6 +13,7 @@ sys.path.append(root)
 
 import socket, threading, traceback
 from select import select
+from copy import copy, deepcopy
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector
 import common.rect
@@ -230,7 +231,7 @@ class Game(Widget):
 		self._is_panning = True
 		self._panstart = self._unproject(pos)
 		self._panref = self._rect.copy()
-		self._panrefview = self._view.copy()
+		self._panrefview = copy(self._view)
 
 	def on_pan_stop(self, pos):
 		self._is_panning = False
