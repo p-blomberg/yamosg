@@ -12,6 +12,10 @@ def parse(line):
 	# Tokenize
 	tokens = shlex.split(line)
 	
+	# Simple validation
+	if len(tokens) < 2:
+		raise RuntimeError, 'Unable to parse command: ' + str([line])
+	
 	# Extract counter
 	counter = tokens.pop(0)
 
