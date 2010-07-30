@@ -39,12 +39,18 @@ class Server(ServerSocket):
 				self.game.clients[sock]=Connection(sock, self.game)
 			
 		print clientsocket.getpeername(), lines
+		
+		# Get client for this socket, or create new client if not previously
+		# connected.
+		try:
+			client = self.game.clients[clientsocket]
+		except KeyError:
+			client = Connection(clientsocket)
+			self.game.clients[clientsocket] = client
+		
+		# Call commands
 		for line in lines:
-			try:
-				response=str(self.game.clients[clientsocket].command(line))+self._split
-			except KeyError:
-				self.game.clients[clientsocket]=Connection(clientsocket)
-				response=self.game.clients[clientsocket].command(line)+self._split
+			response=str(client.command(line))+self._split
 			self.write(clientsocket,[response])
 
 	def tick(self):
