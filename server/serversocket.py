@@ -68,7 +68,10 @@ class ServerSocket:
 
 			for socket_ in read:
 				try:
-					data=self._socketinbuf.get(socket_,"")+socket_.recv(8192)
+					# if the previous recv only got a partial line it was
+					# stored and will be appended to this recv.
+					head = self._socketinbuf.pop(socket_, '')
+					data = head + socket_.recv(8192)
 				except socket.error:
 					print 'socket unexpectedly closed'
 					self._socketlist.remove(socket_)

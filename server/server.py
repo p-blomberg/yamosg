@@ -39,12 +39,18 @@ class Server(ServerSocket):
 				self.game.clients[sock]=Connection(sock, self.game)
 			
 		print clientsocket.getpeername(), lines
+		
+		# Get client for this socket, or create new client if not previously
+		# connected.
+		try:
+			client = self.game.clients[clientsocket]
+		except KeyError:
+			client = Connection(clientsocket)
+			self.game.clients[clientsocket] = client
+		
+		# Call commands
 		for line in lines:
-			try:
-				response=str(self.game.clients[clientsocket].command(line))+self._split
-			except KeyError:
-				self.game.clients[clientsocket]=Connection(clientsocket)
-				response=self.game.clients[clientsocket].command(line)+self._split
+			response=str(client.command(line))+self._split
 			self.write(clientsocket,[response])
 
 	def tick(self):
@@ -66,6 +72,16 @@ class Connection:
 		self.socket=socket
 		self.game=game
 		self.player=None
+		
+		self._commands = {
+			"LOGIN": self.game.login,
+			"PING": self.ping,
+			"PLAYERINFO": self.game.playerinfo,
+			"NEWUSER": self.game.NewUser,
+			"LIST_OF_ENTITIES": self.game.list_of_entities,
+			"ENTACTION": self.game.EntAction,
+			"PLAYERS": self.game.Players
+		}
 	
 	def ping(self, other, parts):
 		print parts
@@ -75,18 +91,12 @@ class Connection:
 			return "ERR_BAD_PARAMS"
 
 	def command(self, line):
-		counter, cmd, args = command.parse(line)
-		commands = {
-			"LOGIN": self.game.login,
-			"PING": self.ping,
-			"PLAYERINFO": self.game.playerinfo,
-			"NEWUSER": self.game.NewUser,
-			"LIST_OF_ENTITIES": self.game.list_of_entities,
-			"ENTACTION": self.game.EntAction,
-			"PLAYERS": self.game.Players
-		}
+		try:
+			counter, cmd, args = command.parse(line)
+		except Exception, e:
+			return '0 NOT_OK ' + str(e)
 		
-		func = commands.get(cmd, lambda *args: "I don't know the command " + cmd)
+		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
 		try:
 			reply = func(self, *args)
 		except CommandError, e:
