@@ -72,6 +72,16 @@ class Connection:
 		self.socket=socket
 		self.game=game
 		self.player=None
+		
+		self._commands = {
+			"LOGIN": self.game.login,
+			"PING": self.ping,
+			"PLAYERINFO": self.game.playerinfo,
+			"NEWUSER": self.game.NewUser,
+			"LIST_OF_ENTITIES": self.game.list_of_entities,
+			"ENTACTION": self.game.EntAction,
+			"PLAYERS": self.game.Players
+		}
 	
 	def ping(self, other, parts):
 		print parts
@@ -82,17 +92,8 @@ class Connection:
 
 	def command(self, line):
 		counter, cmd, args = command.parse(line)
-		commands = {
-			"LOGIN": self.game.login,
-			"PING": self.ping,
-			"PLAYERINFO": self.game.playerinfo,
-			"NEWUSER": self.game.NewUser,
-			"LIST_OF_ENTITIES": self.game.list_of_entities,
-			"ENTACTION": self.game.EntAction,
-			"PLAYERS": self.game.Players
-		}
 		
-		func = commands.get(cmd, lambda *args: "I don't know the command " + cmd)
+		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
 		try:
 			reply = func(self, *args)
 		except CommandError, e:
