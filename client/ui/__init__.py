@@ -71,7 +71,10 @@ class Widget:
 		return self
 
 	def on_resize(self, size):
-		pass
+		self.size = size
+		self.width, self.height = size.xy()
+		self._projection = self.projection()
+		self._generate_framebuffer()
 
 	def on_mousemove(self, pos, buttons):
 		pass

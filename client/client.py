@@ -20,6 +20,7 @@ import common.rect
 from state import Initial, StateManager
 from entity import Entity
 from ui import Widget
+from ui.window import Window
 from state.game import Game as GameState
 
 import pygame
@@ -153,18 +154,15 @@ class Game(Widget):
 		u = min.z / (min.z - max.z)
 		return min + (max - min) * u
 
-	def on_resize(self, size):
-		glMatrixMode(GL_PROJECTION)
+	def projection(self):
 		glPushMatrix()
-
 		glLoadIdentity()
 		gluPerspective(90.0, 1.3333, 0.1, 1000.0)
 		glScalef(1, -1.0, 1);
-		self._projection = glGetDouble(GL_PROJECTION_MATRIX)
+		p = glGetDouble(GL_MODELVIEW_MATRIX)
 		glPopMatrix()
-
-		glMatrixMode(GL_MODELVIEW)
-
+		return p
+	
 	def on_buttondown(self, pos, button):
 		# transform position by camera
 		world_pos = self._unproject(pos)
