@@ -112,6 +112,24 @@ class Widget:
 		glPopMatrix()
 		return p
 	
+	def display(self):
+		self.bind_texture()
+		glColor4f(1,1,1,1)
+		
+		glBegin(GL_QUADS)
+		glTexCoord2f(0, 0)
+		glVertex3f(0, 0, 0)
+		
+		glTexCoord2f(0, 1)
+		glVertex3f(0, self.height, 0)
+		
+		glTexCoord2f(1, 1)
+		glVertex3f(self.width, self.height, 0)
+		
+		glTexCoord2f(1, 0)
+		glVertex3f(self.width, 0, 0)
+		glEnd()
+	
 	def render(self):
 		if not self._invalidated:
 			return
