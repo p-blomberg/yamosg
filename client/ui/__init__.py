@@ -17,6 +17,7 @@ class Widget:
 		self._fbo = glGenFramebuffers(1)
 		self._texture = glGenTextures(1)
 		self._invalidated = True
+		self._projection = self.projection()
 		
 		self._generate_framebuffer()
 	
@@ -97,6 +98,16 @@ class Widget:
 	
 	def do_render(self):
 		raise NotImplementedError
+	
+	def projection(self):
+		glPushMatrix()
+		glLoadIdentity()
+		glOrtho(0, self.width, 0, self.height, -1.0, 1.0);
+		glScalef(1, -1.0, 1);
+		glTranslatef(0, -self.height, 0);
+		p = glGetDouble(GL_MODELVIEW_MATRIX)
+		glPopMatrix()
+		return p
 	
 	def render(self):
 		if not self._invalidated:
