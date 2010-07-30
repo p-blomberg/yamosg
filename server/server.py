@@ -91,7 +91,10 @@ class Connection:
 			return "ERR_BAD_PARAMS"
 
 	def command(self, line):
-		counter, cmd, args = command.parse(line)
+		try:
+			counter, cmd, args = command.parse(line)
+		except Exception, e:
+			return '0 NOT_OK ' + str(e)
 		
 		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
 		try:
