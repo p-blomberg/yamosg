@@ -11,19 +11,24 @@ class Widget:
 		self.pos = pos
 		self.size = size
 		self.width, self.height = size.xy()
+		self._format = format
+		self._filter = filter
 		
 		self._fbo = glGenFramebuffers(1)
 		self._texture = glGenTextures(1)
 		self._invalidated = True
 		
+		self._generate_framebuffer()
+	
+	def _generate_framebuffer(self):
 		self.bind_fbo()
 		
 		glBindTexture(GL_TEXTURE_2D, self._texture)
-		glTexImage2D(GL_TEXTURE_2D, 0, format,  self.width, self.height, 0, GL_RGBA, GL_FLOAT, None)
+		glTexImage2D(GL_TEXTURE_2D, 0, self._format, self.width, self.height, 0, GL_RGBA, GL_FLOAT, None)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self._filter)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self._filter)
 		
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, self._texture, 0)
 		
