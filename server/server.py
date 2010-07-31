@@ -149,14 +149,14 @@ class Connection:
 			return 'NOT_OK ' + str(e)
 
 class Game:
-	logins={}
-	clients={}
-	players=[]
-	entities=[]
-	tick_counter=0
-
 	def __init__(self, split):
 		self.split=split
+		self.logins={}
+		self.clients={}
+		self.players=[]
+		self.entities=[]
+		self.tick_counter=0
+	
 		# Create world
 		p=entity.Planet(len(self.entities), Vector(30,30,0), 20, self)
 		cargo={
