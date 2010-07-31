@@ -30,6 +30,7 @@ class Server(ServerSocket):
 		
 		# Server commands
 		self._commands = {
+			'CAPS': self._get_caps
 		}
 		
 		print "ready"
@@ -81,6 +82,12 @@ class Server(ServerSocket):
 		# Generate full response
 		return '{id} {response}'.format(id=counter, response=response)
 
+	def _get_caps(self):
+		"""
+		Get this servers extended capabilities
+		"""
+		return []
+	
 	def tick(self):
 		self.game.tick()
 
