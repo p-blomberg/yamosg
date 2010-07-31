@@ -10,9 +10,11 @@ class Player:
 		self.name = name
 		self.cash = 100000
 		self.entities = list()
-		id=len(game.entities)
-		self.entities.append(entity.Gateway(id, self, Vector(4,6,0), game))
-		game.entities.append(self.entities[0])
+		
+		gateway = entity.Gateway(Vector(4,6,0), game, owner=self)
+		
+		self.entities.append(gateway)
+		game.add_entity(gateway)
 
 	def __str__(self):
 		return self.name

@@ -154,16 +154,38 @@ class Game:
 		self.logins={}
 		self.clients={}
 		self.players=[]
-		self.entities=[]
+		self._entities={}
 		self.tick_counter=0
 	
 		# Create world
-		p=entity.Planet(len(self.entities), Vector(30,30,0), 20, self)
+		p=entity.Planet(Vector(30,30,0), 20, self)
 		cargo={
-			entity.CopperOre(p, None, self):600
+			entity.CopperOre(container=p, owner=None, game=self): 600
 		}
 		p.cargo=cargo
-		self.entities.append(p)
+		self.add_entity(p)
+	
+	def add_entity(self, ent):
+		"""
+		Add an entity to the game world
+		"""
+		
+		if ent.id in self._entities:
+			raise RuntimeError, 'duplicate entities with id ' + ent.id
+		self._entities[ent.id] = ent
+	
+	def entity_by_id(self, id):
+		"""
+		Get an entity by its ID, return None if there is no such entity.
+		"""
+		return self._entities.get(id, None)
+	
+	def all_entities(self):
+		"""
+		Generator to get all entities in the world.
+		"""
+		for ent in self._entities.values():
+			yield ent
 	
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """
@@ -187,11 +209,11 @@ class Game:
 			self.tick_counter=0
 		for p in self.players:
 			p.tick(key_tick)
-		for o in self.entities:
+		for o in self._entities.values():
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
-		return "OK "+json.dumps([x.dinmamma() for x in self.entities])
+		return "OK "+json.dumps([x.dinmamma() for x in self._entities.values()])
 
 	def NewUser(self, connection, name, password):
 		if name in self.logins:
@@ -238,21 +260,12 @@ class Game:
 		return "OK ID="+str(id)
 
 	def EntAction(self, connection, id, action, *args):
-		try:
-			id = int(id)
-		except ValueError:
-			raise CommandError, 'Invalid ID'
-		
-		try:
-			ent = self.entities[id]
-		except KeyError:
+		ent = self.entity_by_id(id)
+		if ent is None:
 			raise CommandError, 'Invalid ID'
 		
 		player = connection.player
 		if not ent in player.entities:
 			raise CommandError, 'Belongs to other player'
 
-		response = ent.action(action, args)
-		print response
-		return response
-
+		return ent.action(action, args)

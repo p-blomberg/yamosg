@@ -3,7 +3,6 @@ from copy import copy
 import json
 
 class Entity:
-	container=None
 	max_speed=None
 	size=None
 	mass=None
@@ -13,9 +12,12 @@ class Entity:
 	# used to autogenerate id
 	_id_counter = 0
 
-	def __init__(self, id, owner, position, game):
+	def __init__(self, position, game, id=None, container=None, owner=None):
 		self.id = id or self._generate_id()
+		
+		self.container=container
 		self.owner=owner
+		
 		self.position=position
 		self.game=game
 		self.speed=Vector(0,0,0)
@@ -121,8 +123,8 @@ class Entity:
 class Planet(Entity):
 	minable=True
 
-	def __init__(self, id, position, size, game):
-		Entity.__init__(self, id, None, position, game)
+	def __init__(self, position, size, game, **kwargs):
+		Entity.__init__(self, position, game, **kwargs)
 		self.size=size
 		self.mass=2000*size
 
@@ -140,6 +142,9 @@ class Station(Entity):
 class Mineral(Entity):
 	size = 0.001
 	mass = 1
+	
+	def __init__(self, container, owner, game, **kwargs):
+		Entity.__init__(self, position=None, game=game, container=container, owner=owner, **kwargs)
 
 	def __hash__(self):
 		h="".join([str(ord(i)) for i in self.__class__.__name__])
@@ -151,11 +156,7 @@ class Mineral(Entity):
 		else:
 			return 1
 
-	def __init__(self, container, owner, game):
-		id=None
-		position=None
-		self.container=container
-		Entity.__init__(self, id, owner, position, game)
+
 
 class CopperOre(Mineral):
 	pass
@@ -168,8 +169,8 @@ class Miner(Ship):
 	max_cargo = 50
 	cargo_type=None
 
-	def __init__(self, id, owner, position, game):
-		Ship.__init__(self, id, owner, position, game)
+	def __init__(self, *args, **kwargs):
+		Ship.__init__(self, *args, **kwargs)
 		self.actions['GO_TO_PLANET']=self.go_to_planet
 		self.actions['SET_CARGO_TYPE']=self.set_cargo_type
 
@@ -198,7 +199,7 @@ class Miner(Ship):
 		if(key_tick):
 			if(self.cargo_sum() < self.max_cargo):
 				# Look for nearby minable entities
-				for e in self.game.entities:
+				for e in self.game.all_entities():
 					if(e.minable):
 						distance=(e.position-self.position).length()
 						if(distance - e.size - self.size < 0.5):
@@ -207,33 +208,44 @@ class Miner(Ship):
 class Gateway(Station):
 	cost = 10000000
 	size = 10
+	types = {
+		"STATION": Station,
+		"SHIP": Ship,
+		"MINER": Miner
+	}
 	
 	def build(self, type):
-		print type
-		types = {
-			"STATION": Station,
-			"SHIP": Ship,
-			"MINER": Miner
-		}
-		try:
-			id=len(self.game.entities)
-			ent=types[type](id, self.owner, self.position, self.game)
-			if(self.owner.buy(ent.cost)):
-				self.game.entities.append(ent)
-				self.owner.entities.append(ent)
-				return "OK: ID="+str(id)
+		# Get factory
+		unit_type = self.types.get(type, None)
+		
+		# See if we are able to build the specified unit
+		if unit_type is None:
+			return "NOT_OK: Cannot build entity of type '" + type + "' from Gateway"
+		
+		# Test if we can afford it
+		if not self.owner.buy(unit_type.cost):
 			return "NOT_OK: Not enough cash"
-		except KeyError:
-			return "Cannot build entity of type '"+type+"' from Gateway"
+		
+		# Build it
+		ent = unit_type(self.position, self.game, owner=self.owner)
+
+		# Add unit to world
+		self.game.add_entity(ent)
+		self.owner.entities.append(ent)
+		
+		# Successful unit is successful
+		return "OK: ID="+str(ent.id)
 
 	def load(self, ship_id):
-		entity=self.game.entities[int(ship_id)]
+		entity = self.game.entity_by_id(ship_id)
+		
 		for c in entity.cargo:
 			self.retrieve_cargo(c, entity.cargo[c])
+		
 		return "OK"
 
-	def __init__(self, id, owner, position, game):
-		Station.__init__(self, id, owner, position, game)
+	def __init__(self, *args, **kwargs):
+		Station.__init__(self, *args, **kwargs)
 		self.actions['BUILD']=self.build
 		self.actions['LOAD']=self.load
 
