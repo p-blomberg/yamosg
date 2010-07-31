@@ -9,9 +9,12 @@ class Entity:
 	mass=None
 	minable=False
 	max_cargo=0
+	
+	# used to autogenerate id
+	_id_counter = 0
 
 	def __init__(self, id, owner, position, game):
-		self.id=id
+		self.id = id or self._generate_id()
 		self.owner=owner
 		self.position=position
 		self.game=game
@@ -21,6 +24,17 @@ class Entity:
 			'GO': self.go
 		}
 
+	@classmethod
+	def _generate_id(cls, tag=None):
+		"""
+		Generates and incremental ID based on the calling class' counter.
+		If no tag is specified the classname is used, but beware that using the
+		same tag in different classes *may* yield the same ID, so it is better
+		to use the classname which already is unique among the classes.
+		"""
+		cls._id_counter += 1
+		return '{tag}_{id:04}'.format(tag=tag or cls.__name__, id=cls._id_counter)
+	
 	def __str__(self):
 		return self.encode()
 		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", speed: "+str(self.speed)+", cargo: "+str(self.cargo);
