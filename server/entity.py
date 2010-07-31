@@ -199,11 +199,13 @@ class Miner(Ship):
 		if(key_tick):
 			if(self.cargo_sum() < self.max_cargo):
 				# Look for nearby minable entities
-				for e in self.game.all_entities():
-					if(e.minable):
-						distance=(e.position-self.position).length()
-						if(distance - e.size - self.size < 0.5):
-							self.mine(e)
+				def distance(e):
+					distance=(e.position-self.position).length()
+					return distance - e.size - self.size < 0.5
+				
+				for e in self.game.entities_matching(distance, minable=True):
+					print 'got:', e.id, e.minable
+					#self.mine(e)
 
 class Gateway(Station):
 	cost = 10000000

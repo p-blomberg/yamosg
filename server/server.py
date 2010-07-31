@@ -187,6 +187,56 @@ class Game:
 		for ent in self._entities.values():
 			yield ent
 	
+	def entities_matching(self, *func, **criteria):
+		"""
+		Search for entities matching the specified criteria. Just like
+		all_entities it is a Generator.
+		
+		Pass kwargs where the key is the entity variable you would like to
+		match against the value.
+		
+		Eg:
+		>>> entities_matching(minable=True)
+		
+		will examine the variable "minable" and would only match if the value
+		is the same (True in this case).
+		
+		Pass variable arguments as functions to evaluate if the entity is
+		matching. The function receives only single entity should return
+		either True or False.
+		
+		Eg:
+		>>> entities_matching(lambda x: (x.position - self.position).length() < 10.0)
+		
+		will call the lambda for each entity and only yields entities where it
+		returns True.
+		"""
+		
+		def match_criteria(e):
+			for k,v1 in criteria.items():
+				v2 = getattr(ent, k)
+				
+				if v1 != v2:
+					return False
+			
+			return True
+		
+		def match_func(e):
+			for f in func:
+				if not f(ent):
+					return False
+			
+			return True
+		
+		for ent in self._entities.values():
+			if not match_criteria(e):
+				continue
+			
+			if not match_func(e):
+				continue
+			
+			yield ent
+	
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """
 		cmd = Command(command, *args, id='UNICAST')
