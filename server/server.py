@@ -212,7 +212,7 @@ class Game:
 		returns True.
 		"""
 		
-		def match_criteria(e):
+		def match_criteria(ent):
 			for k,v1 in criteria.items():
 				v2 = getattr(ent, k)
 				
@@ -221,7 +221,7 @@ class Game:
 			
 			return True
 		
-		def match_func(e):
+		def match_func(ent):
 			for f in func:
 				if not f(ent):
 					return False
@@ -229,10 +229,10 @@ class Game:
 			return True
 		
 		for ent in self._entities.values():
-			if not match_criteria(e):
+			if not match_criteria(ent):
 				continue
 			
-			if not match_func(e):
+			if not match_func(ent):
 				continue
 			
 			yield ent
