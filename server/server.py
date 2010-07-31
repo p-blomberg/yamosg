@@ -22,11 +22,25 @@ import json
 class CommandError (Exception):
 	pass
 
+def smart_truncate(content, length=100, suffix='...'):
+	# Based on implementation found at:
+	# http://stackoverflow.com/questions/250357/smart-truncate-in-python
+	if len(content) <= length:
+		return content
+	else:
+		return content[:length].rsplit(' ', 1)[0] + suffix
+
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
 		ServerSocket.__init__(self, host, port, 0, split, debug)
 		self.game=Game(split)
 		self.sockets=self._socketlist.copy()
+		
+		# Server commands
+		self._commands = {
+			'CAPS': self._get_caps
+		}
+		
 		print "ready"
 		
 	def readCall(self, clientsocket, lines):
@@ -37,8 +51,6 @@ class Server(ServerSocket):
 				del self.clients[sock]
 			else:
 				self.game.clients[sock]=Connection(sock, self.game)
-			
-		print clientsocket.getpeername(), lines
 		
 		# Get client for this socket, or create new client if not previously
 		# connected.
@@ -50,9 +62,43 @@ class Server(ServerSocket):
 		
 		# Call commands
 		for line in lines:
-			response=str(client.command(line))+self._split
-			self.write(clientsocket,[response])
+			response = self._dispatch_command(client, line)
+			print '{peer} {line} -> {response}'.format(
+				peer=clientsocket.getpeername(),
+				line=[line], 
+				response=[smart_truncate(response, length=50)])
+			self.write(clientsocket, [response + self._split])
+	
+	def _dispatch_command(self, client, line):
+		"""
+		Try to parse the line and dispatch the command to the relevant
+		destination (server or client).
+		"""
+		
+		# Try to parse the line
+		try:
+			counter, cmd, args = command.parse(line)
+		except Exception, e:
+			return '0 NOT_OK ' + str(e)
+		
+		# See if the server handles this command
+		func = self._commands.get(cmd, None)
+		
+		# Dispatch
+		if func is not None:
+			response = func(*args)
+		else:
+			response = client.command(cmd, args)
+		
+		# Generate full response
+		return '{id} {response}'.format(id=counter, response=response)
 
+	def _get_caps(self):
+		"""
+		Get this servers extended capabilities
+		"""
+		return []
+	
 	def tick(self):
 		self.game.tick()
 
@@ -73,6 +119,7 @@ class Connection:
 		self.game=game
 		self.player=None
 		
+		# client commands
 		self._commands = {
 			"LOGIN": self.game.login,
 			"PING": self.ping,
@@ -90,31 +137,26 @@ class Connection:
 		except IndexError:
 			return "ERR_BAD_PARAMS"
 
-	def command(self, line):
-		try:
-			counter, cmd, args = command.parse(line)
-		except Exception, e:
-			return '0 NOT_OK ' + str(e)
-		
+	def command(self, cmd, args):
 		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
+		
 		try:
-			reply = func(self, *args)
+			return func(self, *args)
 		except CommandError, e:
-			reply = 'NOT_OK ' + str(e)
+			return 'NOT_OK ' + str(e)
 		except TypeError, e:
 			traceback.print_exc()
-			reply = 'NOT_OK ' + str(e)
-		return '{id} {reply}'.format(id=counter, reply=reply)
+			return 'NOT_OK ' + str(e)
 
 class Game:
-	logins={}
-	clients={}
-	players=[]
-	entities=[]
-	tick_counter=0
-
 	def __init__(self, split):
 		self.split=split
+		self.logins={}
+		self.clients={}
+		self.players=[]
+		self.entities=[]
+		self.tick_counter=0
+	
 		# Create world
 		p=entity.Planet(len(self.entities), Vector(30,30,0), 20, self)
 		cargo={
