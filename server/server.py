@@ -37,8 +37,6 @@ class Server(ServerSocket):
 				del self.clients[sock]
 			else:
 				self.game.clients[sock]=Connection(sock, self.game)
-			
-		print clientsocket.getpeername(), lines
 		
 		# Get client for this socket, or create new client if not previously
 		# connected.
@@ -50,8 +48,22 @@ class Server(ServerSocket):
 		
 		# Call commands
 		for line in lines:
-			response=str(client.command(line))+self._split
-			self.write(clientsocket,[response])
+			response = self._dispatch_command(client, line)
+			print clientsocket.getpeername(), [line], '->', [response]
+			self.write(clientsocket, [response + self._split])
+	
+	def _dispatch_command(self, client, line):
+		"""
+		Try to parse the line and dispatch the command to the client.
+		"""
+		try:
+			counter, cmd, args = command.parse(line)
+		except Exception, e:
+			return '0 NOT_OK ' + str(e)
+	
+		response = str(client.command(cmd, args))
+		
+		return '{id} {response}'.format(id=counter, response=response)
 
 	def tick(self):
 		self.game.tick()
@@ -90,21 +102,16 @@ class Connection:
 		except IndexError:
 			return "ERR_BAD_PARAMS"
 
-	def command(self, line):
-		try:
-			counter, cmd, args = command.parse(line)
-		except Exception, e:
-			return '0 NOT_OK ' + str(e)
-		
+	def command(self, cmd, args):
 		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
+		
 		try:
-			reply = func(self, *args)
+			return func(self, *args)
 		except CommandError, e:
-			reply = 'NOT_OK ' + str(e)
+			return 'NOT_OK ' + str(e)
 		except TypeError, e:
 			traceback.print_exc()
-			reply = 'NOT_OK ' + str(e)
-		return '{id} {reply}'.format(id=counter, reply=reply)
+			return 'NOT_OK ' + str(e)
 
 class Game:
 	logins={}
