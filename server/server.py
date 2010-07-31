@@ -259,7 +259,7 @@ class Game:
 			self.tick_counter=0
 		for p in self.players:
 			p.tick(key_tick)
-		for o in self._entities.values():
+		for o in self.all_entities():
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
