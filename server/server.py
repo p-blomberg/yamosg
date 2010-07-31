@@ -27,6 +27,11 @@ class Server(ServerSocket):
 		ServerSocket.__init__(self, host, port, 0, split, debug)
 		self.game=Game(split)
 		self.sockets=self._socketlist.copy()
+		
+		# Server commands
+		self._commands = {
+		}
+		
 		print "ready"
 		
 	def readCall(self, clientsocket, lines):
@@ -54,15 +59,26 @@ class Server(ServerSocket):
 	
 	def _dispatch_command(self, client, line):
 		"""
-		Try to parse the line and dispatch the command to the client.
+		Try to parse the line and dispatch the command to the relevant
+		destination (server or client).
 		"""
+		
+		# Try to parse the line
 		try:
 			counter, cmd, args = command.parse(line)
 		except Exception, e:
 			return '0 NOT_OK ' + str(e)
-	
-		response = str(client.command(cmd, args))
 		
+		# See if the server handles this command
+		func = self._commands.get(cmd, None)
+		
+		# Dispatch
+		if func is not None:
+			response = func(*args)
+		else:
+			response = client.command(cmd, args)
+		
+		# Generate full response
 		return '{id} {response}'.format(id=counter, response=response)
 
 	def tick(self):
@@ -85,6 +101,7 @@ class Connection:
 		self.game=game
 		self.player=None
 		
+		# client commands
 		self._commands = {
 			"LOGIN": self.game.login,
 			"PING": self.ping,
