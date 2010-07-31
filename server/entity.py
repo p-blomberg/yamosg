@@ -3,16 +3,10 @@ from copy import copy
 import json
 
 class Entity:
-	id=None
-	owner=None
 	container=None
-	position=None
-	game=None
 	max_speed=None
 	size=None
 	mass=None
-	speed=None
-	actions={}
 	minable=False
 	max_cargo=0
 
@@ -23,7 +17,9 @@ class Entity:
 		self.game=game
 		self.speed=Vector(0,0,0)
 		self.cargo = {}
-		self.actions["GO"]=self.go
+		self.actions = {
+			'GO': self.go
+		}
 
 	def __str__(self):
 		return self.encode()
