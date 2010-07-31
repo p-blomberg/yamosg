@@ -22,6 +22,14 @@ import json
 class CommandError (Exception):
 	pass
 
+def smart_truncate(content, length=100, suffix='...'):
+	# Based on implementation found at:
+	# http://stackoverflow.com/questions/250357/smart-truncate-in-python
+	if len(content) <= length:
+		return content
+	else:
+		return content[:length].rsplit(' ', 1)[0] + suffix
+
 class Server(ServerSocket):
 	def __init__(self, host, port, split="\n", debug=False):
 		ServerSocket.__init__(self, host, port, 0, split, debug)
@@ -55,7 +63,10 @@ class Server(ServerSocket):
 		# Call commands
 		for line in lines:
 			response = self._dispatch_command(client, line)
-			print clientsocket.getpeername(), [line], '->', [response]
+			print '{peer} {line} -> {response}'.format(
+				peer=clientsocket.getpeername(),
+				line=[line], 
+				response=[smart_truncate(response, length=50)])
 			self.write(clientsocket, [response + self._split])
 	
 	def _dispatch_command(self, client, line):
