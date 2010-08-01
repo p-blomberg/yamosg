@@ -130,6 +130,14 @@ class Connection:
 			"PLAYERS": self.game.Players
 		}
 	
+	def disconnect(self, message='Disconnected'):
+		"""
+		Force a client to disconnect.
+		"""
+		
+		self.game.unicast(self.socket, 'DISCONNECTED', message)
+		self.socket.shutdown(socket.SHUT_RDWR)
+	
 	def ping(self, other, parts):
 		print parts
 		try:
@@ -141,41 +149,143 @@ class Connection:
 		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
 		
 		try:
-			return func(self, *args)
+			response = func(self, *args)
+			
+			# encode objects which aren't strings
+			if not isinstance(response, basestring):
+				response = 'OK ' + json.dumps(response)
+			
+			return response
 		except CommandError, e:
-			return 'NOT_OK ' + str(e)
+			# command contained an error which was handled by server and
+			# contains a message to info the user about it.
+			return 'NOT_OK "%s"' % str(e)
 		except TypeError, e:
+			# command didn't pass enought parameters.
 			traceback.print_exc()
-			return 'NOT_OK ' + str(e)
+			return 'NOT_OK "%s"' % str(e)
+		except:
+			# an unhandled exception occured. Will not pass an specific details
+			# to the client. 
+			traceback.print_exc()
+			return 'NOT_OK "An unexpected error occured. Try again later."'
 
 class Game:
 	def __init__(self, split):
-		self.split=split
-		self.logins={}
+		self._split=split
 		self.clients={}
-		self.players=[]
-		self.entities=[]
+		self._players={}  # all players in the world. 
+		self._entities={} # all entities in the world.
 		self.tick_counter=0
 	
 		# Create world
-		p=entity.Planet(len(self.entities), Vector(30,30,0), 20, self)
+		p=entity.Planet(Vector(30,30,0), 20, self)
 		cargo={
-			entity.CopperOre(p, None, self):600
+			entity.CopperOre(container=p, owner=None, game=self): 600
 		}
 		p.cargo=cargo
-		self.entities.append(p)
+		self.add_entity(p)
+	
+	def add_entity(self, ent):
+		"""
+		Add an entity to the game world
+		"""
+		
+		if ent.id in self._entities:
+			raise RuntimeError, 'duplicate entities with id ' + ent.id
+		self._entities[ent.id] = ent
+	
+	def entity_by_id(self, id):
+		"""
+		Get an entity by its ID, return None if there is no such entity.
+		"""
+		return self._entities.get(id, None)
+	
+	def all_entities(self):
+		"""
+		Generator to get all entities in the world.
+		"""
+		for ent in self._entities.values():
+			yield ent
+	
+	def entities_matching(self, *func, **criteria):
+		"""
+		Search for entities matching the specified criteria. Just like
+		all_entities it is a Generator.
+		
+		Pass kwargs where the key is the entity variable you would like to
+		match against the value.
+		
+		Eg:
+		>>> entities_matching(minable=True)
+		
+		will examine the variable "minable" and would only match if the value
+		is the same (True in this case).
+		
+		Pass variable arguments as functions to evaluate if the entity is
+		matching. The function receives only single entity should return
+		either True or False.
+		
+		Eg:
+		>>> entities_matching(lambda x: (x.position - self.position).length() < 10.0)
+		
+		will call the lambda for each entity and only yields entities where it
+		returns True.
+		"""
+		
+		def match_criteria(ent):
+			for k,v1 in criteria.items():
+				v2 = getattr(ent, k)
+				
+				if v1 != v2:
+					return False
+			
+			return True
+		
+		def match_func(ent):
+			for f in func:
+				if not f(ent):
+					return False
+			
+			return True
+		
+		for ent in self._entities.values():
+			if not match_criteria(ent):
+				continue
+			
+			if not match_func(ent):
+				continue
+			
+			yield ent
+	
+	def player_by_id(self, id):
+		"""
+		Get player by its ID. It is an O(n) operation, prefer player_by_username
+		"""
+		
+		for p in self._players.values():
+			if p.id == id:
+				return p
+		return None
+	
+	def player_by_username(self, username):
+		"""
+		Get player by username
+		"""
+		
+		return self._players.get(username, None)
 	
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """
 		cmd = Command(command, *args, id='UNICAST')
-		socket.send(socket, str(cmd) + self._split)
+		socket.send(str(cmd) + self._split)
 	
 	def broadcast(self, command, *args):
 		""" Send a message to all connected clients """
 		cmd = Command(command, *args, id='BROADCAST')
 		for c in self.clients.keys():
 			try:
-				c.send(str(cmd) + self.split)
+				c.send(str(cmd) + self._split)
 			except socket.error:
 				del self.clients[c]
 
@@ -185,74 +295,69 @@ class Game:
 		if(self.tick_counter==15):
 			key_tick=True
 			self.tick_counter=0
-		for p in self.players:
+		for p in self._players.values():
 			p.tick(key_tick)
-		for o in self.entities:
+		for o in self.all_entities():
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
-		return "OK "+json.dumps([x.dinmamma() for x in self.entities])
+		return "OK "+json.dumps([x.dinmamma() for x in self._entities.values()])
 
 	def NewUser(self, connection, name, password):
-		if name in self.logins:
+		# verify
+		if name in self._players:
 			raise CommandError, 'Username already exists'
-		else:
-			self.logins[name]=password
-			return "OK"
-
-	def NewPlayer(self, name):
-		id=len(self.players)
-		self.players.append(player.Player(id, name, self))
+		
+		# create
+		p = player.Player(name, self)
+		p.set_password(password)
+		
+		# store
+		self._players[p.name] = p
+		
 		# push info to all players.
-		self.broadcast('NEW_PLAYER', id, name)
-		return id
+		self.broadcast('NEW_PLAYER', p.id, p.name)
+		
+		return 'OK'
 
 	def playerinfo(self, connection, id):
+		# try numerical ID
 		try:
-			id = int(id)
+			p = self.player_by_id(int(id))
 		except ValueError:
+			p = self.player_by_username(id)
+		
+		if p is None:
 			raise CommandError, 'Invalid ID'
 		
-		try:
-			return self.players[id].info()
-		except IndexError:
-			raise CommandError, 'Invalid ID'
+		return p.info()
 
 	def Players(self, connection):
-		playerlist=str()
-		for player in self.players:
-			playerlist+=str(player.id)+":"+player.name+self.split
-		return playerlist
+		# dict comprehensions are not introduced until 2.7 =/
+		return dict([(p.id, p.name) for p in self._players.values()])
 
 	def login(self, connection, name, passwd):
-		if not name in self.logins:
-			raise CommandError, 'Invalid username or password'
-		if not self.logins[name] == passwd:
-			raise CommandError, 'Invalid username or password'
+		p = self.player_by_username(name)
 		
-		# insert some code to take command of existing player if same login.
-		id=self.NewPlayer(name)
-		connection.player=self.players[id]
+		# validate credentials
+		if p is None or not p.login(connection, passwd):
+			raise CommandError, 'Invalid username or password'
+
+		# store in connection as well
+		connection.player = p
+		
 		# Send info to all players
-		self.broadcast('USER_LOGIN', id, name)
-		return "OK ID="+str(id)
+		self.broadcast('USER_LOGIN', p.id, p.name)
+		
+		return "OK ID=%d" % (p.id)
 
 	def EntAction(self, connection, id, action, *args):
-		try:
-			id = int(id)
-		except ValueError:
-			raise CommandError, 'Invalid ID'
-		
-		try:
-			ent = self.entities[id]
-		except KeyError:
+		ent = self.entity_by_id(id)
+		if ent is None:
 			raise CommandError, 'Invalid ID'
 		
 		player = connection.player
 		if not ent in player.entities:
 			raise CommandError, 'Belongs to other player'
 
-		response = ent.action(action, args)
-		print response
-		return response
-
+		return ent.action(action, args)
