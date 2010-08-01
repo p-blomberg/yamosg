@@ -20,17 +20,17 @@ _decoders = {
 	'json': _jsoncoder.Decoder
 }
 
-def _factory(name, src, args, kwargs):
-	try:
-		return src[name](*args, **kwargs)
-	except KeyError:
-		return None
-
 def encoder(name, *args, **kwargs):
-	return _factory(name, _encoders, args, kwargs)
+	return _encoders[name](*args, **kwargs)
 
 def decoder(name, *args, **kwargs):
-	return _factory(name, _decoders, args, kwargs)
+	return _decoders[name](*args, **kwargs)
+
+def encoders():
+	return _encoders.keys()
+
+def decoders():
+	return _decoders.keys()
 
 if __name__ == '__main__':
 	e = encoder('plaintext')

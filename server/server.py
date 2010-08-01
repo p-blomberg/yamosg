@@ -14,7 +14,7 @@ import entity
 import player
 from common.vector import Vector
 from common.command import Command
-from common.transcoder import encoder, decoder
+from common.transcoder import encoder, encoders
 from common import command
 import socket
 import traceback
@@ -98,7 +98,7 @@ class Server(ServerSocket):
 		"""
 		Get this servers extended capabilities
 		"""
-		return []
+		return {'ENCODERS': encoders()}
 	
 	def tick(self):
 		self.game.tick()
@@ -123,6 +123,7 @@ class Connection:
 		
 		# client commands
 		self._commands = {
+			'SET': self._set_prop,
 			"LOGIN": self.game.login,
 			"PING": self.ping,
 			"PLAYERINFO": self.game.playerinfo,
@@ -130,6 +131,11 @@ class Connection:
 			"LIST_OF_ENTITIES": self.game.list_of_entities,
 			"ENTACTION": self.game.EntAction,
 			"PLAYERS": self.game.Players
+		}
+		
+		# properties
+		self._props = {
+			'ENCODER': self._set_encoder
 		}
 	
 	def disconnect(self, message='Disconnected'):
@@ -139,6 +145,18 @@ class Connection:
 		
 		self.game.unicast(self.socket, 'DISCONNECTED', message)
 		self.socket.shutdown(socket.SHUT_RDWR)
+	
+	def _set_prop(self, connection, key, value):
+		if key not in self._props:
+			raise CommandError, 'Invalid property'
+		
+		self._props[key](value)
+	
+	def _set_encoder(self, name):
+		try:
+			self._encoder = encoder(name)
+		except KeyError:
+			raise CommandError, 'Invalid value'
 	
 	def ping(self, other, parts):
 		print parts
@@ -155,7 +173,11 @@ class Connection:
 			
 			# encode objects which aren't strings
 			if not isinstance(response, basestring):
-				response = 'OK ' + self._encoder.encode(response)
+				# skip None
+				if response is None:
+					response = 'OK'
+				else:
+					response = 'OK ' + self._encoder.encode(response)
 			
 			return response
 		except CommandError, e:
