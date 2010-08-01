@@ -201,7 +201,23 @@ class Game:
 		self._players={}  # all players in the world. 
 		self._entities={} # all entities in the world.
 		self.tick_counter=0
-	
+		
+		# temporary player storage @tempstore
+		import sqlite3
+		self._db = sqlite3.connect('players.db')
+		self._db.row_factory = sqlite3.Row
+		self._c = self._db.cursor()
+		self._c.execute('PRAGMA foreign_keys = ON')
+		self._c.execute("""
+			CREATE TABLE IF NOT EXISTS players (
+				id INTEGER UNIQUE NOT NULL,
+				username TEXT PRIMARY KEY,
+				password TEXT NOT NULL,
+				cash INTEGER NOT NULL
+			)""")
+		for row in self._c.execute('SELECT id, username, password, cash FROM players').fetchall():
+			self.add_player(Player(game=self, **row))
+		
 		# Create world
 		p=entity.Planet(Vector(30,30,0), 20, self)
 		cargo={
@@ -282,6 +298,23 @@ class Game:
 			
 			yield ent
 	
+	def add_player(self, player):
+		self._players[player.name] = player
+		self.player_persist()
+	
+	def player_persist(self):
+		# temporary player storage @tempstore
+		self._c.execute('DELETE from players')
+		self._db.commit()
+		for player in self._players.values():
+			self._c.execute("""
+				INSERT INTO players (
+					id, username, password, cash
+				) VALUES (
+					:id, :username, :password, :cash
+				)
+			""", player.serialize())
+	
 	def player_by_id(self, id):
 		"""
 		Get player by its ID. It is an O(n) operation, prefer player_by_username
@@ -337,7 +370,7 @@ class Game:
 		p.set_password(password)
 		
 		# store
-		self._players[p.name] = p
+		self.add_player(p)
 		
 		# push info to all players.
 		self.broadcast('NEW_PLAYER', p.id, p.name)
