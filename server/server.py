@@ -149,7 +149,13 @@ class Connection:
 		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
 		
 		try:
-			return func(self, *args)
+			response = func(self, *args)
+			
+			# encode objects which aren't strings
+			if not isinstance(response, basestring):
+				response = 'OK ' + json.dumps(response)
+			
+			return response
 		except CommandError, e:
 			return 'NOT_OK ' + str(e)
 		except TypeError, e:
