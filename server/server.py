@@ -14,6 +14,7 @@ import entity
 import player
 from common.vector import Vector
 from common.command import Command
+from common.transcoder import encoder, decoder
 from common import command
 import socket
 import traceback
@@ -118,6 +119,7 @@ class Connection:
 		self.socket=socket
 		self.game=game
 		self.player=None
+		self._encoder = encoder('plaintext')
 		
 		# client commands
 		self._commands = {
@@ -153,7 +155,7 @@ class Connection:
 			
 			# encode objects which aren't strings
 			if not isinstance(response, basestring):
-				response = 'OK ' + json.dumps(response)
+				response = 'OK ' + self._encoder.encode(response)
 			
 			return response
 		except CommandError, e:
@@ -301,7 +303,7 @@ class Game:
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
-		return "OK "+json.dumps([x.dinmamma() for x in self._entities.values()])
+		return [x.dinmamma() for x in self._entities.values()]
 
 	def NewUser(self, connection, name, password):
 		# verify
