@@ -6,11 +6,8 @@ class Player:
 	_counter = 0
 	__salt = 'yamosg_salt_omg'
 	
-	def __init__(self, name, game, cash=100000):
-		# assign player id
-		Player._counter += 1
-		self.id = Player._counter
-		
+	def __init__(self, name, game, id=None, cash=100000):
+		self.id = id or self._generate_id()
 		self.name = name
 		self.cash = cash
 		self.entities = list()
@@ -25,6 +22,10 @@ class Player:
 		
 		self.entities.append(gateway)
 		game.add_entity(gateway)
+	
+	def _generate_id(self):
+		Player._counter += 1
+		return Player._counter
 	
 	def _hash(self, line):
 		"""
