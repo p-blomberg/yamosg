@@ -157,10 +157,18 @@ class Connection:
 			
 			return response
 		except CommandError, e:
-			return 'NOT_OK ' + str(e)
+			# command contained an error which was handled by server and
+			# contains a message to info the user about it.
+			return 'NOT_OK "%s"' % str(e)
 		except TypeError, e:
+			# command didn't pass enought parameters.
 			traceback.print_exc()
-			return 'NOT_OK ' + str(e)
+			return 'NOT_OK "%s"' % str(e)
+		except:
+			# an unhandled exception occured. Will not pass an specific details
+			# to the client. 
+			traceback.print_exc()
+			return 'NOT_OK "An unexpected error occured. Try again later."'
 
 class Game:
 	def __init__(self, split):
