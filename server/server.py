@@ -321,15 +321,16 @@ class Game:
 		return 'OK'
 
 	def playerinfo(self, connection, id):
+		# try numerical ID
 		try:
-			id = int(id)
+			p = self.player_by_id(int(id))
 		except ValueError:
+			p = self.player_by_username(id)
+		
+		if p is None:
 			raise CommandError, 'Invalid ID'
 		
-		try:
-			return self.players[id].info()
-		except IndexError:
-			raise CommandError, 'Invalid ID'
+		return p.info()
 
 	def Players(self, connection):
 		# dict comprehensions are not introduced until 2.7 =/
