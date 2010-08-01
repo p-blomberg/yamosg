@@ -258,6 +258,23 @@ class Game:
 			
 			yield ent
 	
+	def player_by_id(self, id):
+		"""
+		Get player by its ID. It is an O(n) operation, prefer player_by_username
+		"""
+		
+		for p in self._players.values():
+			if p.id == id:
+				return p
+		return None
+	
+	def player_by_username(self, username):
+		"""
+		Get player by username
+		"""
+		
+		return self._players.get(username, None)
+	
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """
 		cmd = Command(command, *args, id='UNICAST')
@@ -319,7 +336,7 @@ class Game:
 		return dict([(p.id, p.name) for p in self._players.values()])
 
 	def login(self, connection, name, passwd):
-		p = self._players.get(name, None)
+		p = self.player_by_username(name)
 		
 		# validate credentials
 		if p is None or not p.login(connection, passwd):
