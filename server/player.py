@@ -6,13 +6,13 @@ class Player:
 	_counter = 0
 	__salt = 'yamosg_salt_omg'
 	
-	def __init__(self, name, game):
+	def __init__(self, name, game, cash=100000):
 		# assign player id
 		Player._counter += 1
 		self.id = Player._counter
 		
 		self.name = name
-		self.cash = 100000
+		self.cash = cash
 		self.entities = list()
 		
 		# Client connection or None if not logged in.
