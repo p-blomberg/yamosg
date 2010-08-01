@@ -130,6 +130,14 @@ class Connection:
 			"PLAYERS": self.game.Players
 		}
 	
+	def disconnect(self, message='Disconnected'):
+		"""
+		Force a client to disconnect.
+		"""
+		
+		self.game.unicast(self.socket, 'DISCONNECTED', message)
+		self.socket.shutdown(socket.SHUT_RDWR)
+	
 	def ping(self, other, parts):
 		print parts
 		try:
@@ -150,11 +158,10 @@ class Connection:
 
 class Game:
 	def __init__(self, split):
-		self.split=split
-		self.logins={}
+		self._split=split
 		self.clients={}
-		self.players=[]
-		self._entities={}
+		self._players={}  # all players in the world. 
+		self._entities={} # all entities in the world.
 		self.tick_counter=0
 	
 		# Create world
@@ -240,14 +247,14 @@ class Game:
 	def unicast(self, socket, command, *args):
 		""" Send a message to a specific client """
 		cmd = Command(command, *args, id='UNICAST')
-		socket.send(socket, str(cmd) + self._split)
+		socket.send(str(cmd) + self._split)
 	
 	def broadcast(self, command, *args):
 		""" Send a message to all connected clients """
 		cmd = Command(command, *args, id='BROADCAST')
 		for c in self.clients.keys():
 			try:
-				c.send(str(cmd) + self.split)
+				c.send(str(cmd) + self._split)
 			except socket.error:
 				del self.clients[c]
 
@@ -257,7 +264,7 @@ class Game:
 		if(self.tick_counter==15):
 			key_tick=True
 			self.tick_counter=0
-		for p in self.players:
+		for p in self._players.values():
 			p.tick(key_tick)
 		for o in self.all_entities():
 			o.tick(key_tick)
@@ -266,18 +273,21 @@ class Game:
 		return "OK "+json.dumps([x.dinmamma() for x in self._entities.values()])
 
 	def NewUser(self, connection, name, password):
-		if name in self.logins:
+		# verify
+		if name in self._players:
 			raise CommandError, 'Username already exists'
-		else:
-			self.logins[name]=password
-			return "OK"
-
-	def NewPlayer(self, name):
-		id=len(self.players)
-		self.players.append(player.Player(id, name, self))
+		
+		# create
+		p = player.Player(name, self)
+		p.set_password(password)
+		
+		# store
+		self._players[p.name] = p
+		
 		# push info to all players.
-		self.broadcast('NEW_PLAYER', id, name)
-		return id
+		self.broadcast('NEW_PLAYER', p.id, p.name)
+		
+		return 'OK'
 
 	def playerinfo(self, connection, id):
 		try:
@@ -297,17 +307,19 @@ class Game:
 		return playerlist
 
 	def login(self, connection, name, passwd):
-		if not name in self.logins:
-			raise CommandError, 'Invalid username or password'
-		if not self.logins[name] == passwd:
-			raise CommandError, 'Invalid username or password'
+		p = self._players.get(name, None)
 		
-		# insert some code to take command of existing player if same login.
-		id=self.NewPlayer(name)
-		connection.player=self.players[id]
+		# validate credentials
+		if p is None or not p.login(connection, passwd):
+			raise CommandError, 'Invalid username or password'
+
+		# store in connection as well
+		connection.player = p
+		
 		# Send info to all players
-		self.broadcast('USER_LOGIN', id, name)
-		return "OK ID="+str(id)
+		self.broadcast('USER_LOGIN', p.id, p.name)
+		
+		return "OK ID=%d" % (p.id)
 
 	def EntAction(self, connection, id, action, *args):
 		ent = self.entity_by_id(id)
