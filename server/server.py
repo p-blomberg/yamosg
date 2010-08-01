@@ -307,10 +307,8 @@ class Game:
 			raise CommandError, 'Invalid ID'
 
 	def Players(self, connection):
-		playerlist=str()
-		for player in self.players:
-			playerlist+=str(player.id)+":"+player.name+self.split
-		return playerlist
+		# dict comprehensions are not introduced until 2.7 =/
+		return dict([(p.id, p.name) for p in self._players.values()])
 
 	def login(self, connection, name, passwd):
 		p = self._players.get(name, None)
