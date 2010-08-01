@@ -94,7 +94,10 @@ class Player:
 		return False
 
 	def info(self):
-		return "Name:%s Cash:%i" % (self.name, self.cash)
+		return {
+			'name': self.name,
+			'cash': self.cash
+		}
 
 	def tick(self, key_tick):
 		pass
