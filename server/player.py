@@ -2,9 +2,6 @@ import entity
 from common.vector import Vector
 
 class Player:
-	name=''
-	id=None
-	cash=0
 	def __init__(self, id, name, game):
 		self.id=id
 		self.name = name
