@@ -27,6 +27,14 @@ class Player:
 		Player._counter += 1
 		return Player._counter
 	
+	def serialize(self):
+		return {
+			'id': self.id,
+			'username': self.name,
+			'password': self._password,
+			'cash': self.cash
+		}
+	
 	def _hash(self, line):
 		"""
 		Returns the hash of line with salt prepended.
