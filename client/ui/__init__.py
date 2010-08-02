@@ -53,6 +53,13 @@ class Widget:
 		"""
 		return point - self.pos
 	
+	def get_children(self):
+		"""
+		Get a list of all children from this widget, only required to be
+		implemented if you are doing any kind of container.
+		"""
+		return []
+	
 	def hit_test(self, point, project=True):
 		"""
 			Test if a point hits the object or not.
@@ -97,7 +104,10 @@ class Widget:
 	
 	def _impl_on_mousemove(self, pos, buttons):
 		projection = self.project(pos)
-		self.on_mousemove(projection, buttons)
+		hit = self.hit_test(projection, False)
+		
+		if hit:
+			hit.on_mousemove(projection, buttons)
 	
 	def do_render(self):
 		raise NotImplementedError
@@ -106,8 +116,6 @@ class Widget:
 		glPushMatrix()
 		glLoadIdentity()
 		glOrtho(0, self.width, 0, self.height, -1.0, 1.0);
-		glScalef(1, -1.0, 1);
-		glTranslatef(0, -self.height, 0);
 		p = glGetDouble(GL_MODELVIEW_MATRIX)
 		glPopMatrix()
 		return p
@@ -131,6 +139,11 @@ class Widget:
 		glEnd()
 	
 	def render(self):
+		# if any of the children are invalidated this is also invalidated.
+		if any([x._invalidated for x in self.get_children()]):
+			self._invalidated = True
+	
+		# must check if a child is invalidated
 		if not self._invalidated:
 			return
 		
@@ -138,8 +151,22 @@ class Widget:
 		# which requires continious rendering may mark itself as invalidated.
 		self._invalidated = False
 		
+		# First render all children
+		for x in self.get_children():
+			x.render()
+		
+		#print 'viewport:', int(self.width)
+		#glViewport(0, 0, int(self.width), int(self.height));
+		
+		# load projection
+		glMatrixMode(GL_PROJECTION)
+		glLoadMatrixd(self._projection)
+		glMatrixMode(GL_MODELVIEW)
+		
 		self.bind_fbo()
+		glPushMatrix()
 		self.do_render()
+		glPopMatrix()
 		self.unbind_fbo()
 
 from button import Button

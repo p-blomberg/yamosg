@@ -155,6 +155,8 @@ class Game(Widget):
 		return min + (max - min) * u
 
 	def projection(self):
+		self._ortho_projection = Widget.projection(self)
+	
 		glPushMatrix()
 		glLoadIdentity()
 		gluPerspective(90.0, 1.3333, 0.1, 1000.0)
@@ -250,12 +252,6 @@ class Game(Widget):
 		
 		self._render_background()
 
-		# perspective projection
-		glMatrixMode(GL_PROJECTION)
-		glPushMatrix()
-		glLoadMatrixd(self._projection)
-		glMatrixMode(GL_MODELVIEW)
-
 		glDisable(GL_CULL_FACE)
 
 		# view matrix
@@ -301,20 +297,15 @@ class Game(Widget):
 			
 			glPopMatrix()
 
-		glColor(1,1,0,1)
-		glutSolidSphere(5, 25, 25)
-		
-		# restore projection
-		glMatrixMode(GL_PROJECTION)
-		glPopMatrix()
-		glMatrixMode(GL_MODELVIEW)
-
 		self.invalidate()
 	
 	def _render_background(self):
+		# render background in an orthogonal projection
+		glMatrixMode(GL_PROJECTION)
 		glPushMatrix()
-		
-		#glTranslate(-self._rect.x, -self._rect.y, 0.0)
+		glLoadMatrixd(self._ortho_projection)
+		glMatrixMode(GL_MODELVIEW)
+		glPushMatrix()
 		
 		glColor4f(1,1,1,1)
 		
@@ -325,7 +316,6 @@ class Game(Widget):
 				self._rect.y * s,
 				1.0 + i * 0.4,
 				1.0 + i * 0.6)
-
 			glBegin(GL_QUADS)
 			glTexCoord2f(t.x, t.y)
 			glVertex2f(0, 0)
@@ -340,8 +330,14 @@ class Game(Widget):
 			glVertex2f(self.width, 0)
 			glEnd()
 		
+		
 		glBindTexture(GL_TEXTURE_2D, 0)
+		
+		# restore matrices
 		glPopMatrix()
+		glMatrixMode(GL_PROJECTION)
+		glPopMatrix()
+		glMatrixMode(GL_MODELVIEW)
 
 class Client:
 	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
@@ -390,9 +386,6 @@ class Client:
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 		glOrtho(0, width, 0, height, -1.0, 1.0);
-		glScalef(1, -1.0, 1);
-		glTranslatef(0, -height, 0);
-		default_projection = glGetDouble(GL_PROJECTION_MATRIX)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
@@ -517,7 +510,7 @@ class Client:
 	
 	@expose
 	def Hello(self):
-		print self.call('SET', 'ENCODER', 'json')
+		self.call('SET', 'ENCODER', 'json')
 		_, self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
 		self.list_of_entities()
 		#_, entities = self.call('LIST_OF_ENTITIES')
