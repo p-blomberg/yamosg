@@ -517,6 +517,7 @@ class Client:
 	
 	@expose
 	def Hello(self):
+		print self.call('SET', 'ENCODER', 'json')
 		_, self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
 		self.list_of_entities()
 		#_, entities = self.call('LIST_OF_ENTITIES')
