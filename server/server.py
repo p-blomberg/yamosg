@@ -215,11 +215,13 @@ class Game:
 			CREATE TABLE IF NOT EXISTS players (
 				id INTEGER UNIQUE NOT NULL,
 				username TEXT PRIMARY KEY,
-				password TEXT NOT NULL,
+				password BLOB NOT NULL,
 				cash INTEGER NOT NULL
 			)""")
 		for row in self._c.execute('SELECT id, username, password, cash FROM players').fetchall():
-			self.add_player(Player(game=self, **row))
+			d = dict(**row)
+			d['password'] = str(d['password'])
+			self.add_player(player.Player(game=self, **d))
 		
 		# Create world
 		p=entity.Planet(Vector(30,30,0), 20, self)
@@ -306,17 +308,23 @@ class Game:
 		self.player_persist()
 	
 	def player_persist(self):
+		import sqlite3
+		
 		# temporary player storage @tempstore
 		self._c.execute('DELETE from players')
 		self._db.commit()
 		for player in self._players.values():
+			d = player.serialize()
+			d['password'] = sqlite3.Binary(d['password'])
+			
 			self._c.execute("""
 				INSERT INTO players (
 					id, username, password, cash
 				) VALUES (
 					:id, :username, :password, :cash
 				)
-			""", player.serialize())
+			""", d)
+		self._db.commit()
 	
 	def player_by_id(self, id):
 		"""
@@ -420,4 +428,7 @@ class Game:
 		if not ent in player.entities:
 			raise CommandError, 'Belongs to other player'
 
-		return ent.action(action, args)
+		response = ent.action(action, args)
+		self.player_persist()
+		
+		return response

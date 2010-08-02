@@ -9,9 +9,9 @@ class Player:
 	_counter = 0
 	__salt = 'yamosg_salt_omg'
 	
-	def __init__(self, name, game, id=None, cash=100000):
+	def __init__(self, username, game, id=None, password=None, cash=100000):
 		self.id = id or self._generate_id()
-		self.name = name
+		self.name = username
 		self.cash = cash
 		self.entities = list()
 		
@@ -19,7 +19,7 @@ class Player:
 		self._client = None
 		
 		# Credentials
-		self._password = None
+		self._password = password
 		
 		gateway = entity.Gateway(Vector(4,6,0), game, owner=self)
 		
