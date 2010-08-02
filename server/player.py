@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import entity
 from common.vector import Vector
 import hashlib
@@ -6,25 +9,34 @@ class Player:
 	_counter = 0
 	__salt = 'yamosg_salt_omg'
 	
-	def __init__(self, name, game):
-		# assign player id
-		Player._counter += 1
-		self.id = Player._counter
-		
-		self.name = name
-		self.cash = 100000
+	def __init__(self, username, game, id=None, password=None, cash=100000):
+		self.id = id or self._generate_id()
+		self.name = username
+		self.cash = cash
 		self.entities = list()
 		
 		# Client connection or None if not logged in.
 		self._client = None
 		
 		# Credentials
-		self._password = None
+		self._password = password
 		
 		gateway = entity.Gateway(Vector(4,6,0), game, owner=self)
 		
 		self.entities.append(gateway)
 		game.add_entity(gateway)
+	
+	def _generate_id(self):
+		Player._counter += 1
+		return Player._counter
+	
+	def serialize(self):
+		return {
+			'id': self.id,
+			'username': self.name,
+			'password': self._password,
+			'cash': self.cash
+		}
 	
 	def _hash(self, line):
 		"""

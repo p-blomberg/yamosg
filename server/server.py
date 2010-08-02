@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import os.path, sys
 from time import sleep, clock, time
 
@@ -14,6 +17,7 @@ import entity
 import player
 from common.vector import Vector
 from common.command import Command
+from common.transcoder import encoder, encoders
 from common import command
 import socket
 import traceback
@@ -97,7 +101,7 @@ class Server(ServerSocket):
 		"""
 		Get this servers extended capabilities
 		"""
-		return []
+		return {'ENCODERS': encoders()}
 	
 	def tick(self):
 		self.game.tick()
@@ -118,9 +122,11 @@ class Connection:
 		self.socket=socket
 		self.game=game
 		self.player=None
+		self._encoder = encoder('plaintext')
 		
 		# client commands
 		self._commands = {
+			'SET': self._set_prop,
 			"LOGIN": self.game.login,
 			"PING": self.ping,
 			"PLAYERINFO": self.game.playerinfo,
@@ -128,6 +134,11 @@ class Connection:
 			"LIST_OF_ENTITIES": self.game.list_of_entities,
 			"ENTACTION": self.game.EntAction,
 			"PLAYERS": self.game.Players
+		}
+		
+		# properties
+		self._props = {
+			'ENCODER': self._set_encoder
 		}
 	
 	def disconnect(self, message='Disconnected'):
@@ -137,6 +148,18 @@ class Connection:
 		
 		self.game.unicast(self.socket, 'DISCONNECTED', message)
 		self.socket.shutdown(socket.SHUT_RDWR)
+	
+	def _set_prop(self, connection, key, value):
+		if key not in self._props:
+			raise CommandError, 'Invalid property'
+		
+		self._props[key](value)
+	
+	def _set_encoder(self, name):
+		try:
+			self._encoder = encoder(name)
+		except KeyError:
+			raise CommandError, 'Invalid value'
 	
 	def ping(self, other, parts):
 		print parts
@@ -153,7 +176,11 @@ class Connection:
 			
 			# encode objects which aren't strings
 			if not isinstance(response, basestring):
-				response = 'OK ' + json.dumps(response)
+				# skip None
+				if response is None:
+					response = 'OK'
+				else:
+					response = 'OK ' + self._encoder.encode(response)
 			
 			return response
 		except CommandError, e:
@@ -177,7 +204,25 @@ class Game:
 		self._players={}  # all players in the world. 
 		self._entities={} # all entities in the world.
 		self.tick_counter=0
-	
+		
+		# temporary player storage @tempstore
+		import sqlite3
+		self._db = sqlite3.connect('players.db')
+		self._db.row_factory = sqlite3.Row
+		self._c = self._db.cursor()
+		self._c.execute('PRAGMA foreign_keys = ON')
+		self._c.execute("""
+			CREATE TABLE IF NOT EXISTS players (
+				id INTEGER UNIQUE NOT NULL,
+				username TEXT PRIMARY KEY,
+				password BLOB NOT NULL,
+				cash INTEGER NOT NULL
+			)""")
+		for row in self._c.execute('SELECT id, username, password, cash FROM players').fetchall():
+			d = dict(**row)
+			d['password'] = str(d['password'])
+			self.add_player(player.Player(game=self, **d))
+		
 		# Create world
 		p=entity.Planet(Vector(30,30,0), 20, self)
 		cargo={
@@ -258,6 +303,29 @@ class Game:
 			
 			yield ent
 	
+	def add_player(self, player):
+		self._players[player.name] = player
+		self.player_persist()
+	
+	def player_persist(self):
+		import sqlite3
+		
+		# temporary player storage @tempstore
+		self._c.execute('DELETE from players')
+		self._db.commit()
+		for player in self._players.values():
+			d = player.serialize()
+			d['password'] = sqlite3.Binary(d['password'])
+			
+			self._c.execute("""
+				INSERT INTO players (
+					id, username, password, cash
+				) VALUES (
+					:id, :username, :password, :cash
+				)
+			""", d)
+		self._db.commit()
+	
 	def player_by_id(self, id):
 		"""
 		Get player by its ID. It is an O(n) operation, prefer player_by_username
@@ -301,7 +369,7 @@ class Game:
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
-		return "OK "+json.dumps([x.dinmamma() for x in self._entities.values()])
+		return [x.dinmamma() for x in self._entities.values()]
 
 	def NewUser(self, connection, name, password):
 		# verify
@@ -313,7 +381,7 @@ class Game:
 		p.set_password(password)
 		
 		# store
-		self._players[p.name] = p
+		self.add_player(p)
 		
 		# push info to all players.
 		self.broadcast('NEW_PLAYER', p.id, p.name)
@@ -360,4 +428,7 @@ class Game:
 		if not ent in player.entities:
 			raise CommandError, 'Belongs to other player'
 
-		return ent.action(action, args)
+		response = ent.action(action, args)
+		self.player_persist()
+		
+		return response
