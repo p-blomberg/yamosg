@@ -27,7 +27,6 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.GLUT import *
 import json
 
 def expose(func):
@@ -345,7 +344,6 @@ class Client:
 		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
 		setup_opengl()
-		glutInit()
 		
 		self._split = split
 		self._running = False
