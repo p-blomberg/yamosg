@@ -15,7 +15,7 @@ import socket, threading, traceback
 import json
 from select import select
 from common.command import parse, parse_tokens, Command
-from common.vector import Vector3
+from common.vector import Vector2i, Vector3
 from state import Initial, StateManager
 from entity import Entity
 from state.game import Game as GameState
@@ -82,9 +82,9 @@ class Network(threading.Thread):
 		self._s.send(str)
 
 class Client:
-	def __init__(self, resolution=Vector3(800,600), host='localhost', port=1234, split="\n"):
+	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
 		# opengl must be initialized first
-		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
+		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
 		setup_opengl()
 		
@@ -92,7 +92,7 @@ class Client:
 		self._running = False
 		self._state = StateManager()
 		self._game = GameWidget(resolution)
-		self._state.push(GameState(resolution, Window(Vector3(0,0,0), resolution, children=[self._game])))
+		self._state.push(GameState(resolution, Window(Vector2i(0,0), resolution, children=[self._game])))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
@@ -100,7 +100,7 @@ class Client:
 		self._playerid = None
 
 		# resizing must be done after state has been created so the event is propagated proper.
-		self._resize(resolution.x, resolution.y)
+		self._resize(resolution)
 	
 	def quit(self):
 		self._running = False
@@ -123,14 +123,14 @@ class Client:
 			except:
 				traceback.print_exc()
 	
-	def _resize(self, width, height):
+	def _resize(self, resolution):
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		glOrtho(0, width, 0, height, -1.0, 1.0);
+		glOrtho(0, resolution.width, 0, resolution.height, -1.0, 1.0);
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
-		self._state.resize(Vector3(width, height))
+		self._state.resize(resolution)
 	
 	def _flush_queue(self):
 		while True:
@@ -158,11 +158,11 @@ class Client:
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
-				self._state.on_mousemove(Vector3(event.pos))
+				self._state.on_mousemove(Vector2i(event.pos))
 			elif event.type == pygame.MOUSEBUTTONDOWN:
-				self._state.on_buttondown(Vector3(event.pos), event.button)
+				self._state.on_buttondown(Vector2i(event.pos), event.button)
 			elif event.type == pygame.MOUSEBUTTONUP:
-				self._state.on_buttonup(Vector3(event.pos), event.button)
+				self._state.on_buttonup(Vector2i(event.pos), event.button)
 			elif event.type == pygame.KEYDOWN:
 				pass
 			elif event.type == pygame.KEYUP:

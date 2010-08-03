@@ -20,6 +20,10 @@ class Vector2:
 		else:
 			self.x = self.__class__.datatype(x)
 			self.y = self.__class__.datatype(y)
+		
+		# since Vector2 is commonly used to describe resolution these aliases is used:
+		self.width = self.x
+		self.height = self.y
 	
 	def copy(self):
 		return self.__class__(self.x, self.y)
@@ -146,6 +150,13 @@ if __name__ == '__main__':
 		def test_constructor_tuple_number(self):
 			self.assertRaises(ValueError, Vector2, (1.0, 2.0), 3.0)
 		
+		def test_alias(self):
+			v = Vector2(1.0, 2.0)
+			self.assertEqual(v.x, 1.0)
+			self.assertEqual(v.y, 2.0)
+			self.assertEqual(v.width, v.x)
+			self.assertEqual(v.height, v.y)
+			
 		def test_copy(self):
 			v1 = Vector2(1.0, 2.0)
 			v2 = v1.copy()

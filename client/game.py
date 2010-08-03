@@ -4,7 +4,7 @@
 from copy import copy, deepcopy
 
 from ui import Widget
-from common.vector import Vector3
+from common.vector import Vector2i, Vector3
 from common.rect import Rect
 
 import pygame
@@ -13,7 +13,7 @@ from OpenGL.GLU import *
 
 class GameWidget(Widget):
 	def __init__(self, size):
-		Widget.__init__(self, Vector3(0,0,0), size)
+		Widget.__init__(self, Vector2i(0,0), size)
 		self.entities = []
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
@@ -39,8 +39,8 @@ class GameWidget(Widget):
 		self._calc_view_matrix()
 	
 	def _calc_view_matrix(self):
-		self._rect.w = self.size.x * self._scale
-		self._rect.h = self.size.y * self._scale
+		self._rect.w = self.size.width  * self._scale
+		self._rect.h = self.size.height * self._scale
 
 		glPushMatrix()
 
@@ -83,10 +83,13 @@ class GameWidget(Widget):
 
 	def projection(self):
 		self._ortho_projection = Widget.projection(self)
-	
+		fov = 90.0
+		near = 0.1
+		far = 1000.0
+		
 		glPushMatrix()
 		glLoadIdentity()
-		gluPerspective(90.0, 1.3333, 0.1, 1000.0)
+		gluPerspective(fov, self.size.ratio(), near, far)
 		glScalef(1, -1.0, 1);
 		p = glGetDouble(GL_MODELVIEW_MATRIX)
 		glPopMatrix()
