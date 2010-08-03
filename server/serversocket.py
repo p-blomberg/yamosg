@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #coding: utf-8
-# едц
+# пїЅпїЅпїЅ
 
 import socket
 import select
@@ -10,6 +10,7 @@ import sys
 import time
 import collections
 import traceback
+import errno
 
 def have_trailing_newline(line):
 	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
@@ -46,25 +47,7 @@ class ServerSocket:
 				self.write(clientsocket,"UNICAST Hello"+self._split)
 
 			for socket_ in write:
-				assert self._socketwrite[socket_]		
-				try:
-					while self._socketwrite[socket_]:
-						send_data=self._socketwrite[socket_].popleft()
-						data_sent=socket_.send(send_data)
-
-						if self._debug: print time.ctime(), socket_.getpeername(), "out", send_data[:data_sent]
-
-						if len(send_data) > data_sent:
-							self._socketwrite[socket_].appendleft(send_data[data_sent:])
-							if self._debug: print "try again, wrote %s" % data_sent
-
-					del self._socketwrite[socket_]
-				except socket.error, se:
-					if se.errno == 11:
-						self._socketwrite[socket_].appendleft(send_data)
-						pass
-					else:
-						raise
+				self.flush(socket_)
 
 			for socket_ in read:
 				try:
@@ -128,7 +111,34 @@ class ServerSocket:
 			if not self._socketwrite.has_key(recipient):
 				self._socketwrite[recipient]=collections.deque()
 			self._socketwrite[recipient].extend(lines)
-
+	
+	def flush(self, sock):
+		""" Send all queued data for socket """
+		
+		queue = self._socketwrite.pop(sock, [])
+		
+		for element in queue:
+			size = len(element)
+			while size > 0:
+				try:
+					sent = sock.send(element)
+					element = element[sent:]
+					size -= sent
+				except socket.error, e:
+					if e.errno == errno.EAGAIN:
+						continue
+					raise
+	
+	def disconnect(self, sock):
+		self.flush(sock)
+		
+		try:
+			sock.shutdown(socket.SHUT_RDWR)
+		except socket.error:
+			pass
+		
+		self._socketlist.remove(sock)
+		
 	def quit(self, signr, frame):
 		for socket_ in self._socketlist:
 			try:

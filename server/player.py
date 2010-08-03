@@ -90,7 +90,21 @@ class Player:
 		
 		self._client = client
 		return True
-
+	
+	def logout(self):
+		"""
+		Logout a player.
+		"""
+		
+		if self._client is None:
+			raise RuntimeError, 'Invalid player state for logout'
+		
+		self._client.disconnect('Logged out')
+		self._client = None
+	
+	def is_online(self):
+		return self._client is not None
+	
 	def __str__(self):
 		return self.name
 

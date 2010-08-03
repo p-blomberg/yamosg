@@ -26,6 +26,9 @@ import json
 class CommandError (Exception):
 	pass
 
+class NoData (Exception):
+	pass
+
 def smart_truncate(content, length=100, suffix='...'):
 	# Based on implementation found at:
 	# http://stackoverflow.com/questions/250357/smart-truncate-in-python
@@ -54,7 +57,7 @@ class Server(ServerSocket):
 			if self.game.clients.has_key(sock):
 				del self.clients[sock]
 			else:
-				self.game.clients[sock]=Connection(sock, self.game)
+				self.game.clients[sock]=Connection(self, sock, self.game)
 		
 		# Get client for this socket, or create new client if not previously
 		# connected.
@@ -64,14 +67,19 @@ class Server(ServerSocket):
 			client = Connection(clientsocket)
 			self.game.clients[clientsocket] = client
 		
+		# only get peer once, and before command (eg logout will disconnect socket)
+		peer = clientsocket.getpeername()
+		
 		# Call commands
 		for line in lines:
 			response = self._dispatch_command(client, line)
 			print '{peer} {line} -> {response}'.format(
-				peer=clientsocket.getpeername(),
+				peer=peer,
 				line=[line], 
-				response=[smart_truncate(response, length=50)])
-			self.write(clientsocket, [response + self._split])
+				response=[smart_truncate(str(response), length=50)])
+			
+			if response is not None:
+				self.write(clientsocket, [response + self._split])
 	
 	def _dispatch_command(self, client, line):
 		"""
@@ -94,6 +102,10 @@ class Server(ServerSocket):
 		else:
 			response = client.command(cmd, args)
 		
+		# If the handler returned None, pass it directly. No data will be sent to the client.
+		if response is None:
+			return None
+			
 		# Generate full response
 		return '{id} {response}'.format(id=counter, response=response)
 
@@ -118,7 +130,8 @@ class Server(ServerSocket):
 			t=new_time
 
 class Connection:
-	def __init__(self, socket, game):
+	def __init__(self, server, socket, game):
+		self._server = server
 		self.socket=socket
 		self.game=game
 		self.player=None
@@ -128,6 +141,7 @@ class Connection:
 		self._commands = {
 			'SET': self._set_prop,
 			"LOGIN": self.game.login,
+			"LOGOUT": self.game.logout,
 			"PING": self.ping,
 			"PLAYERINFO": self.game.playerinfo,
 			"NEWUSER": self.game.NewUser,
@@ -146,9 +160,21 @@ class Connection:
 		Force a client to disconnect.
 		"""
 		
-		self.game.unicast(self.socket, 'DISCONNECTED', message)
-		self.socket.shutdown(socket.SHUT_RDWR)
+		# notify client
+		self.game.unicast(self, 'DISCONNECTED', message)
+		
+		# remove socket
+		del self.game.clients[self.socket]
+		self._server.disconnect(self.socket)
 	
+	def send(self, message):
+		try:
+
+			self.socket.send(message)
+		except socket.error:
+			traceback.print_exc()
+			self._server.disconnect(self.socket)
+		
 	def _set_prop(self, connection, key, value):
 		if key not in self._props:
 			raise CommandError, 'Invalid property'
@@ -187,6 +213,9 @@ class Connection:
 			# command contained an error which was handled by server and
 			# contains a message to info the user about it.
 			return 'NOT_OK "%s"' % str(e)
+		except NoData:
+			# the client has been disconnected. Don't reply.
+			return None
 		except TypeError, e:
 			# command didn't pass enought parameters.
 			traceback.print_exc()
@@ -343,19 +372,16 @@ class Game:
 		
 		return self._players.get(username, None)
 	
-	def unicast(self, socket, command, *args):
+	def unicast(self, connection, command, *args):
 		""" Send a message to a specific client """
 		cmd = Command(command, *args, id='UNICAST')
-		socket.send(str(cmd) + self._split)
+		connection.send(str(cmd) + self._split)
 	
 	def broadcast(self, command, *args):
 		""" Send a message to all connected clients """
 		cmd = Command(command, *args, id='BROADCAST')
-		for c in self.clients.keys():
-			try:
-				c.send(str(cmd) + self._split)
-			except socket.error:
-				del self.clients[c]
+		for c in self.clients.values():
+			c.send(str(cmd) + self._split)
 
 	def tick(self):
 		self.tick_counter+=1
@@ -402,7 +428,7 @@ class Game:
 
 	def Players(self, connection):
 		# dict comprehensions are not introduced until 2.7 =/
-		return dict([(p.id, p.name) for p in self._players.values()])
+		return dict([(p.id, p.name) for p in self._players.values() if p.is_online()])
 
 	def login(self, connection, name, passwd):
 		p = self.player_by_username(name)
@@ -418,6 +444,23 @@ class Game:
 		self.broadcast('USER_LOGIN', p.id, p.name)
 		
 		return "OK ID=%d" % (p.id)
+	
+	def logout(self, connection):
+		p = connection.player
+		
+		if p is None:
+			# @TODO should still disconnect socket
+			raise CommandError, 'Not logged in'
+		
+		# logout
+		p.logout()
+		
+		# Send info to all players
+		self.broadcast('USER_LOGOUT', p.id, p.name)
+		
+		# This is kind of hackish, but it assures that no reply is passed to
+		# the (now) disconnected peer.
+		raise NoData
 
 	def EntAction(self, connection, id, action, *args):
 		ent = self.entity_by_id(id)
