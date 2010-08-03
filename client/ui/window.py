@@ -7,8 +7,8 @@ from OpenGL.GL import *
 from copy import copy
 
 class Window(Widget):
-	def __init__(self, children=[], format=GL_RGB8, *args, **kwargs):
-		Widget.__init__(self, *args, format=format, **kwargs)
+	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
+		Widget.__init__(self, position, size, *args, format=format, **kwargs)
 		self._children = copy(children) # shallow copy
 	
 	def get_children(self):

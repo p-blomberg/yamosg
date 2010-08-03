@@ -15,11 +15,12 @@ import socket, threading, traceback
 import json
 from select import select
 from common.command import parse, parse_tokens, Command
-from common.vector import Vector
+from common.vector import Vector3
 from state import Initial, StateManager
 from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
+from ui.window import Window;
 
 import pygame
 from pygame.locals import *
@@ -81,7 +82,7 @@ class Network(threading.Thread):
 		self._s.send(str)
 
 class Client:
-	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
+	def __init__(self, resolution=Vector3(800,600), host='localhost', port=1234, split="\n"):
 		# opengl must be initialized first
 		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
@@ -91,7 +92,7 @@ class Client:
 		self._running = False
 		self._state = StateManager()
 		self._game = GameWidget(resolution)
-		self._state.push(GameState(resolution, self._game))
+		self._state.push(GameState(resolution, Window(Vector3(0,0,0), resolution, children=[self._game])))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
@@ -129,7 +130,7 @@ class Client:
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
-		self._state.resize(Vector(width, height))
+		self._state.resize(Vector3(width, height))
 	
 	def _flush_queue(self):
 		while True:
@@ -157,11 +158,11 @@ class Client:
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
-				self._state.on_mousemove(Vector(event.pos))
+				self._state.on_mousemove(Vector3(event.pos))
 			elif event.type == pygame.MOUSEBUTTONDOWN:
-				self._state.on_buttondown(Vector(event.pos), event.button)
+				self._state.on_buttondown(Vector3(event.pos), event.button)
 			elif event.type == pygame.MOUSEBUTTONUP:
-				self._state.on_buttonup(Vector(event.pos), event.button)
+				self._state.on_buttonup(Vector3(event.pos), event.button)
 			elif event.type == pygame.KEYDOWN:
 				pass
 			elif event.type == pygame.KEYUP:

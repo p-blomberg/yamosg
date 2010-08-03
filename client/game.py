@@ -4,7 +4,7 @@
 from copy import copy, deepcopy
 
 from ui import Widget
-from common.vector import Vector
+from common.vector import Vector3
 from common.rect import Rect
 
 import pygame
@@ -13,7 +13,7 @@ from OpenGL.GLU import *
 
 class GameWidget(Widget):
 	def __init__(self, size):
-		Widget.__init__(self, Vector(0,0,0), size)
+		Widget.__init__(self, Vector3(0,0,0), size)
 		self.entities = []
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
@@ -73,8 +73,8 @@ class GameWidget(Widget):
 		y = viewport[3]-point.y # [3] is the height of the viewport
 
 		# Get the min and max points
-		min = Vector(gluUnProject(x, y, 0, view, self._projection, viewport))
-		max = Vector(gluUnProject(x, y, 1, view, self._projection, viewport))
+		min = Vector3(gluUnProject(x, y, 0, view, self._projection, viewport))
+		max = Vector3(gluUnProject(x, y, 1, view, self._projection, viewport))
 
 		# This is a simplification of the general line-plane intersection.
 		# Since the plane normal is (0,0,1) and d=0, z is the only variable left.

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import entity
-from common.vector import Vector
+from common.vector import Vector3
 import hashlib
 
 class Player:
@@ -21,7 +21,7 @@ class Player:
 		# Credentials
 		self._password = password
 		
-		gateway = entity.Gateway(Vector(4,6,0), game, owner=self)
+		gateway = entity.Gateway(Vector3(4,6,0), game, owner=self)
 		
 		self.entities.append(gateway)
 		game.add_entity(gateway)

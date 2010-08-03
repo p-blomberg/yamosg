@@ -15,7 +15,7 @@ sys.path.append(root)
 from serversocket import ServerSocket
 import entity
 import player
-from common.vector import Vector
+from common.vector import Vector3
 from common.command import Command
 from common.transcoder import encoder, encoders
 from common import command
@@ -224,7 +224,7 @@ class Game:
 			self.add_player(player.Player(game=self, **d))
 		
 		# Create world
-		p=entity.Planet(Vector(30,30,0), 20, self)
+		p=entity.Planet(Vector3(30,30,0), 20, self)
 		cargo={
 			entity.CopperOre(container=p, owner=None, game=self): 600
 		}

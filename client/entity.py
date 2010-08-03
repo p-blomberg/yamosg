@@ -1,4 +1,4 @@
-from common.vector import Vector
+from common.vector import Vector3
 from OpenGL.GL import *
 import pygame
 
@@ -29,9 +29,9 @@ class Entity:
 	def __init__(self, Type, Id, Position, Cargo, Speed, Minable, Owner):
 		self._type = Type
 		self._id = Id
-		self.position = Vector(*Position)
+		self.position = Vector3(*Position)
 		self._cargo = Cargo
-		self._speed = Vector(*Speed)
+		self._speed = Vector3(*Speed)
 		self._minable = Minable
 		self._owner = Owner
 		self.sprite = 0
