@@ -164,9 +164,11 @@ class GameWidget(Widget):
 		self._panstart = self._unproject(pos)
 		self._panref = self._rect.copy()
 		self._panrefview = copy(self._view)
+		self.focus_lock()
 
 	def on_pan_stop(self, pos):
 		self._is_panning = False
+		self.focus_unlock()
 
 	def on_pan_move(self, pos):
 		rel = self._unproject(pos,self._panrefview) - self._panstart

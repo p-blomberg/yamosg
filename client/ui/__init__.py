@@ -13,6 +13,8 @@ class Widget:
 		self.width, self.height = size.xy()
 		self._format = format
 		self._filter = filter
+		self.parent = None
+		self._focus_lock = None
 		
 		self._fbo = glGenFramebuffers(1)
 		self._texture = glGenTextures(1)
@@ -34,6 +36,20 @@ class Widget:
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, self._texture, 0)
 		
 		self.unbind_fbo()
+	
+	def focus_lock(self, widget=None):
+		widget = widget or self
+		
+		if self.parent:
+			self.parent.focus_lock(widget)
+		
+		self._focus_lock = widget
+	
+	def focus_unlock(self):
+		self._focus_lock = None
+		
+		if self.parent:
+			self.parent.focus_unlock()
 	
 	def bind_fbo(self):
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, self._fbo)
@@ -65,6 +81,9 @@ class Widget:
 			Test if a point hits the object or not.
 			Return the widget that is hit, or None if there is no hit at all.
 		"""
+		
+		if self._focus_lock:
+			return self._focus_lock, self._focus_lock.project(point)
 		
 		if project:
 			point = self.project(point)

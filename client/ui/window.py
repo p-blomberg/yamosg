@@ -16,10 +16,12 @@ class Window(Widget):
 		if pos.y > self.height-self._bordersize - 20:
 			self._move = True
 			self._moveref = pos
+			self.focus_lock()
 	
 	def on_buttonup(self, pos, button):
 		self._move = False
 		self._moveref = None
+		self.focus_unlock()
 	
 	def on_mousemove(self, pos, buttons):
 		if self._move:
