@@ -12,7 +12,7 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 # add rootdir to pythonpath
 sys.path.append(root)
 
-from serversocket import ServerSocket
+from serversocket import ServerSocket, Connection
 import entity
 import player
 from common.vector import Vector3
@@ -37,102 +37,10 @@ def smart_truncate(content, length=100, suffix='...'):
 	else:
 		return content[:length].rsplit(' ', 1)[0] + suffix
 
-class Server(ServerSocket):
-	def __init__(self, host, port, split="\n", debug=False):
-		ServerSocket.__init__(self, host, port, 0, split, debug)
-		self.game=Game(split)
-		self.sockets=self._socketlist.copy()
+class Client (Connection):
+	def __init__(self, sock, server, game):
+		Connection.__init__(self, sock, server)
 		
-		# Server commands
-		self._commands = {
-			'CAPS': self._get_caps
-		}
-		
-		print "ready"
-		
-	def readCall(self, clientsocket, lines):
-		changed_sockets = self._socketlist - self.sockets
-		self.sockets=self._socketlist.copy()
-		for sock in changed_sockets:
-			if self.game.clients.has_key(sock):
-				del self.clients[sock]
-			else:
-				self.game.clients[sock]=Connection(self, sock, self.game)
-		
-		# Get client for this socket, or create new client if not previously
-		# connected.
-		try:
-			client = self.game.clients[clientsocket]
-		except KeyError:
-			client = Connection(clientsocket)
-			self.game.clients[clientsocket] = client
-		
-		# only get peer once, and before command (eg logout will disconnect socket)
-		peer = clientsocket.getpeername()
-		
-		# Call commands
-		for line in lines:
-			response = self._dispatch_command(client, line)
-			print '{peer} {line} -> {response}'.format(
-				peer=peer,
-				line=[line], 
-				response=[smart_truncate(str(response), length=50)])
-			
-			if response is not None:
-				self.write(clientsocket, [response + self._split])
-	
-	def _dispatch_command(self, client, line):
-		"""
-		Try to parse the line and dispatch the command to the relevant
-		destination (server or client).
-		"""
-		
-		# Try to parse the line
-		try:
-			counter, cmd, args = command.parse(line)
-		except Exception, e:
-			return '0 NOT_OK ' + str(e)
-		
-		# See if the server handles this command
-		func = self._commands.get(cmd, None)
-		
-		# Dispatch
-		if func is not None:
-			response = func(*args)
-		else:
-			response = client.command(cmd, args)
-		
-		# If the handler returned None, pass it directly. No data will be sent to the client.
-		if response is None:
-			return None
-			
-		# Generate full response
-		return '{id} {response}'.format(id=counter, response=response)
-
-	def _get_caps(self):
-		"""
-		Get this servers extended capabilities
-		"""
-		return {'ENCODERS': encoders()}
-	
-	def tick(self):
-		self.game.tick()
-
-	def main(self):
-		t=clock()
-		while True:
-			self.tick()
-			self.checkSockets()
-			new_time=clock()
-			st=(1.0/15)-(new_time-t)
-			if(st>0):
-				sleep(st)
-			t=new_time
-
-class Connection:
-	def __init__(self, server, socket, game):
-		self._server = server
-		self.socket=socket
 		self.game=game
 		self.player=None
 		self._encoder = encoder('plaintext')
@@ -163,9 +71,8 @@ class Connection:
 		# notify client
 		self.game.unicast(self, 'DISCONNECTED', message)
 		
-		# remove socket
-		del self.game.clients[self.socket]
-		self._server.disconnect(self.socket)
+		# actual disconnect
+		Connection.disconnect(self, message)
 	
 	def send(self, message):
 		try:
@@ -226,10 +133,112 @@ class Connection:
 			traceback.print_exc()
 			return 'NOT_OK "An unexpected error occured. Try again later."'
 
+class Server(ServerSocket):
+	def _create_client(self, sock, server):
+		return Client(sock, server, self.game)
+	
+	connection_object = _create_client
+	
+	def __init__(self, host, port, split="\n", debug=False):
+		ServerSocket.__init__(self, host, port, 0, split, debug)
+		self._split = split
+		self.game=Game(self)
+		
+		# Server commands
+		self._commands = {
+			'CAPS': self._get_caps
+		}
+		
+		print "ready"
+	
+	def unicast(self, connection, command, *args):
+		""" Send a message to a specific client """
+		cmd = Command(command, *args, id='UNICAST')
+		connection.write(str(cmd) + self._split)
+	
+	def broadcast(self, command, *args):
+		""" Send a message to all connected clients """
+		cmd = Command(command, *args, id='BROADCAST')
+		for client in self.clients():
+			client.write(str(cmd) + self._split)
+	
+	def new_connection(self, client):
+		self.unicast(client , 'Hello')
+	
+	def lost_connection(self, client, message):
+		p = client.player
+		
+		if p is not None:
+			# forced disconnect
+			
+			p.logout(disconnected=True)
+			
+			# Send info to all players
+			self.broadcast('USER_LOGOUT', p.id, p.name)
+		
+		print '{peer} disconnected: {message}'.format(peer=client.peer, message=message)
+	
+	def readCall(self, client, line):
+		response = self._dispatch_command(client, line)
+		print '{peer} {line} -> {response}'.format(
+			peer=client.peer,
+			line=[line], 
+			response=response and [smart_truncate(str(response), length=50)]) or None
+		
+		if response is not None:
+			client.write(response + self._split)
+	
+	def _dispatch_command(self, client, line):
+		"""
+		Try to parse the line and dispatch the command to the relevant
+		destination (server or client).
+		"""
+		
+		# Try to parse the line
+		try:
+			counter, cmd, args = command.parse(line)
+		except Exception, e:
+			return '0 NOT_OK ' + str(e)
+		
+		# See if the server handles this command
+		func = self._commands.get(cmd, None)
+		
+		# Dispatch
+		if func is not None:
+			response = func(*args)
+		else:
+			response = client.command(cmd, args)
+		
+		# If the handler returned None, pass it directly. No data will be sent to the client.
+		if response is None:
+			return None
+			
+		# Generate full response
+		return '{id} {response}'.format(id=counter, response=response)
+
+	def _get_caps(self):
+		"""
+		Get this servers extended capabilities
+		"""
+		return {'ENCODERS': encoders()}
+	
+	def tick(self):
+		self.game.tick()
+
+	def main(self):
+		t=clock()
+		while True:
+			self.tick()
+			self.checkSockets()
+			new_time=clock()
+			st=(1.0/15)-(new_time-t)
+			if(st>0):
+				sleep(st)
+			t=new_time
+
 class Game:
-	def __init__(self, split):
-		self._split=split
-		self.clients={}
+	def __init__(self, server):
+		self._server=server
 		self._players={}  # all players in the world. 
 		self._entities={} # all entities in the world.
 		self.tick_counter=0
@@ -259,6 +268,12 @@ class Game:
 		}
 		p.cargo=cargo
 		self.add_entity(p)
+	
+	def unicast(self, client, command, *args):
+		self._server.unicast(client, command, *args)
+	
+	def broadcast(self, command, *args):
+		self._server.broadcast(command, *args)
 	
 	def add_entity(self, ent):
 		"""
@@ -371,17 +386,6 @@ class Game:
 		"""
 		
 		return self._players.get(username, None)
-	
-	def unicast(self, connection, command, *args):
-		""" Send a message to a specific client """
-		cmd = Command(command, *args, id='UNICAST')
-		connection.send(str(cmd) + self._split)
-	
-	def broadcast(self, command, *args):
-		""" Send a message to all connected clients """
-		cmd = Command(command, *args, id='BROADCAST')
-		for c in self.clients.values():
-			c.send(str(cmd) + self._split)
 
 	def tick(self):
 		self.tick_counter+=1

@@ -91,15 +91,18 @@ class Player:
 		self._client = client
 		return True
 	
-	def logout(self):
+	def logout(self, disconnected=False):
 		"""
 		Logout a player.
+		@param disconnected If the server forces the logout due to a disconnect.: 
 		"""
 		
 		if self._client is None:
 			raise RuntimeError, 'Invalid player state for logout'
 		
-		self._client.disconnect('Logged out')
+		if disconnected == False:
+			self._client.disconnect('Logged out')
+		
 		self._client = None
 	
 	def is_online(self):

@@ -15,148 +15,161 @@ import errno
 def have_trailing_newline(line):
 	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
 
-class ServerSocket:
-	def __init__(self, host, port, timeout=30, split="\n", debug=False):
-		signal.signal(signal.SIGINT,self.quit)
-		self._timeout=timeout
-		self._split=split
-		self._debug = debug
-
-		self._socketlist=set()
-		self._socketwrite=dict()
-		self._socketinbuf=dict()
-
-		self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self._socket.bind((host, port))
-		self._socket.listen(5)
-		self._socketlist.add(self._socket)
-
-
-	def checkSockets(self):
-		try:
-			(read, write, error)=select.select(self._socketlist, self._socketwrite.keys(), self._socketlist, self._timeout)
-			if self._debug: print read, write, error
-
-			if self._socket in read:
-				(clientsocket, address) = self._socket.accept()
-				if self._debug: print address
-				clientsocket.setblocking(False)
-				self._socketlist.add(clientsocket)
-				read.remove(self._socket)
-				self.write(clientsocket,"UNICAST Hello"+self._split)
-
-			for socket_ in write:
-				self.flush(socket_)
-
-			for socket_ in read:
-				try:
-					# if the previous recv only got a partial line it was
-					# stored and will be appended to this recv.
-					head = self._socketinbuf.pop(socket_, '')
-					data = head + socket_.recv(8192)
-				except socket.error:
-					print 'socket unexpectedly closed'
-					self._socketlist.remove(socket_)
-					continue
-
-				if not data:
-					try:
-						socket_.close()
-					finally:
-						self._socketlist.remove(socket_)
-					continue
-
-				lines = data.splitlines()
-				
-				# store tail
-				if not have_trailing_newline(data):
-					tail = lines.pop()
-					self._socketinbuf[socket_] = tail
-				
-				if self._debug:
-					if self._socketinbuf[socket_]:
-						print ">>> halva rader"
-					else:
-						print ">>> hela rader"
-
-				if self._debug:
-					for line in lines:
-						print time.ctime(), socket_.getpeername(), "in", line.strip()
-
-				if lines: self.readCall(socket_, lines)
-
-			for socket_ in error:
-				try:
-					socket_.shutdown(socket.SHUT_RDWR)
-				finally:
-					self._socketlist.remove(socket_)
-		except SystemExit:
-			raise
-		except socket.error:
-			raise
-		except:
-			traceback.print_exc()
-
-	def readCall(self, clientsocket, lines):
-		raise NotImplemented
-
-	def write(self, target, lines):
-		if target != "all":
-			recipients=[target]
-		else:
-			recipients=self._socketlist ^ set([self._socket])
-			
-		for recipient in recipients:
-			if not self._socketwrite.has_key(recipient):
-				self._socketwrite[recipient]=collections.deque()
-			self._socketwrite[recipient].extend(lines)
+class Connection:
+	def __init__(self, sock, server):
+		self._socket = sock
+		self.peer    = sock.getpeername()
+		self._server = server
+		
+		self._writequeue = []
+		self._readbuffer = ''
 	
-	def flush(self, sock):
+	def fileno(self):
+		""" So the instances fits to select """
+		return self._socket.fileno()
+	
+	def disconnect(self, message):
+		try:
+			self._flush()
+		except socket.error:
+			# there is nothing to be done, this cannot be handled
+			pass
+		
+		try:
+			self._socket.shutdown(socket.SHUT_RDWR)
+		except socket.error:
+			pass
+		
+		self._server._del_client(self, message)
+	
+	def write(self, chunk):
+		self._writequeue.append(chunk)
+	
+	def _read(self):
+		try:
+			data = self._socket.recv(8192)
+		except socket.error:
+			self.disconnect('socket unexpectedly closed')
+			return
+		
+		if not data:
+			self.disconnect('socket unexpectedly closed')
+			return
+		
+		# if the previous recv only got a partial line it was
+		# stored and will be appended to this recv.
+		if self._readbuffer:
+			data = self._readbuffer + data
+			self._readbuffer = None
+
+		lines = data.splitlines()
+		
+		# store tail
+		if not have_trailing_newline(data):
+			tail = lines.pop()
+			self._readbuffer = tail
+
+		for line in lines:
+			yield line
+	
+	def _flush(self):
 		""" Send all queued data for socket """
 		
-		queue = self._socketwrite.pop(sock, [])
-		
-		for element in queue:
+		for element in self._writequeue:
 			size = len(element)
 			while size > 0:
 				try:
-					sent = sock.send(element)
+					sent = self._socket.send(element)
 					element = element[sent:]
 					size -= sent
 				except socket.error, e:
 					if e.errno == errno.EAGAIN:
 						continue
 					raise
+		
+		self._writequeue = []
+
+class ServerSocket:
+	connection_object = Connection
 	
-	def disconnect(self, sock):
-		self.flush(sock)
+	def __init__(self, host, port, timeout=30, split="\n", debug=False):
+		signal.signal(signal.SIGINT,self.quit)
+		self._timeout=timeout
+
+		# connected clients
+		self._clients = []
+
+		# listen socket
+		self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self._socket.bind((host, port))
+		self._socket.listen(5)
+	
+	def new_connection(self, connection):
+		""" Called when a new connection has been accepted """
+		pass # do nothing
+	
+	def lost_connection(self, connection):
+		""" Called when a connection is lost (expected or not) """
+		pass # do nothing
+	
+	def _add_client(self, sock):
+		# create new connection object
+		connection = self.connection_object(sock, self)
 		
+		# store and notify
+		self._clients.append(connection)
+		self.new_connection(connection)
+	
+	def _del_client(self, connection, reason=None):
+		self._clients.remove(connection)
+		self.lost_connection(connection, reason)
+	
+	def clients(self):
+		for client in self._clients:
+			yield client
+
+	def checkSockets(self):
 		try:
-			sock.shutdown(socket.SHUT_RDWR)
-		except socket.error:
-			pass
+			(read, write, error)=select.select([self._socket] + self._clients, self._clients, self._clients, self._timeout)
+
+			# see if listen socket is ready to accept
+			if self._socket in read:
+				# add client
+				(clientsocket, address) = self._socket.accept()
+				self._add_client(clientsocket)
+				
+				# remove listen socket from ready list
+				read.remove(self._socket)
+
+			# Flush all clients that are ready.
+			for client in write:
+				client._flush()
+
+			# Read data from clients that have sent data
+			for client in read:
+				for line in client._read():
+					self.readCall(client, line)
+			
+			# Socket exceptions
+			for client in error:
+				client.disconnect('socket exception')
 		
-		self._socketlist.remove(sock)
-		
+		except SystemExit:
+			raise
+		except:
+			traceback.print_exc()
+
+	def readCall(self, clientsocket, lines):
+		raise NotImplemented
+	
 	def quit(self, signr, frame):
-		for socket_ in self._socketlist:
-			try:
-				socket_.shutdown(socket.SHUT_RDWR)
-			except: pass
-			try:
-				socket_.close()
-			except: pass
+		for client in self.clients():
+			client.disconnect('server shutting down')
+		
 		try:
 			self._socket.close()
-		except: pass
+		except:
+			pass
+		
 		sys.exit()
-
-if __name__ == "__main__":
-	class EchoServer(ServerSocket):
-		def readCall(self, clientsocket, lines):
-			if self._debug: print clientsocket, lines
-			self.write(clientsocket, [a+self._split for a in lines])
-
-	s=EchoServer("0.0.0.0", 1234, 5, debug=True)
-	s.main()
