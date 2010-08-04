@@ -75,7 +75,7 @@ class Widget:
 		if point.x > self.width or point.y > self.height:
 			return None
 		
-		return self
+		return self, point
 
 	def on_resize(self, size):
 		self.size = size
@@ -93,8 +93,7 @@ class Widget:
 		pass
 	
 	def _impl_on_button(self, pos, button, state):
-		projection = self.project(pos)
-		hit = self.hit_test(projection, False)
+		hit, projection = self.hit_test(pos)
 		
 		if hit:
 			if state:
@@ -103,8 +102,7 @@ class Widget:
 				hit.on_buttonup(projection, button)
 	
 	def _impl_on_mousemove(self, pos, buttons):
-		projection = self.project(pos)
-		hit = self.hit_test(projection, False)
+		hit, projection = self.hit_test(pos)
 		
 		if hit:
 			hit.on_mousemove(projection, buttons)
@@ -123,6 +121,8 @@ class Widget:
 	def display(self):
 		self.bind_texture()
 		glColor4f(1,1,1,1)
+		
+		glTranslatef(self.pos.x, self.pos.y, 0.0)
 		
 		glBegin(GL_QUADS)
 		glTexCoord2f(0, 0)

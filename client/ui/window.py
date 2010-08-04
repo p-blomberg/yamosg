@@ -7,29 +7,22 @@ from OpenGL.GL import *
 from copy import copy
 
 class Window(Widget):
-	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
+	def __init__(self, position, size, format=GL_RGB8, *args, **kwargs):
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
-		self._children = copy(children) # shallow copy
+		self._move = False
 	
-	def get_children(self):
-		return self._children
+	def on_buttondown(self, pos, button):
+		self._move = True
+		self._moveref = pos
 	
-	def hit_test(self, point, project=True):
-		if project:
-			point = self.project(point)
+	def on_buttonup(self, pos, button):
+		self._move = False
+		self._moveref = None
+	
+	def on_mousemove(self, pos, buttons):
+		if self._move:
+			self.pos -= self._moveref - pos
 		
-		for x in self._children:
-			hit = x.hit_test(point, False)
-			if hit:
-				return hit
-		
-		return Widget.hit_test(point, False)
-	
 	def do_render(self):
 		glClearColor(0,0.5,1,1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-		
-		for x in self._children:
-			glPushMatrix()
-			x.display()
-			glPopMatrix()

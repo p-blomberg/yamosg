@@ -69,8 +69,10 @@ class GameWidget(Widget):
 		viewport = glGetInteger(GL_VIEWPORT)
 
 		# The view is flipped, so Y must be flipped again.
+		# NO YOU!!
 		x = point.x
-		y = viewport[3]-point.y # [3] is the height of the viewport
+		y = point.y
+		#y = viewport[3]-point.y # [3] is the height of the viewport
 
 		# Get the min and max points
 		min = Vector3(gluUnProject(x, y, 0, view, self._projection, viewport))

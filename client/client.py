@@ -20,7 +20,8 @@ from state import Initial, StateManager
 from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
-from ui.window import Window;
+from ui.container import Container
+from ui.window import Window
 
 import pygame
 from pygame.locals import *
@@ -88,11 +89,12 @@ class Client:
 		pygame.display.set_caption('yamosg')
 		setup_opengl()
 		
+		self._resolution = resolution
 		self._split = split
 		self._running = False
 		self._state = StateManager()
 		self._game = GameWidget(resolution)
-		self._state.push(GameState(resolution, Window(Vector2i(0,0), resolution, children=[self._game])))
+		self._state.push(GameState(resolution, Container(Vector2i(0,0), resolution, children=[self._game, Window(Vector2i(100,100), Vector2i(100,100))])))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
@@ -124,6 +126,7 @@ class Client:
 				traceback.print_exc()
 	
 	def _resize(self, resolution):
+		self._resolution = resolution
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 		glOrtho(0, resolution.width, 0, resolution.height, -1.0, 1.0);
@@ -158,11 +161,17 @@ class Client:
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
-				self._state.on_mousemove(Vector2i(event.pos))
+				pos = Vector2i(event.pos)
+				pos.y = self._resolution.height - pos.y
+				self._state.on_mousemove(pos)
 			elif event.type == pygame.MOUSEBUTTONDOWN:
-				self._state.on_buttondown(Vector2i(event.pos), event.button)
+				pos = Vector2i(event.pos)
+				pos.y = self._resolution.height - pos.y
+				self._state.on_buttondown(pos, event.button)
 			elif event.type == pygame.MOUSEBUTTONUP:
-				self._state.on_buttonup(Vector2i(event.pos), event.button)
+				pos = Vector2i(event.pos)
+				pos.y = self._resolution.height - pos.y
+				self._state.on_buttonup(pos, event.button)
 			elif event.type == pygame.KEYDOWN:
 				pass
 			elif event.type == pygame.KEYUP:
