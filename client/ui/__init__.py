@@ -35,6 +35,8 @@ class Widget:
 		
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, self._texture, 0)
 		
+		glBindTexture(GL_TEXTURE_2D, 0)
+		
 		self.unbind_fbo()
 	
 	def focus_lock(self, widget=None):
