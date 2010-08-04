@@ -63,6 +63,12 @@ class Client (Connection):
 			'ENCODER': self._set_encoder
 		}
 	
+	def peer(self):
+		if self.player:
+			return str(Connection.peer(self)) + '::' + self.player.name
+		else:
+			return str(Connection.peer(self))
+	
 	def disconnect(self, message='Disconnected'):
 		"""
 		Force a client to disconnect.
@@ -176,12 +182,12 @@ class Server(ServerSocket):
 			# Send info to all players
 			self.broadcast('USER_LOGOUT', p.id, p.name)
 		
-		print '{peer} disconnected: {message}'.format(peer=client.peer, message=message)
+		print '{peer} disconnected: {message}'.format(peer=client.peer(), message=message)
 	
 	def readCall(self, client, line):
 		response = self._dispatch_command(client, line)
 		print '{peer} {line} -> {response}'.format(
-			peer=client.peer,
+			peer=client.peer(),
 			line=[line], 
 			response=response and [smart_truncate(str(response), length=50)]) or None
 		

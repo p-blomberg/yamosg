@@ -18,11 +18,14 @@ def have_trailing_newline(line):
 class Connection:
 	def __init__(self, sock, server):
 		self._socket = sock
-		self.peer    = sock.getpeername()
+		self._peer   = sock.getpeername()
 		self._server = server
 		
 		self._writequeue = []
 		self._readbuffer = ''
+	
+	def peer(self):
+		return self._peer
 	
 	def fileno(self):
 		""" So the instances fits to select """
