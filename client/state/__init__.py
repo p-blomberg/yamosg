@@ -9,7 +9,11 @@ class State:
 		self._root = root
 		self.size = self.width, self.height = size.xy()
 		self.button = [False] * 12 # assume 12 buttons @todo query or something
-		
+	
+	def resize(self, size):
+		self.size = self.width, self.height = size.xy()
+		self._root.on_resize(size)
+
 	def render(self):
 		glClearColor(0,1,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -17,26 +21,23 @@ class State:
 		if self._root is None:
 			return
 		
+		# store matrices
+		glMatrixMode(GL_PROJECTION)
 		glPushMatrix()
+		glMatrixMode(GL_MODELVIEW)
+		glPushMatrix()
+		
+		# render root UI element
 		self._root.render()
+		
+		# restore matrices
 		glPopMatrix()
+		glMatrixMode(GL_PROJECTION)
+		glPopMatrix()
+		glMatrixMode(GL_MODELVIEW)
 		
-		glColor4f(1,1,1,1)
-		self._root.bind_texture()
-		
-		glBegin(GL_QUADS)
-		glTexCoord2f(0, 1)
-		glVertex2f(0, 0)
-		
-		glTexCoord2f(0, 0)
-		glVertex2f(0, self.height)
-		
-		glTexCoord2f(1, 0)
-		glVertex2f(self.width, self.height)
-		
-		glTexCoord2f(1, 1)
-		glVertex2f(self.width, 0)
-		glEnd()
+		# display root UI element
+		self._root.display()
 		
 		glBindTexture(GL_TEXTURE_2D, 0)
 

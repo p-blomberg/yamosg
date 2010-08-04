@@ -12,10 +12,10 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 # add rootdir to pythonpath
 sys.path.append(root)
 
-from serversocket import ServerSocket
+from serversocket import ServerSocket, Connection
 import entity
 import player
-from common.vector import Vector
+from common.vector import Vector3
 from common.command import Command
 from common.transcoder import encoder, encoders
 from common import command
@@ -26,6 +26,9 @@ import json
 class CommandError (Exception):
 	pass
 
+class NoData (Exception):
+	pass
+
 def smart_truncate(content, length=100, suffix='...'):
 	# Based on implementation found at:
 	# http://stackoverflow.com/questions/250357/smart-truncate-in-python
@@ -34,92 +37,10 @@ def smart_truncate(content, length=100, suffix='...'):
 	else:
 		return content[:length].rsplit(' ', 1)[0] + suffix
 
-class Server(ServerSocket):
-	def __init__(self, host, port, split="\n", debug=False):
-		ServerSocket.__init__(self, host, port, 0, split, debug)
-		self.game=Game(split)
-		self.sockets=self._socketlist.copy()
+class Client (Connection):
+	def __init__(self, sock, server, game):
+		Connection.__init__(self, sock, server)
 		
-		# Server commands
-		self._commands = {
-			'CAPS': self._get_caps
-		}
-		
-		print "ready"
-		
-	def readCall(self, clientsocket, lines):
-		changed_sockets = self._socketlist - self.sockets
-		self.sockets=self._socketlist.copy()
-		for sock in changed_sockets:
-			if self.game.clients.has_key(sock):
-				del self.clients[sock]
-			else:
-				self.game.clients[sock]=Connection(sock, self.game)
-		
-		# Get client for this socket, or create new client if not previously
-		# connected.
-		try:
-			client = self.game.clients[clientsocket]
-		except KeyError:
-			client = Connection(clientsocket)
-			self.game.clients[clientsocket] = client
-		
-		# Call commands
-		for line in lines:
-			response = self._dispatch_command(client, line)
-			print '{peer} {line} -> {response}'.format(
-				peer=clientsocket.getpeername(),
-				line=[line], 
-				response=[smart_truncate(response, length=50)])
-			self.write(clientsocket, [response + self._split])
-	
-	def _dispatch_command(self, client, line):
-		"""
-		Try to parse the line and dispatch the command to the relevant
-		destination (server or client).
-		"""
-		
-		# Try to parse the line
-		try:
-			counter, cmd, args = command.parse(line)
-		except Exception, e:
-			return '0 NOT_OK ' + str(e)
-		
-		# See if the server handles this command
-		func = self._commands.get(cmd, None)
-		
-		# Dispatch
-		if func is not None:
-			response = func(*args)
-		else:
-			response = client.command(cmd, args)
-		
-		# Generate full response
-		return '{id} {response}'.format(id=counter, response=response)
-
-	def _get_caps(self):
-		"""
-		Get this servers extended capabilities
-		"""
-		return {'ENCODERS': encoders()}
-	
-	def tick(self):
-		self.game.tick()
-
-	def main(self):
-		t=clock()
-		while True:
-			self.tick()
-			self.checkSockets()
-			new_time=clock()
-			st=(1.0/15)-(new_time-t)
-			if(st>0):
-				sleep(st)
-			t=new_time
-
-class Connection:
-	def __init__(self, socket, game):
-		self.socket=socket
 		self.game=game
 		self.player=None
 		self._encoder = encoder('plaintext')
@@ -128,6 +49,7 @@ class Connection:
 		self._commands = {
 			'SET': self._set_prop,
 			"LOGIN": self.game.login,
+			"LOGOUT": self.game.logout,
 			"PING": self.ping,
 			"PLAYERINFO": self.game.playerinfo,
 			"NEWUSER": self.game.NewUser,
@@ -141,14 +63,31 @@ class Connection:
 			'ENCODER': self._set_encoder
 		}
 	
+	def peer(self):
+		if self.player:
+			return str(Connection.peer(self)) + '::' + self.player.name
+		else:
+			return str(Connection.peer(self))
+	
 	def disconnect(self, message='Disconnected'):
 		"""
 		Force a client to disconnect.
 		"""
 		
-		self.game.unicast(self.socket, 'DISCONNECTED', message)
-		self.socket.shutdown(socket.SHUT_RDWR)
+		# notify client
+		self.game.unicast(self, 'DISCONNECTED', message)
+		
+		# actual disconnect
+		Connection.disconnect(self, message)
 	
+	def send(self, message):
+		try:
+
+			self.socket.send(message)
+		except socket.error:
+			traceback.print_exc()
+			self._server.disconnect(self.socket)
+		
 	def _set_prop(self, connection, key, value):
 		if key not in self._props:
 			raise CommandError, 'Invalid property'
@@ -187,6 +126,9 @@ class Connection:
 			# command contained an error which was handled by server and
 			# contains a message to info the user about it.
 			return 'NOT_OK "%s"' % str(e)
+		except NoData:
+			# the client has been disconnected. Don't reply.
+			return None
 		except TypeError, e:
 			# command didn't pass enought parameters.
 			traceback.print_exc()
@@ -197,10 +139,112 @@ class Connection:
 			traceback.print_exc()
 			return 'NOT_OK "An unexpected error occured. Try again later."'
 
+class Server(ServerSocket):
+	def _create_client(self, sock, server):
+		return Client(sock, server, self.game)
+	
+	connection_object = _create_client
+	
+	def __init__(self, host, port, split="\n", debug=False):
+		ServerSocket.__init__(self, host, port, 0, split, debug)
+		self._split = split
+		self.game=Game(self)
+		
+		# Server commands
+		self._commands = {
+			'CAPS': self._get_caps
+		}
+		
+		print "ready"
+	
+	def unicast(self, connection, command, *args):
+		""" Send a message to a specific client """
+		cmd = Command(command, *args, id='UNICAST')
+		connection.write(str(cmd) + self._split)
+	
+	def broadcast(self, command, *args):
+		""" Send a message to all connected clients """
+		cmd = Command(command, *args, id='BROADCAST')
+		for client in self.clients():
+			client.write(str(cmd) + self._split)
+	
+	def new_connection(self, client):
+		self.unicast(client , 'Hello')
+	
+	def lost_connection(self, client, message):
+		p = client.player
+		
+		if p is not None:
+			# forced disconnect
+			
+			p.logout(disconnected=True)
+			
+			# Send info to all players
+			self.broadcast('USER_LOGOUT', p.id, p.name)
+		
+		print '{peer} disconnected: {message}'.format(peer=client.peer(), message=message)
+	
+	def readCall(self, client, line):
+		response = self._dispatch_command(client, line)
+		print '{peer} {line} -> {response}'.format(
+			peer=client.peer(),
+			line=[line], 
+			response=response and [smart_truncate(str(response), length=50)]) or None
+		
+		if response is not None:
+			client.write(response + self._split)
+	
+	def _dispatch_command(self, client, line):
+		"""
+		Try to parse the line and dispatch the command to the relevant
+		destination (server or client).
+		"""
+		
+		# Try to parse the line
+		try:
+			counter, cmd, args = command.parse(line)
+		except Exception, e:
+			return '0 NOT_OK ' + str(e)
+		
+		# See if the server handles this command
+		func = self._commands.get(cmd, None)
+		
+		# Dispatch
+		if func is not None:
+			response = func(*args)
+		else:
+			response = client.command(cmd, args)
+		
+		# If the handler returned None, pass it directly. No data will be sent to the client.
+		if response is None:
+			return None
+			
+		# Generate full response
+		return '{id} {response}'.format(id=counter, response=response)
+
+	def _get_caps(self):
+		"""
+		Get this servers extended capabilities
+		"""
+		return {'ENCODERS': encoders()}
+	
+	def tick(self):
+		self.game.tick()
+
+	def main(self):
+		t=clock()
+		while True:
+			self.tick()
+			self.checkSockets()
+			new_time=clock()
+			st=(1.0/15)-(new_time-t)
+			if(st>0):
+				sleep(st)
+			t=new_time
+
 class Game:
-	def __init__(self, split):
-		self._split=split
-		self.clients={}
+	def __init__(self, server):
+		self._server=server
 		self._players={}  # all players in the world. 
 		self._entities={} # all entities in the world.
 		self.tick_counter=0
@@ -224,12 +268,18 @@ class Game:
 			self.add_player(player.Player(game=self, **d))
 		
 		# Create world
-		p=entity.Planet(Vector(30,30,0), 20, self)
+		p=entity.Planet(Vector3(30,30,0), 20, self)
 		cargo={
 			entity.CopperOre(container=p, owner=None, game=self): 600
 		}
 		p.cargo=cargo
 		self.add_entity(p)
+	
+	def unicast(self, client, command, *args):
+		self._server.unicast(client, command, *args)
+	
+	def broadcast(self, command, *args):
+		self._server.broadcast(command, *args)
 	
 	def add_entity(self, ent):
 		"""
@@ -342,20 +392,6 @@ class Game:
 		"""
 		
 		return self._players.get(username, None)
-	
-	def unicast(self, socket, command, *args):
-		""" Send a message to a specific client """
-		cmd = Command(command, *args, id='UNICAST')
-		socket.send(str(cmd) + self._split)
-	
-	def broadcast(self, command, *args):
-		""" Send a message to all connected clients """
-		cmd = Command(command, *args, id='BROADCAST')
-		for c in self.clients.keys():
-			try:
-				c.send(str(cmd) + self._split)
-			except socket.error:
-				del self.clients[c]
 
 	def tick(self):
 		self.tick_counter+=1
@@ -402,7 +438,7 @@ class Game:
 
 	def Players(self, connection):
 		# dict comprehensions are not introduced until 2.7 =/
-		return dict([(p.id, p.name) for p in self._players.values()])
+		return dict([(p.id, p.name) for p in self._players.values() if p.is_online()])
 
 	def login(self, connection, name, passwd):
 		p = self.player_by_username(name)
@@ -418,6 +454,23 @@ class Game:
 		self.broadcast('USER_LOGIN', p.id, p.name)
 		
 		return "OK ID=%d" % (p.id)
+	
+	def logout(self, connection):
+		p = connection.player
+		
+		if p is None:
+			# @TODO should still disconnect socket
+			raise CommandError, 'Not logged in'
+		
+		# logout
+		p.logout()
+		
+		# Send info to all players
+		self.broadcast('USER_LOGOUT', p.id, p.name)
+		
+		# This is kind of hackish, but it assures that no reply is passed to
+		# the (now) disconnected peer.
+		raise NoData
 
 	def EntAction(self, connection, id, action, *args):
 		ent = self.entity_by_id(id)

@@ -7,6 +7,9 @@ class Rect:
 		self.y = float(y)
 		self.w = float(w)
 		self.h = float(h)
-	
+
+	def copy(self):
+		return Rect(self.x, self.y, self.w, self.h)
+
 	def __str__(self):
-		return '<Rect %.3f %.3f %.3f %.3f>' % (self.x, self.y, self.w, self.h)
+		return '<Rect (%.3f %.3f %.3f %.3f)>' % (self.x, self.y, self.w, self.h)

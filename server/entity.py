@@ -1,4 +1,4 @@
-from common.vector import Vector
+from common.vector import Vector3
 from copy import copy
 import json
 
@@ -20,7 +20,7 @@ class Entity:
 		
 		self.position=position
 		self.game=game
-		self.speed=Vector(0,0,0)
+		self.speed=Vector3(0,0,0)
 		self.cargo = {}
 		self.actions = {
 			'GO': self.go
@@ -104,7 +104,7 @@ class Entity:
 
 	def go(self, params):
 		print params
-		speed=Vector(params[0], params[1], params[2])
+		speed=Vector3(params[0], params[1], params[2])
 		if(speed.length() > self.max_speed):
 			return "NOT_OK: Max speed for "+self.__class__.__name__+" is "+str(self.max_speed)
 		self.speed=speed
@@ -179,11 +179,11 @@ class Miner(Ship):
 		return "OK"
 
 	def go_to_planet(self):
-		self.position=Vector(30, 9.6, 0)
+		self.position=Vector3(30, 9.6, 0)
 		return "OK"
 	
 	def go_to_gateway(self):
-		self.position=Vector(4, 6, 0)
+		self.position=Vector3(4, 6, 0)
 		return "OK"
 
 	def mine(self, entity):

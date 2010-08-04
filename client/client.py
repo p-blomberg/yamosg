@@ -12,20 +12,21 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 sys.path.append(root)
 
 import socket, threading, traceback
+import json
 from select import select
 from common.command import parse, parse_tokens, Command
-from common.vector import Vector
-from common.rect import Rect
+from common.vector import Vector2i, Vector3
 from state import Initial, StateManager
 from entity import Entity
-from ui import Widget
 from state.game import Game as GameState
+from game import GameWidget
+from ui.container import Container
+from ui.window import Window
 
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
-from OpenGL.GLU import *
-import json
+
 
 def expose(func):
 	""" Exposes a method, eg is callable by server """
@@ -43,6 +44,11 @@ def server_call(alias):
 def setup_opengl():
 	glClearColor(1,0,1,0)
 	glEnable(GL_TEXTURE_2D)
+	
+	glEnable(GL_BLEND);
+	#glDisable(GL_ALPHA_TEST);
+	#glDisable(GL_DEPTH_TEST);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 def have_trailing_newline(line):
 	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
@@ -76,102 +82,27 @@ class Network(threading.Thread):
 	def send(self, str):
 		self._s.send(str)
 
-class Game(Widget):
-	def __init__(self, size):
-		Widget.__init__(self, Vector(0,0,0), size)
-		self.entities = []
-		self._scale = 1.0
-		self._rect = Rect(0,0,0,0)
-		self._panstart = None # position where the panning has started
-		self._panref = None
-		
-		self._calc_rect()
-	
-	def _calc_rect(self):
-		self._rect.w = self.size.x * self._scale
-		self._rect.h = self.size.y * self._scale
-		print self._rect
-	
-	def on_buttondown(self, pos, button):
-		if button == 1:
-			for e in self.entities:
-				if pos.x < e.position.x or pos.y < e.position.y:
-					continue
-				
-				if pos.x > e.position.x + 50 or pos.y > e.position.y + 50:
-					continue
-				
-				print e
-				break
-		elif button == 3:
-			self._panstart = pos
-			self._panref = self._rect.copy()
-		elif button == 4:
-			if self._scale > 0.2:
-				self.on_zoom(-0.1)
-		elif button == 5:
-			self.on_zoom(0.1)
-	
-	def on_mousemove(self, pos, buttons):
-		if buttons[3]:
-			rel = pos - self._panstart
-			self._rect.x = self._panref.x - rel.x
-			self._rect.y = self._panref.y - rel.y
-			print self._rect
-	
-	def on_zoom(self, amount):
-		self._scale += amount
-		self._calc_rect()
-	
-	def do_render(self):
-		glClearColor(0,0,1,0)
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-		# camera
-		glTranslate(-self._rect.x, -self._rect.y, 0.0)
-		
-		for e in self.entities:
-			glPushMatrix()
-			glTranslate(e.position.x, e.position.y, e.position.z)
-			
-			glColor4f(1,0,1,1)
-			glBegin(GL_QUADS)
-			glTexCoord2f(0, 1)
-			glVertex2f(0, 0)
-			
-			glTexCoord2f(0, 0)
-			glVertex2f(0, 50)
-			
-			glTexCoord2f(1, 0)
-			glVertex2f(50, 50)
-			
-			glTexCoord2f(1, 1)
-			glVertex2f(50, 0)
-			glEnd()
-			
-			glPopMatrix()
-		
-		self.invalidate()
-
 class Client:
-	def __init__(self, resolution=Vector(800,600), host='localhost', port=1234, split="\n"):
+	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
 		# opengl must be initialized first
-		self._screen = pygame.display.set_mode((int(resolution.x),int(resolution.y)), OPENGL|DOUBLEBUF|RESIZABLE)
-		self._resize(resolution.x, resolution.y)
+		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
-		
 		setup_opengl()
 		
+		self._resolution = resolution
 		self._split = split
 		self._running = False
 		self._state = StateManager()
-		self._game = Game(resolution)
-		self._state.push(GameState(resolution, self._game))
+		self._game = GameWidget(resolution)
+		self._state.push(GameState(resolution, Container(Vector2i(0,0), resolution, children=[self._game, Window(Vector2i(100,100), Vector2i(320,240))])))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
+
+		# resizing must be done after state has been created so the event is propagated proper.
+		self._resize(resolution)
 	
 	def quit(self):
 		self._running = False
@@ -194,14 +125,15 @@ class Client:
 			except:
 				traceback.print_exc()
 	
-	def _resize(self, width, height):
+	def _resize(self, resolution):
+		self._resolution = resolution
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		glOrtho(0, width, 0, height, -1.0, 1.0);
-		glScalef(1, -1.0, 1);
-		glTranslatef(0, -height, 0);
+		glOrtho(0, resolution.width, 0, resolution.height, -1.0, 1.0);
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
+
+		self._state.resize(resolution)
 	
 	def _flush_queue(self):
 		while True:
@@ -229,11 +161,17 @@ class Client:
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
-				self._state.on_mousemove(Vector(event.pos))
+				pos = Vector2i(event.pos)
+				pos.y = self._resolution.height - pos.y
+				self._state.on_mousemove(pos)
 			elif event.type == pygame.MOUSEBUTTONDOWN:
-				self._state.on_buttondown(Vector(event.pos), event.button)
+				pos = Vector2i(event.pos)
+				pos.y = self._resolution.height - pos.y
+				self._state.on_buttondown(pos, event.button)
 			elif event.type == pygame.MOUSEBUTTONUP:
-				self._state.on_buttonup(Vector(event.pos), event.button)
+				pos = Vector2i(event.pos)
+				pos.y = self._resolution.height - pos.y
+				self._state.on_buttonup(pos, event.button)
 			elif event.type == pygame.KEYDOWN:
 				pass
 			elif event.type == pygame.KEYUP:
@@ -322,7 +260,7 @@ class Client:
 	
 	@expose
 	def Hello(self):
-		print self.call('SET', 'ENCODER', 'json')
+		self.call('SET', 'ENCODER', 'json')
 		_, self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
 		self.list_of_entities()
 		#_, entities = self.call('LIST_OF_ENTITIES')

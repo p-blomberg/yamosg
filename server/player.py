@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import entity
-from common.vector import Vector
+from common.vector import Vector3
 import hashlib
 
 class Player:
@@ -21,7 +21,7 @@ class Player:
 		# Credentials
 		self._password = password
 		
-		gateway = entity.Gateway(Vector(4,6,0), game, owner=self)
+		gateway = entity.Gateway(Vector3(4,6,0), game, owner=self)
 		
 		self.entities.append(gateway)
 		game.add_entity(gateway)
@@ -90,7 +90,24 @@ class Player:
 		
 		self._client = client
 		return True
-
+	
+	def logout(self, disconnected=False):
+		"""
+		Logout a player.
+		@param disconnected If the server forces the logout due to a disconnect.: 
+		"""
+		
+		if self._client is None:
+			raise RuntimeError, 'Invalid player state for logout'
+		
+		if disconnected == False:
+			self._client.disconnect('Logged out')
+		
+		self._client = None
+	
+	def is_online(self):
+		return self._client is not None
+	
 	def __str__(self):
 		return self.name
 

@@ -3,7 +3,6 @@
 
 from state import State
 from ui import Button
-from common.vector import Vector
 
 from OpenGL.GL import *
 
