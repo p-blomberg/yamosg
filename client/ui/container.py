@@ -19,6 +19,9 @@ class Container(Widget):
 		return self._children
 	
 	def hit_test(self, point, project=True):
+		if self._focus_lock:
+			return self._focus_lock, self._focus_lock.project(point)
+	
 		if project:
 			point = self.project(point)
 		
