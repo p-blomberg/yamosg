@@ -145,8 +145,8 @@ class Server(ServerSocket):
 	
 	connection_object = _create_client
 	
-	def __init__(self, host, port, split="\n", debug=False):
-		ServerSocket.__init__(self, host, port, 0, split, debug)
+	def __init__(self, host, port, split="\n"):
+		ServerSocket.__init__(self, host, port, 0)
 		self._split = split
 		self.game=Game(self)
 		
