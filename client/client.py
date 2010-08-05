@@ -157,7 +157,7 @@ class Client:
 			elif event.type == pygame.VIDEOEXPOSE:
 				pass
 			elif event.type == pygame.VIDEORESIZE:
-				self._resize(event.w, event.h)
+				self._resize(Vector2i(event.w, event.h))
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
