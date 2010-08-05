@@ -1,18 +1,15 @@
 #! /usr/bin/env python
-#coding: utf-8
-# ���
+# -*- coding: utf-8 -*-
 
 import socket
-import select
-import threading
 import signal
 import sys
-import time
-import collections
 import traceback
 import errno
+from select import select
 
 def have_trailing_newline(line):
+	""" Check if a line has a trailing newline """
 	return line[-1] == '\n' or line[-1] == '\r' or line[-2:] == '\r\n'
 
 class Connection:
@@ -25,6 +22,7 @@ class Connection:
 		self._readbuffer = ''
 	
 	def peer(self):
+		""" Get string representation of this connection, eg ip """
 		return self._peer
 	
 	def fileno(self):
@@ -32,17 +30,22 @@ class Connection:
 		return self._socket.fileno()
 	
 	def disconnect(self, message):
+		""" Disconnect this connection """
+		
+		# Flush outgoing data first
 		try:
 			self._flush()
 		except socket.error:
 			# there is nothing to be done, this cannot be handled
 			pass
 		
+		# Mark as shutdown
 		try:
 			self._socket.shutdown(socket.SHUT_RDWR)
 		except socket.error:
 			pass
 		
+		# Remove from storage
 		self._server._del_client(self, message)
 	
 	def write(self, chunk):
@@ -95,9 +98,9 @@ class Connection:
 class ServerSocket:
 	connection_object = Connection
 	
-	def __init__(self, host, port, timeout=30, split="\n", debug=False):
-		signal.signal(signal.SIGINT,self.quit)
-		self._timeout=timeout
+	def __init__(self, host, port, timeout=30):
+		signal.signal(signal.SIGINT, self.quit)
+		self._timeout = timeout
 
 		# connected clients
 		self._clients = []
@@ -112,11 +115,12 @@ class ServerSocket:
 		""" Called when a new connection has been accepted """
 		pass # do nothing
 	
-	def lost_connection(self, connection):
+	def lost_connection(self, connection, message):
 		""" Called when a connection is lost (expected or not) """
 		pass # do nothing
 	
 	def _add_client(self, sock):
+		""" Store client, and notify that a new client has connected. """
 		# create new connection object
 		connection = self.connection_object(sock, self)
 		
@@ -125,21 +129,29 @@ class ServerSocket:
 		self.new_connection(connection)
 	
 	def _del_client(self, connection, reason=None):
+		""" Delete a client from storage, and notify of this. """
 		self._clients.remove(connection)
 		self.lost_connection(connection, reason)
 	
 	def clients(self):
+		""" Get all clients. Generator """
 		for client in self._clients:
 			yield client
 
 	def checkSockets(self):
+		""" Poll the sockets for updates """
+		
+		rlist = [self._socket] + self._clients
+		wlist = self._clients
+		xlist = self._clients
+		
 		try:
-			(read, write, error)=select.select([self._socket] + self._clients, self._clients, self._clients, self._timeout)
+			read, write, error = select(rlist, wlist, xlist, self._timeout)
 
 			# see if listen socket is ready to accept
 			if self._socket in read:
 				# add client
-				(clientsocket, address) = self._socket.accept()
+				(clientsocket, _) = self._socket.accept()
 				self._add_client(clientsocket)
 				
 				# remove listen socket from ready list
@@ -164,15 +176,18 @@ class ServerSocket:
 			traceback.print_exc()
 
 	def readCall(self, clientsocket, lines):
-		raise NotImplemented
+		""" Command callback """
+		raise NotImplementedError
 	
 	def quit(self, signr, frame):
+		""" Terminate server, all clients will be properly disconnected. """
+		
 		for client in self.clients():
 			client.disconnect('server shutting down')
 		
 		try:
 			self._socket.close()
-		except:
+		except socket.error:
 			pass
 		
 		sys.exit()
