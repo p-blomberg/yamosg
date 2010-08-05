@@ -509,7 +509,12 @@ class Game:
 	
 	@entity_param('entity')
 	def entity_info(self, connection, entity):
-		print entity
+		d = entity.dinmamma()
+		
+		if entity.owner == connection.player:
+			d['actions'] = entity.actions.keys()
+		
+		return d
 	
 	def EntAction(self, connection, id, action, *args):
 		ent = self.entity_by_id(id)
