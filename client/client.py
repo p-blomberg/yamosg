@@ -94,7 +94,7 @@ class Client:
 		self._running = False
 		self._state = StateManager()
 		self._game = GameWidget(resolution)
-		self._state.push(GameState(resolution, Container(Vector2i(0,0), resolution, children=[self._game, Window(Vector2i(100,100), Vector2i(320,240))])))
+		self._state.push(GameState(resolution, Container(Vector2i(0,0), resolution, children=[self._game, Window(Vector2i(70,20), Vector2i(320,480))])))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
