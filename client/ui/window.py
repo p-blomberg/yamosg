@@ -5,6 +5,7 @@ from ui import Widget
 from ui._cairo import CairoWidget, ALIGN_CENTER
 from common.vector import Vector2i, Vector2f
 from OpenGL.GL import *
+from OpenGL.GLU import *
 from copy import copy
 
 class BaseWindow:
@@ -77,16 +78,16 @@ class BaseWindow:
 			self.invalidate()
 
 class WindowDecoration(CairoWidget):
-	def __init__(self, title, *args, **kwargs):
+	def __init__(self, size, title, *args, **kwargs):
 		CairoWidget.__init__(self, Vector2i(0,0 ), size, *args, **kwargs)
 		self._title = title
 		self._font = self.create_font(size=9)
 	
-	def render(self):
-		self.do_render(self.cr, self.size)
+	def do_render(self):
+		self.render_decoration(self.cr, self.size, self._font, self._title)
 	
 	@classmethod
-	def do_render(cls, cr, size):
+	def render_decoration(cls, cr, size, font, title):
 		width, height = size.xy()
 		radius = 20;
 		degrees = 3.1415 / 180.0;
@@ -122,6 +123,9 @@ class WindowDecoration(CairoWidget):
 		cr.set_source_rgba (0.0, 1.0, 0, 1.0)
 		cr.set_line_width (border*2)
 		cr.stroke ()
+		
+		cr.move_to(0, 3)
+		cls.text(cr, title, font, alignment=ALIGN_CENTER, width=width)
 
 class OpenGLWindow(BaseWindow, Widget):
 	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, title='Unnamed window', *args, **kwargs):
@@ -129,7 +133,14 @@ class OpenGLWindow(BaseWindow, Widget):
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
 		
 		self._bordersize = bordersize
-		self._decoration = WindowDecoration(title, Vector2i(0,0), size)
+		self._decoration = WindowDecoration(size, title)
+	
+	def get_children(self):
+		return [self._decoration]
+	
+	def on_resize(self, size):
+		Widget.on_resize(self, size)
+		self._decoration.on_resize(size)
 
 class CairoWindow(BaseWindow, CairoWidget):
 	def __init__(self, position, size, bordersize=1, title='Unnamed window', *args, **kwargs):
@@ -137,6 +148,79 @@ class CairoWindow(BaseWindow, CairoWidget):
 		CairoWidget.__init__(self, position, size, *args, **kwargs)
 		
 		self._bordersize = bordersize
+		self._font = self.create_font(size=9)
+
+class SampleOpenGLWindow(OpenGLWindow):
+	def __init__(self, *args, **kwargs):
+		OpenGLWindow.__init__(self, *args, **kwargs)
+		self.rquad = 0.0
+	
+	def do_render(self):
+		glClearColor(0,0,0,0)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		
+		self._decoration.display()
+		
+		glMatrixMode(GL_PROJECTION)
+		glPushMatrix()
+		glLoadIdentity()
+		gluPerspective(45.0, float(self.width)/float(self.height), 0.1, 100.0)
+		glMatrixMode(GL_MODELVIEW)
+		
+		glPushAttrib(GL_ENABLE_BIT)
+		glEnable(GL_DEPTH_TEST)
+		glDisable(GL_TEXTURE_2D)
+		glEnable(GL_CULL_FACE)
+		
+		self.rquad += 0.05
+		glTranslatef(0.0, 0.0, -7.0)
+		glRotatef(self.rquad,1.0,1.0,1.0)
+		glBegin(GL_QUADS)
+
+		glColor3f(0.0,1.0,0.0)
+		glVertex3f( 1.0, 1.0,-1.0)
+		glVertex3f(-1.0, 1.0,-1.0)
+		glVertex3f(-1.0, 1.0, 1.0)
+		glVertex3f( 1.0, 1.0, 1.0)
+
+		glColor3f(1.0,0.5,0.0)
+		glVertex3f( 1.0,-1.0, 1.0)
+		glVertex3f(-1.0,-1.0, 1.0)
+		glVertex3f(-1.0,-1.0,-1.0)
+		glVertex3f( 1.0,-1.0,-1.0)
+
+		glColor3f(1.0,0.0,0.0)
+		glVertex3f( 1.0, 1.0, 1.0)
+		glVertex3f(-1.0, 1.0, 1.0)
+		glVertex3f(-1.0,-1.0, 1.0)
+		glVertex3f( 1.0,-1.0, 1.0)
+
+		glColor3f(1.0,1.0,0.0)
+		glVertex3f( 1.0,-1.0,-1.0)
+		glVertex3f(-1.0,-1.0,-1.0)
+		glVertex3f(-1.0, 1.0,-1.0)
+		glVertex3f( 1.0, 1.0,-1.0)
+
+		glColor3f(0.0,0.0,1.0)
+		glVertex3f(-1.0, 1.0, 1.0)
+		glVertex3f(-1.0, 1.0,-1.0)
+		glVertex3f(-1.0,-1.0,-1.0)
+		glVertex3f(-1.0,-1.0, 1.0)
+
+		glColor3f(1.0,0.0,1.0)
+		glVertex3f( 1.0, 1.0,-1.0)
+		glVertex3f( 1.0, 1.0, 1.0)
+		glVertex3f( 1.0,-1.0, 1.0)
+		glVertex3f( 1.0,-1.0,-1.0)
+		glEnd()
+		
+		glPopAttrib()
+		
+		glMatrixMode(GL_PROJECTION)
+		glPopMatrix()
+		glMatrixMode(GL_MODELVIEW)
+		
+		self.invalidate()
 
 class SampleCairoWindow(CairoWindow):
 	def __init__(self, *args, **kwargs):
@@ -187,8 +271,8 @@ class SampleCairoWindow(CairoWindow):
 	def do_render(self):
 		cr = self.cr
 		
-		self.clear((0,0,0,0))
-		WindowDecoration.do_render(cr, self.size)
+		CairoWidget.clear(cr, (0,0,0,0))
+		WindowDecoration.render_decoration(cr, self.size, self._font, self._title)
 		
 		p = [v * self.size for v in self.points]
 		

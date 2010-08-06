@@ -138,20 +138,21 @@ class CairoWidget:
 		
 		self._invalidated = False
 	
-	def create_font(self, font='Sans', size=12):
+	@classmethod
+	def create_font(cls, font='Sans', size=12):
 		return pango.FontDescription('%s %f' % (font, size))
 	
-	def clear(self, color=(0,0,0,0)):
-		self.cr.save()
-		self.cr.set_source_rgba(*color)
-		self.cr.set_operator(cairo.OPERATOR_SOURCE)
-		self.cr.paint()
-		self.cr.restore()
+	@classmethod
+	def clear(cls, cr, color=(0,0,0,0)):
+		cr.save()
+		cr.set_source_rgba(*color)
+		cr.set_operator(cairo.OPERATOR_SOURCE)
+		cr.paint()
+		cr.restore()
 	
-	def text(self, text, font, color=(0,0,0,1), alignment=pango.ALIGN_LEFT, justify=False, width=None):
-		cr = self.cr
-		
-		self.cr.set_source_rgba(*color)
+	@classmethod
+	def text(cls, cr, text, font, color=(0,0,0,1), alignment=pango.ALIGN_LEFT, justify=False, width=None):
+		cr.set_source_rgba(*color)
 		
 		ctx = pangocairo.CairoContext(cr)
 		layout = ctx.create_layout()
