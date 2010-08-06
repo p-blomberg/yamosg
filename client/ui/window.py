@@ -9,41 +9,31 @@ from OpenGL.GL import *
 from copy import copy
 
 class _Decoration(CairoWidget):
-	def __init__(self, *args, **kwargs):
+	def __init__(self, title, *args, **kwargs):
 		CairoWidget.__init__(self, *args, **kwargs)
+		self._title = title
 		self._font = self.create_font(size=9)
 		
 	def do_render(self):
+		cr = self.cr
+		
 		self.clear((0,0,0,0))
 		self._layout()
 		
-		self.cr.move_to(0, 3)
-		self.text('Test window', self._font, alignment=ALIGN_CENTER, width=self.width)
+		cr.move_to(0, 3)
+		self.text(self._title, self._font, alignment=ALIGN_CENTER, width=self.width)
 		
-		self.cr.move_to(7, 30)
-		self.text("""<i>Lorem ipsum dolor sit amet</i>, consectetur <b>adipiscing</b> <span color="#ff0000">elit</span>. Aenean euismod elit vel nisl convallis in hendrerit velit iaculis. Morbi et elit ut magna iaculis euismod.
-
-Nam faucibus fermentum neque id gravida. Ut et risus arcu. Mauris semper, lorem rhoncus consequat vulputate, ante ligula rhoncus lacus, sed elementum quam quam pulvinar leo. Praesent hendrerit, dui id ullamcorper ultricies, odio libero fermentum felis, eu facilisis risus tellus non lectus.
-
-私はガラスを食べられます。それは私を傷つけません。
-איך קען עסן גלאָז און עס טוט מיר נישט װײ
-나는 유리를 먹을 수 있어요. 그래도 아프지 않아요
-Ég get etið gler án þess að meiða mig.
-أنا قادر على أكل الزجاج و هذا لا يؤلمني
-मैं काँच खा सकता हूँ, मुझे उस से कोई पीडा नहीं होती.
-<tt>
-⎧⎡⎛┌─────┐⎞⎤⎫
-⎪⎢⎜│a²+b³ ⎟⎥⎪
-⎪⎢⎜│───── ⎟⎥⎪
-⎪⎢⎜⎷ c₈   ⎟⎥⎪
-⎨⎢⎜       ⎟⎥⎬
-⎪⎢⎜ ∞     ⎟⎥⎪
-⎪⎢⎜ ⎲     ⎟⎥⎪
-⎪⎢⎜ ⎳aⁱ-bⁱ⎟⎥⎪
-⎩⎣⎝i=1    ⎠⎦⎭
-</tt>
-
-""", self._font, justify=True, width=self.width-14)
+		for i, element in enumerate(['foo', 'bar', 'baz']):
+			x = 15
+			y = 35 + i * 20
+			
+			cr.set_source_rgba (0.0, 0.0, 0.0, 1.0)
+			cr.new_sub_path()
+			cr.arc(x, y + 7.5, 3, 0, 2*3.1415)
+			cr.fill()
+			
+			cr.move_to(x + 10, y)
+			self.text(element, self._font)
 	
 	def _layout(self):
 		cr = self.cr
@@ -84,15 +74,18 @@ Nam faucibus fermentum neque id gravida. Ut et risus arcu. Mauris semper, lorem 
 		cr.stroke ()
 
 class Window(Widget):
-	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, *args, **kwargs):
+	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, title='Unnamed window', *args, **kwargs):
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
 		self._bordersize = bordersize
-		self._decoration = _Decoration(Vector2i(0,0), size)
+		self._decoration = _Decoration(title, Vector2i(0,0), size)
 		
 		# states
 		self._ref = None
 		self._is_moving = False
 		self._is_resizing = False
+	
+	def close(self):
+		self.parent.remove(self)
 	
 	def get_children(self):
 		return [self._decoration]
@@ -103,6 +96,10 @@ class Window(Widget):
 	
 	def on_buttondown(self, pos, button):
 		if pos.y > self.height-self._bordersize - 20:
+			if pos.x > self.width - 20:
+				self.close()
+				return
+			
 			self._is_moving = True
 			self._moveref = pos
 			self.focus_lock()

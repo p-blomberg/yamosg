@@ -32,6 +32,16 @@ class Container(Widget):
 		
 		return Widget.hit_test(self, point, False)
 	
+	def add(self, widget):
+		widget.parent = self
+		self._children.append(widget)
+		self.invalidate()
+	
+	def remove(self, widget):
+		widget.parent = None
+		self._children.remove(widget)
+		self.invalidate()
+	
 	def do_render(self):
 		glClearColor(0,0.5,1,1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

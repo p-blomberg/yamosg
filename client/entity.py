@@ -28,7 +28,7 @@ def load_sprite(filename):
 class Entity:
 	def __init__(self, Type, Id, Position, Cargo, Speed, Minable, Owner):
 		self._type = Type
-		self._id = Id
+		self.id = Id
 		self.position = Vector3(*Position)
 		self._cargo = Cargo
 		self._speed = Vector3(*Speed)

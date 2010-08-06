@@ -4,6 +4,7 @@
 from copy import copy, deepcopy
 
 from ui import Widget
+from ui.window import Window
 from common.vector import Vector2i, Vector3
 from common.rect import Rect
 
@@ -12,8 +13,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 class GameWidget(Widget):
-	def __init__(self, size):
+	def __init__(self, client, size):
 		Widget.__init__(self, Vector2i(0,0), size)
+		self._client = client
 		self.entities = []
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
@@ -109,7 +111,7 @@ class GameWidget(Widget):
 				if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
 					continue
 				
-				print e
+				self.on_selection(e)
 				break
 		elif button == 3:
 			self.on_pan_start(pos)
@@ -175,7 +177,15 @@ class GameWidget(Widget):
 		self._rect.x = self._panref.x - rel.x
 		self._rect.y = self._panref.y - rel.y
 		self._calc_view_matrix()
-
+	
+	#
+	# Entity selected
+	#
+	
+	def on_selection(self, entity):
+		info = self._client.entity_info(entity.id)
+		self._client.add_window(Window(Vector2i(70,20), Vector2i(100,100), title=entity.id))
+	
 	#
 	# Rendering
 	#

@@ -37,7 +37,7 @@ def server_call(alias):
 	def wrap(f):
 		def wrapped_f(self, *args, **kwargs):
 			status, args2, line = self.call(alias, *args, **kwargs)
-			f(self, status, line, *args2)
+			return f(self, status, line, *args2)
 		return wrapped_f
 	return wrap
 
@@ -93,16 +93,22 @@ class Client:
 		self._split = split
 		self._running = False
 		self._state = StateManager()
-		self._game = GameWidget(resolution)
-		self._state.push(GameState(resolution, Container(Vector2i(0,0), resolution, children=[self._game, Window(Vector2i(70,20), Vector2i(320,480))])))
+		self._game = GameWidget(self, resolution)
+		self._container = Container(Vector2i(0,0), resolution, children=[self._game])
+		self._state.push(GameState(resolution, self._container))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
+		
+		self.add_window(Window(Vector2i(70,20), Vector2i(320,480)))
 
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
+	
+	def add_window(self, win):
+		self._container.add(win)
 	
 	def quit(self):
 		self._running = False
@@ -257,6 +263,13 @@ class Client:
 			return
 		
 		self._game.entities = [Entity(**x) for x in json.loads(line)]
+	
+	@server_call('ENTINFO')
+	def entity_info(self, status, line, *args):
+		if status == 'NOT_OK':
+			return
+		
+		return json.loads(line)
 	
 	@expose
 	def Hello(self):
