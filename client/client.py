@@ -21,7 +21,7 @@ from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
 from ui.container import Container
-from ui.window import Window
+from ui.window import SampleCairoWindow
 
 import pygame
 from pygame.locals import *
@@ -102,7 +102,7 @@ class Client:
 		self._command_lock = threading.Lock()
 		self._playerid = None
 		
-		self.add_window(Window(Vector2i(70,20), Vector2i(320,480)))
+		self.add_window(SampleCairoWindow(Vector2i(70,20), Vector2i(320,480)))
 
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)

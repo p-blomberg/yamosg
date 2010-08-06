@@ -4,7 +4,7 @@
 from copy import copy, deepcopy
 
 from ui import Widget
-from ui.window import Window
+from ui.window import SampleCairoWindow
 from common.vector import Vector2i, Vector3
 from common.rect import Rect
 
@@ -184,7 +184,7 @@ class GameWidget(Widget):
 	
 	def on_selection(self, entity):
 		info = self._client.entity_info(entity.id)
-		self._client.add_window(Window(Vector2i(70,20), Vector2i(100,100), title=entity.id))
+		self._client.add_window(SampleCairoWindow(Vector2i(70,20), Vector2i(100,100), title=entity.id))
 	
 	#
 	# Rendering

@@ -17,6 +17,8 @@ class CairoWidget:
 		self._filter = filter
 		
 		self._invalidated = True
+		self._parent = None # @todo MERGE WITH WIDGET
+		self._focus_lock = None # @todo MERGE WITH WIDGET
 		
 		self._generate_surface()
 		
@@ -68,6 +70,54 @@ class CairoWidget:
 		glTexCoord2f(1, 1)
 		glVertex3f(self.width, 0, 0)
 		glEnd()
+	
+	def focus_lock(self, widget=None):
+		# @todo MERGE WITH WIDGET
+		widget = widget or self
+		
+		if self.parent:
+			self.parent.focus_lock(widget)
+		
+		self._focus_lock = widget
+	
+	def focus_unlock(self):
+		# @todo MERGE WITH WIDGET
+		self._focus_lock = None
+		
+		if self.parent:
+			self.parent.focus_unlock()
+	
+	def project(self, point):
+		"""
+			Project a point so it is relative to the widgets space.
+		"""
+		
+		 # @todo MERGE WITH WIDGET
+		return point - self.pos
+	
+	def hit_test(self, point, project=True):
+		"""
+			Test if a point hits the object or not.
+			Return the widget that is hit, or None if there is no hit at all.
+		"""
+		
+		# @todo This is duplicated from Widget, they should both use the same.
+		#       Perhaps it would be better to create a BaseWidget and than split
+		#       to OpenGL and Cairo implementations early.
+		
+		if self._focus_lock:
+			return self._focus_lock, self._focus_lock.project(point)
+		
+		if project:
+			point = self.project(point)
+		
+		if point.x < 0 or point.y < 0:
+			return None
+		
+		if point.x > self.width or point.y > self.height:
+			return None
+		
+		return self, point
 	
 	def on_resize(self, size):
 		self.size = size
