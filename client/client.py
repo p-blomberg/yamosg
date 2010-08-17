@@ -41,6 +41,7 @@ def server_call(alias, *in_args, **params):
 	:param alias: is the name of the server call.
 	:param in_args: is the names of the arguments (as strings.)
 	:param raw: if True the raw reply will be passed instead of parsed into positional arguments.
+	:param decode: if True the reply will be json decoded.
 
 	eg:
 
@@ -60,6 +61,7 @@ def server_call(alias, *in_args, **params):
 	"""
 
 	raw = params.get('raw', False)
+	decode = params.get('decode', False)
 	en = len(in_args) # expected number of arguments
 
 	def wrap(f):
@@ -80,7 +82,9 @@ def server_call(alias, *in_args, **params):
 				raise RuntimeError, reply_args[0]
 
 			# pass reply to callback
-			if raw:
+			if decode:
+				return f(self, json.loads(line))
+			elif raw:
 				return f(self, line)
 			else:
 				return f(self, *reply_args)
@@ -304,18 +308,22 @@ class Client:
 		
 		return reply
 	
-	@server_call('LIST_OF_ENTITIES', raw=True)
-	def list_of_entities(self, line):
-		self._game.entities = [Entity(**x) for x in json.loads(line)]
+	@server_call('LIST_OF_ENTITIES', decode=True)
+	def list_of_entities(self, descriptions):
+		self._game.entities = [Entity(**x) for x in descriptions]
 	
-	@server_call('ENTINFO', raw=True)
-	def entity_info(self, line):
-		return json.loads(line)
+	@server_call('ENTINFO', decode=True)
+	def entity_info(self, info):
+		return info
 	
 	@server_call('LOGIN', 'username', 'password')
 	def login(self, playerid):
 		self.playerid = playerid
-			
+	
+	@server_call('PLAYERS', decode=True)
+	def players(self, players):
+		return players
+
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
