@@ -37,7 +37,9 @@ def server_call(alias):
 	def wrap(f):
 		def wrapped_f(self, *args, **kwargs):
 			status, args2, line = self.call(alias, *args, **kwargs)
-			return f(self, status, line, *args2)
+			if status != 'OK':
+				raise RuntimeError, args2[0]
+			return f(self, line, *args2)
 		return wrapped_f
 	return wrap
 
@@ -259,25 +261,16 @@ class Client:
 		return reply
 	
 	@server_call('LIST_OF_ENTITIES')
-	def list_of_entities(self, status, line, *args):
-		if status == 'NOT_OK':
-			return
-		
+	def list_of_entities(self, line, *args):
 		self._game.entities = [Entity(**x) for x in json.loads(line)]
 	
 	@server_call('ENTINFO')
-	def entity_info(self, status, line, *args):
-		if status == 'NOT_OK':
-			return
-		
+	def entity_info(self, line, *args):
 		return json.loads(line)
 	
 	@server_call('LOGIN')
-	def login(self, status, line, *args):
-		if status != 'OK':
-			raise RuntimeError, args[0]
-
-		self.playerid = args[0]
+	def login(self, line, playerid):
+		self.playerid = playerid
 			
 	@expose
 	def Hello(self):
