@@ -34,17 +34,18 @@ def expose(func):
 	func.exposed = True
 	return func
 
-def server_call(alias, *in_args):
+def server_call(alias, *in_args, **params):
 	"""
 	Wrapper for a server call.
 
-	:param alias: is the name of the server call
-	:param in_args: is the names of the arguments (as strings)
+	:param alias: is the name of the server call.
+	:param in_args: is the names of the arguments (as strings.)
+	:param raw: if True the raw reply will be passed instead of parsed into positional arguments.
 
 	eg:
 
 	@server_call('FOO', 'spam', 'bacon')
-	def foo(self, line, fred, barney, wilma):
+	def foo(self, fred, barney, wilma):
 		pass
 
 	will make a function `foo(self, spam, bacon)`
@@ -53,11 +54,12 @@ def server_call(alias, *in_args):
 
 	Calling foo(1, 2) yields the server command 'FOO 1 2' and
 	if the reply is 'OK a b c' user function will be called as
-	foo(line='a b c', fred='a', barney='b', wilma='c')
+	foo('a', 'b', 'c')
 
 	It accepts both positional- and keyword arguments.
 	"""
 
+	raw = params.get('raw', False)
 	en = len(in_args) # expected number of arguments
 
 	def wrap(f):
@@ -78,7 +80,10 @@ def server_call(alias, *in_args):
 				raise RuntimeError, reply_args[0]
 
 			# pass reply to callback
-			return f(self, line, *reply_args)
+			if raw:
+				return f(self, line)
+			else:
+				return f(self, *reply_args)
 		return wrapped_f
 	return wrap
 
@@ -299,16 +304,16 @@ class Client:
 		
 		return reply
 	
-	@server_call('LIST_OF_ENTITIES')
-	def list_of_entities(self, line, *args):
+	@server_call('LIST_OF_ENTITIES', raw=True)
+	def list_of_entities(self, line):
 		self._game.entities = [Entity(**x) for x in json.loads(line)]
 	
-	@server_call('ENTINFO')
-	def entity_info(self, line, *args):
+	@server_call('ENTINFO', raw=True)
+	def entity_info(self, line):
 		return json.loads(line)
 	
 	@server_call('LOGIN', 'username', 'password')
-	def login(self, line, playerid):
+	def login(self, playerid):
 		self.playerid = playerid
 			
 	@expose
