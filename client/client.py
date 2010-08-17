@@ -312,7 +312,7 @@ class Client:
 	def list_of_entities(self, descriptions):
 		self._game.entities = [Entity(**x) for x in descriptions]
 	
-	@server_call('ENTINFO', decode=True)
+	@server_call('ENTINFO', 'id', decode=True)
 	def entity_info(self, info):
 		return info
 	
