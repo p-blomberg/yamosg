@@ -26,6 +26,7 @@ from ui.window import SampleCairoWindow, SampleOpenGLWindow
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
+import itertools
 
 
 def expose(func):
@@ -33,13 +34,51 @@ def expose(func):
 	func.exposed = True
 	return func
 
-def server_call(alias):
+def server_call(alias, *in_args):
+	"""
+	Wrapper for a server call.
+
+	:param alias: is the name of the server call
+	:param in_args: is the names of the arguments (as strings)
+
+	eg:
+
+	@server_call('FOO', 'spam', 'bacon')
+	def foo(self, line, fred, barney, wilma):
+		pass
+
+	will make a function `foo(self, spam, bacon)`
+	which calls the user implemented function with the reply
+	from the server and arguments passed as *args
+
+	Calling foo(1, 2) yields the server command 'FOO 1 2' and
+	if the reply is 'OK a b c' user function will be called as
+	foo(line='a b c', fred='a', barney='b', wilma='c')
+
+	It accepts both positional- and keyword arguments.
+	"""
+
+	en = len(in_args) # expected number of arguments
+
 	def wrap(f):
 		def wrapped_f(self, *args, **kwargs):
-			status, args2, line = self.call(alias, *args, **kwargs)
+			# make sure the correct number of arguments is passed
+			gn = len(args) + len(kwargs) # passed number of arguments
+			if en != gn:
+				raise TypeError, '%s takes exactly %d argument%s (%d given)' % (alias, en, en > 1 and 's' or '', gn)
+			
+			# parse arguments into a new args list
+			d = dict(itertools.izip_longest(in_args, args, fillvalue=None))
+			d.update(kwargs)
+			real_args = [d.pop(k) for k in in_args]
+
+			# pass command to server
+			status, reply_args, line = self.call(alias, *real_args)
 			if status != 'OK':
-				raise RuntimeError, args2[0]
-			return f(self, line, *args2)
+				raise RuntimeError, reply_args[0]
+
+			# pass reply to callback
+			return f(self, line, *reply_args)
 		return wrapped_f
 	return wrap
 
@@ -268,14 +307,14 @@ class Client:
 	def entity_info(self, line, *args):
 		return json.loads(line)
 	
-	@server_call('LOGIN')
+	@server_call('LOGIN', 'username', 'password')
 	def login(self, line, playerid):
 		self.playerid = playerid
 			
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
-		self.login('foo', 'bar')
+		self.login(password='bar', username='foo')
 		self.list_of_entities()
 
 if __name__ == '__main__':
