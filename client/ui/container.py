@@ -9,10 +9,12 @@ from copy import copy
 class Container(Widget):
 	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
-		self._children = copy(children) # shallow copy
-		
+		self._children = []
+
 		for i, child in enumerate(children):
 			self.add(child, zorder=i)
+		
+		self.sort()
 	
 	def get_children(self):
 		return self._children
@@ -30,12 +32,27 @@ class Container(Widget):
 				return hit
 		
 		return Widget.hit_test(self, point, False)
-	
+
+	def bring_to_front(self, widget):
+		for c in self._children:
+			c.__zorder += 1
+		widget.__zorder = 0
+		self.sort()
+
+	def sort(self):
+		self._children.sort(key=lambda x: x.__zorder, reverse=True)
+
+		# renumber
+		n = len(self._children)
+		for i,c in enumerate(self._children):
+			c.__zorder = n - 1		
+
 	def add(self, widget, zorder=0):
 		widget.parent = self
 		widget.__zorder = zorder
 		self._children.append(widget)
 		self.invalidate()
+		self.sort()
 	
 	def remove(self, widget):
 		widget.parent = None

@@ -21,6 +21,8 @@ class BaseWindow:
 		self.parent.remove(self)
 	
 	def on_buttondown(self, pos, button):
+		self.parent.bring_to_front(self)
+
 		if pos.y > self.height-self._bordersize - 20:
 			if pos.x > self.width - 20:
 				self.close()
