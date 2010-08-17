@@ -11,9 +11,8 @@ class Container(Widget):
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
 		self._children = copy(children) # shallow copy
 		
-		for i, child in enumerate(self._children):
-			child.parent = self
-			child.__zorder = i
+		for i, child in enumerate(children):
+			self.add(child, zorder=i)
 	
 	def get_children(self):
 		return self._children
@@ -32,8 +31,9 @@ class Container(Widget):
 		
 		return Widget.hit_test(self, point, False)
 	
-	def add(self, widget):
+	def add(self, widget, zorder=0):
 		widget.parent = self
+		widget.__zorder = zorder
 		self._children.append(widget)
 		self.invalidate()
 	
