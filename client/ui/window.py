@@ -16,6 +16,9 @@ class BaseWindow:
 		self._ref = None
 		self._is_moving = False
 		self._is_resizing = False
+
+	def title(self):
+		return self._title
 	
 	def close(self):
 		self.parent.remove(self)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ui import Widget
+from window import BaseWindow
 
 from OpenGL.GL import *
 from copy import copy
@@ -58,6 +59,15 @@ class Container(Widget):
 		widget.parent = None
 		self._children.remove(widget)
 		self.invalidate()
+
+	def find_window(self, name):
+		for c in self._children:
+			if not isinstance(c, BaseWindow):
+				continue
+
+			if c.title() == name:
+				return c
+		return None
 	
 	def do_render(self):
 		glClearColor(0,0.5,1,1)

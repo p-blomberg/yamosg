@@ -183,6 +183,9 @@ class GameWidget(Widget):
 	#
 	
 	def on_selection(self, entity):
+		if self.parent.find_window(entity.id) is not None:
+			return
+
 		info = self._client.entity_info(entity.id)
 		self._client.add_window(SampleCairoWindow(None, Vector2i(100,100), title=entity.id))
 	
