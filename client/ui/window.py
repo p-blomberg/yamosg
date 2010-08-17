@@ -129,11 +129,27 @@ class WindowDecoration(CairoWidget):
 		cr.move_to(0, 3)
 		cls.text(cr, title, font, alignment=ALIGN_CENTER, width=width)
 
+# autoposition
+_autopos_x = 50
+_autopos_y = 450
+_autopos_dx = 20
+_autopos_dy = -20
+
+def get_autopos():
+	global _autopos_x, _autopos_y, _autopos_dx, _autopos_dy
+	v = Vector2i(_autopos_x, _autopos_y)
+	_autopos_x += _autopos_dx
+	_autopos_y += _autopos_dy
+	return v
+
 class OpenGLWindow(BaseWindow, Widget):
 	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, title='Unnamed window', *args, **kwargs):
+		if position is None:
+			position = get_autopos()
+
 		BaseWindow.__init__(self, title)
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
-		
+	
 		self._bordersize = bordersize
 		self._decoration = WindowDecoration(size, title)
 	
@@ -146,6 +162,9 @@ class OpenGLWindow(BaseWindow, Widget):
 
 class CairoWindow(BaseWindow, CairoWidget):
 	def __init__(self, position, size, bordersize=1, title='Unnamed window', *args, **kwargs):
+		if position is None:
+			position = get_autopos()
+
 		BaseWindow.__init__(self, title)
 		CairoWidget.__init__(self, position, size, *args, **kwargs)
 		

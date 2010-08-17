@@ -184,7 +184,7 @@ class GameWidget(Widget):
 	
 	def on_selection(self, entity):
 		info = self._client.entity_info(entity.id)
-		self._client.add_window(SampleCairoWindow(Vector2i(70,20), Vector2i(100,100), title=entity.id))
+		self._client.add_window(SampleCairoWindow(None, Vector2i(100,100), title=entity.id))
 	
 	#
 	# Rendering
