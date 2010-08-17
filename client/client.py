@@ -277,8 +277,6 @@ class Client:
 		self.call('SET', 'ENCODER', 'json')
 		self.login('foo', 'bar')
 		self.list_of_entities()
-		#_, entities = self.call('LIST_OF_ENTITIES')
-		#print json.loads(entities)
 
 if __name__ == '__main__':
 	pygame.display.init()
