@@ -272,10 +272,17 @@ class Client:
 		
 		return json.loads(line)
 	
+	@server_call('LOGIN')
+	def login(self, status, line, *args):
+		if status != 'OK':
+			raise RuntimeError, args[0]
+
+		self.playerid = args[0]
+			
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
-		_, self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
+		self.login('foo', 'bar')
 		self.list_of_entities()
 		#_, entities = self.call('LIST_OF_ENTITIES')
 		#print json.loads(entities)
