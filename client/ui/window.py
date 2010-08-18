@@ -60,10 +60,15 @@ class BaseWindow:
 			
 		if self._is_resizing:
 			delta = self._moveref - pos
-			
+
+			# flip x-axis
+			if self._resize_mode == 2:
+				delta.x *= -1
+
 			self.size.y += delta.y
+			self.size.x += delta.x
 			self.pos.y -= delta.y
-			
+
 			if self.size.y < 40:
 				self.size.y = 40
 			
@@ -71,13 +76,11 @@ class BaseWindow:
 				self.size.x = 40
 				
 			if self._resize_mode == 1:
-				self.size.x += delta.x
 				self.pos.x -= delta.x
 			
 			if self._resize_mode == 2:
-				self.size.x -= delta.x
 				#self.pos.x -= delta.x
-				self._moveref.x -= delta.x
+				self._moveref.x += delta.x
 			
 			self.on_resize(self.size)
 			self.invalidate()
