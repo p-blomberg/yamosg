@@ -141,22 +141,38 @@ class WindowDecoration(CairoWidget):
 		cls.text(cr, title, font, alignment=ALIGN_CENTER, width=width)
 
 # autoposition
-_autopos_x = 50
-_autopos_y = 450
-_autopos_dx = 20
-_autopos_dy = -20
+_autopos   = Vector2i(50, 450)
+_autopos_c = 50
+_autopos_d = Vector2i(20, -20)
 
-def get_autopos():
-	global _autopos_x, _autopos_y, _autopos_dx, _autopos_dy
-	v = Vector2i(_autopos_x, _autopos_y)
-	_autopos_x += _autopos_dx
-	_autopos_y += _autopos_dy
+def get_autopos(size):
+	global _autopos, _autopos_c, _autopos_d
+	resolution = client.resolution()
+
+	restart_cases = [
+		_autopos.y + size.y > resolution.y,
+		_autopos.x + size.x > resolution.x,
+		_autopos.y < 0,
+		_autopos.x < 0
+	]
+
+	if any(restart_cases):
+		_autopos.x = _autopos_c
+		_autopos.y = resolution.y - size.y
+		_autopos_c += _autopos_d.x * 2
+
+	if _autopos_c > resolution.x * 0.5:
+		_autopos_c = 0
+
+	v = _autopos.copy()
+	_autopos += _autopos_d
+
 	return v
 
 class OpenGLWindow(BaseWindow, Widget):
 	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, title='Unnamed window', *args, **kwargs):
 		if position is None:
-			position = get_autopos()
+			position = get_autopos(size)
 
 		BaseWindow.__init__(self, title)
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
@@ -174,7 +190,7 @@ class OpenGLWindow(BaseWindow, Widget):
 class CairoWindow(BaseWindow, CairoWidget):
 	def __init__(self, position, size, bordersize=1, title='Unnamed window', *args, **kwargs):
 		if position is None:
-			position = get_autopos()
+			position = get_autopos(size)
 
 		BaseWindow.__init__(self, title)
 		CairoWidget.__init__(self, position, size, *args, **kwargs)
