@@ -28,7 +28,6 @@ from pygame.locals import *
 from OpenGL.GL import *
 import itertools
 
-
 def expose(func):
 	""" Exposes a method, eg is callable by server """
 	func.exposed = True
@@ -334,4 +333,9 @@ if __name__ == '__main__':
 	pygame.display.init()
 	
 	client = Client()
+
+	# create "superglobal" access to the client- and game instances
+	__builtins__.client = client
+	__builtins__.game = client._game # hack
+
 	client.run()
