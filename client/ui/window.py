@@ -42,45 +42,50 @@ class BaseWindow:
 			if pos.x < 20:
 				self._resize_mode = 1
 			
-			self._moveref = pos
+			self._moveref_abs = self.pos + pos
+			self._moveref_rel = pos
 			self._sizeref = self.size.copy()
+			self._posref = self.pos.copy()
 			self.focus_lock()
 	
 	def on_buttonup(self, pos, button):
 		self._is_moving = False
 		self._is_resizing = False
 		self._resize_mode = None
-		self._moveref = None
+		self._moveref_abs = None
+		self._moveref_rel = None
 		self._sizeref = None
+		self._posref = None
 		self.focus_unlock()
 	
 	def on_mousemove(self, pos, buttons):
+		abs = self.pos + pos
+
 		if self._is_moving:
-			self.pos -= self._moveref - pos
+			self.pos -= self._moveref_rel - pos
 			
 		if self._is_resizing:
-			delta = self._moveref - pos
+			delta = self._moveref_abs - abs
 
-			# flip x-axis
-			if self._resize_mode == 2:
+			# flip axis
+			delta.y *= -1
+			if self._resize_mode == 1:
 				delta.x *= -1
 
-			self.size.y += delta.y
-			self.size.x += delta.x
-			self.pos.y -= delta.y
+			# clamp delta
+			if self._sizeref.x - delta.x < 40:
+				delta.x = self._sizeref.x - 40
+			if self._sizeref.y - delta.y < 40:
+				delta.y = self._sizeref.y - 40
 
-			if self.size.y < 40:
-				self.size.y = 40
-			
-			if self.size.x < 40:
-				self.size.x = 40
-				
+			# resize
+			self.size = self._sizeref - delta
+
+			# move window
+			self.pos.y = self._posref.y + delta.y
 			if self._resize_mode == 1:
-				self.pos.x -= delta.x
-			
-			if self._resize_mode == 2:
-				self._moveref.x += delta.x
-			
+				self.pos.x = self._posref.x + delta.x
+						
 			self.on_resize(self.size)
 			self.invalidate()
 
