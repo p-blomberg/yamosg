@@ -166,6 +166,10 @@ class Client:
 	def is_running(self):
 		return self._running
 	
+
+	def resolution(self):
+		return self._resolution
+
 	def run(self):
 		self._running = True
 		self._network.start()
