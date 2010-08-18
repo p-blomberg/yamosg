@@ -9,8 +9,9 @@ from OpenGL.GLU import *
 from copy import copy
 
 class BaseWindow:
-	def __init__(self, title):
+	def __init__(self, title, minsize=Vector2i(150,150)):
 		self._title = title
+		self._minsize = minsize
 		
 		# states
 		self._ref = None
@@ -32,7 +33,7 @@ class BaseWindow:
 				return
 			
 			self._is_moving = True
-			self._moveref = pos
+			self._moveref_rel = pos
 			self.focus_lock()
 		
 		if pos.y < 20 and (pos.x < 20 or pos.x > self.width - 20):
@@ -73,10 +74,10 @@ class BaseWindow:
 				delta.x *= -1
 
 			# clamp delta
-			if self._sizeref.x - delta.x < 40:
-				delta.x = self._sizeref.x - 40
-			if self._sizeref.y - delta.y < 40:
-				delta.y = self._sizeref.y - 40
+			if self._sizeref.x - delta.x < self._minsize.x:
+				delta.x = self._sizeref.x - self._minsize.x
+			if self._sizeref.y - delta.y < self._minsize.y:
+				delta.y = self._sizeref.y - self._minsize.y
 
 			# resize
 			self.size = self._sizeref - delta
