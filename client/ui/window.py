@@ -94,10 +94,10 @@ class WindowDecoration(CairoWidget):
 	def __init__(self, size, title, *args, **kwargs):
 		CairoWidget.__init__(self, Vector2i(0,0 ), size, *args, **kwargs)
 		self._title = title
-		self._font = self.create_font(size=9)
+		self._titlefont = self.create_font(size=9)
 	
 	def do_render(self):
-		self.render_decoration(self.cr, self.size, self._font, self._title)
+		self.render_decoration(self.cr, self.size, self._titlefont, self._title)
 	
 	@classmethod
 	def render_decoration(cls, cr, size, font, title):
@@ -180,7 +180,7 @@ class CairoWindow(BaseWindow, CairoWidget):
 		CairoWidget.__init__(self, position, size, *args, **kwargs)
 		
 		self._bordersize = bordersize
-		self._font = self.create_font(size=9)
+		self._titlefont = self.create_font(size=9)
 
 class SampleOpenGLWindow(OpenGLWindow):
 	def __init__(self, *args, **kwargs):
@@ -304,7 +304,7 @@ class SampleCairoWindow(CairoWindow):
 		cr = self.cr
 		
 		CairoWidget.clear(cr, (0,0,0,0))
-		WindowDecoration.render_decoration(cr, self.size, self._font, self._title)
+		WindowDecoration.render_decoration(cr, self.size, self._titlefont, self._title)
 		
 		p = [v * self.size for v in self.points]
 		

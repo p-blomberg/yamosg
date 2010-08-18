@@ -4,13 +4,33 @@
 from copy import copy, deepcopy
 
 from ui import Widget
-from ui.window import SampleCairoWindow
+from ui.window import CairoWindow, SampleCairoWindow, WindowDecoration
+from ui._cairo import ALIGN_RIGHT
 from common.vector import Vector2i, Vector3
 from common.rect import Rect
 
 import pygame
 from OpenGL.GL import *
 from OpenGL.GLU import *
+
+class EntityWindow(CairoWindow):
+	def __init__(self, entity, info, **kwargs):
+		CairoWindow.__init__(self, None, Vector2i(300,200), title=entity.id, **kwargs)
+		self._entity = entity
+		self._info = info
+		self._font = CairoWindow.create_font(size=9)
+
+	def do_render(self):
+		cr = self.cr
+
+		CairoWindow.clear(cr, (0,0,0,0))
+		WindowDecoration.render_decoration(cr, self.size, self._titlefont, self._title)
+
+		for i, (k,v) in enumerate(self._info.items()):
+			cr.move_to(5, 25 + i * 15)
+			CairoWindow.text(cr, k, self._font, alignment=ALIGN_RIGHT, width=75)
+			cr.move_to(100, 25 + i * 15)
+			CairoWindow.text(cr, str(v), self._font)
 
 class GameWidget(Widget):
 	def __init__(self, client, size):
@@ -187,7 +207,7 @@ class GameWidget(Widget):
 			return
 
 		info = self._client.entity_info(entity.id)
-		self._client.add_window(SampleCairoWindow(None, Vector2i(150,150), title=entity.id))
+		self._client.add_window(EntityWindow(entity, info))
 	
 	#
 	# Rendering
