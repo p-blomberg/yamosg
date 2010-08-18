@@ -15,7 +15,11 @@ from OpenGL.GLU import *
 
 class EntityWindow(CairoWindow):
 	def __init__(self, entity, info, **kwargs):
-		CairoWindow.__init__(self, None, Vector2i(300,200), title=entity.id, **kwargs)
+		title = str(entity.id)
+		if entity.owner:
+			title += ' (%s)' % entity.owner
+
+		CairoWindow.__init__(self, None, Vector2i(300,200), title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 		self._font = CairoWindow.create_font(size=9)

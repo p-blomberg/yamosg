@@ -150,6 +150,7 @@ class Client:
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
+		self._players = {}
 		
 		#self.add_window(SampleCairoWindow(Vector2i(70,20), Vector2i(320,480)))
 		self.add_window(SampleOpenGLWindow(Vector2i(70,20), Vector2i(320,480)))
@@ -327,10 +328,14 @@ class Client:
 	def players(self, players):
 		return players
 
+	def player_by_id(self, id):
+		return self._players.get(unicode(id), None)
+
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
 		self.login(password='bar', username='foo')
+		self._players = self.players()
 		self.list_of_entities()
 
 if __name__ == '__main__':

@@ -33,7 +33,7 @@ class Entity:
 		self._cargo = Cargo
 		self._speed = Vector3(*Speed)
 		self._minable = Minable
-		self._owner = Owner
+		self.owner = client.player_by_id(Owner)
 		self.sprite = 0
 
 		if Type == 'Planet':
