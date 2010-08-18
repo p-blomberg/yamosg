@@ -79,7 +79,6 @@ class BaseWindow:
 				self.pos.x -= delta.x
 			
 			if self._resize_mode == 2:
-				#self.pos.x -= delta.x
 				self._moveref.x += delta.x
 			
 			self.on_resize(self.size)
