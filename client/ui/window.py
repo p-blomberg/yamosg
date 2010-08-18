@@ -9,7 +9,8 @@ from OpenGL.GLU import *
 from copy import copy
 
 class BaseWindow:
-	def __init__(self, title, minsize=Vector2i(150,150)):
+	def __init__(self, id=None, title='Unnamed window', minsize=Vector2i(150,150)):
+		self._id = id
 		self._title = title
 		self._minsize = minsize
 		
@@ -17,6 +18,9 @@ class BaseWindow:
 		self._ref = None
 		self._is_moving = False
 		self._is_resizing = False
+
+	def id(self):
+		return self._id
 
 	def title(self):
 		return self._title
@@ -170,15 +174,15 @@ def get_autopos(size):
 	return v
 
 class OpenGLWindow(BaseWindow, Widget):
-	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, title='Unnamed window', *args, **kwargs):
+	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, *args, **kwargs):
 		if position is None:
 			position = get_autopos(size)
 
-		BaseWindow.__init__(self, title)
+		BaseWindow.__init__(self, **kwargs)
 		Widget.__init__(self, position, size, *args, format=format, **kwargs)
 	
 		self._bordersize = bordersize
-		self._decoration = WindowDecoration(size, title)
+		self._decoration = WindowDecoration(size, self.title())
 	
 	def get_children(self):
 		return [self._decoration]
@@ -188,15 +192,18 @@ class OpenGLWindow(BaseWindow, Widget):
 		self._decoration.on_resize(size)
 
 class CairoWindow(BaseWindow, CairoWidget):
-	def __init__(self, position, size, bordersize=1, title='Unnamed window', *args, **kwargs):
+	def __init__(self, position, size, bordersize=1, *args, **kwargs):
 		if position is None:
 			position = get_autopos(size)
 
-		BaseWindow.__init__(self, title)
+		BaseWindow.__init__(self, **kwargs)
 		CairoWidget.__init__(self, position, size, *args, **kwargs)
 		
 		self._bordersize = bordersize
 		self._titlefont = self.create_font(size=9)
+
+	def render_decoration(self):
+		WindowDecoration.render_decoration(self.cr, self.size, self._titlefont, self.title())
 
 class SampleOpenGLWindow(OpenGLWindow):
 	def __init__(self, *args, **kwargs):
@@ -320,7 +327,7 @@ class SampleCairoWindow(CairoWindow):
 		cr = self.cr
 		
 		CairoWidget.clear(cr, (0,0,0,0))
-		WindowDecoration.render_decoration(cr, self.size, self._titlefont, self._title)
+		self.render_decoration()
 		
 		p = [v * self.size for v in self.points]
 		

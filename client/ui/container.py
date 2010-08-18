@@ -61,11 +61,15 @@ class Container(Widget):
 		self.invalidate()
 
 	def find_window(self, name):
+		# to make sure we dont find a window with id None
+		if name is None:
+			return None
+
 		for c in self._children:
 			if not isinstance(c, BaseWindow):
 				continue
 
-			if c.title() == name:
+			if c.id() == name:
 				return c
 		return None
 	

@@ -9,7 +9,7 @@ from OpenGL.GLU import *
 from pango import ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT
 
 class CairoWidget:
-	def __init__(self, pos, size, format=cairo.FORMAT_ARGB32, filter=GL_NEAREST):
+	def __init__(self, pos, size, format=cairo.FORMAT_ARGB32, filter=GL_NEAREST, **kwargs):
 		self.pos = pos
 		self.size = size
 		self.width, self.height = size.xy()

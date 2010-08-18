@@ -19,7 +19,7 @@ class EntityWindow(CairoWindow):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		CairoWindow.__init__(self, None, Vector2i(300,200), title=title, **kwargs)
+		CairoWindow.__init__(self, None, Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 		self._font = CairoWindow.create_font(size=9)
