@@ -9,11 +9,20 @@ from ui._cairo import ALIGN_RIGHT
 from common.vector import Vector2i, Vector3
 from common.rect import Rect
 
-import pygame
+import pygame, cairo, os.path
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+def load(path):
+	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
+
 class EntityWindow(CairoWindow):
+	icons = {
+		'GO': [load('BTNMove.png'), load('BTNMove_disabled.png')],
+		'BUILD': [load('BTNHumanBuild.png'), load('BTNHumanBuild_disabled.png')],
+		'LOAD': [load('BTNLoad.png'), load('BTNLoad_disabled.png')],
+	}
+
 	def __init__(self, entity, info, **kwargs):
 		title = str(entity.id)
 		if entity.owner:
@@ -24,11 +33,28 @@ class EntityWindow(CairoWindow):
 		self._info = info
 		self._font = CairoWindow.create_font(size=9)
 
+		if not 'actions' in self._info:
+			self._info['actions'] = {}
+
 	def do_render(self):
 		cr = self.cr
 
 		CairoWindow.clear(cr, (0,0,0,0))
 		WindowDecoration.render_decoration(cr, self.size, self._titlefont, self._title)
+
+		for i, x in enumerate(['GO', 'LOAD', 'BUILD']):
+			icon = self.icons[x][1] # disabled
+			if x in self._info['actions']:
+				icon = self.icons[x][0] # enabled
+
+			cr.save()
+			cr.translate(i*50 + 25, 25)
+			cr.scale(50.0/icon.get_width(), 50.0/icon.get_height())
+			cr.set_source_surface(icon)
+			#cr.set_source_rgb(1,0,0)
+			#cr.mask(cairo.SolidPattern(0.1,0.5,1.0,.8))
+			cr.paint()
+			cr.restore()
 
 		for i, (k,v) in enumerate(self._info.items()):
 			cr.move_to(5, 25 + i * 15)
