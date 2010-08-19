@@ -104,12 +104,8 @@ class Entity:
 			
 		return actual_amount
 
-	def go(self, params):
-		print params
-		speed=Vector3(params[0], params[1], params[2])
-		if(speed.length() > self.max_speed):
-			return "NOT_OK: Max speed for "+self.__class__.__name__+" is "+str(self.max_speed)
-		self._velocity=speed
+	def go(self, x, y, z):
+		self._dst = Vector3(x, y, z)
 		return "OK"
 
 	def action(self, action, args):
@@ -118,9 +114,27 @@ class Entity:
 		except KeyError:
 			response="NOT_OK: ENTACTION %s is not valid" %(action)
 		return response
-
+	
+	def _distance(self):
+		""" Distance to destination """
+		return (self.position - self._dst).length()
+	
 	def tick(self, key_tick):
-		self.position=self.position+(self._velocity*(1./15))
+		dt = 1./15
+		
+		# only move if we are to far from the target position
+		if self._distance() > 1.0: # @todo use radius (or something better)
+			# calculate new velocity
+			f = 5000.0 # force
+			a = f / self.mass # acceleration
+			dir = (self._dst - self.position).normalize() # direction
+			self._velocity += dir * a
+			
+			# clamp at max speed
+			if self._velocity.length() > self.max_speed:
+				self._velocity = self._velocity.normalize() * self.max_speed
+		
+			self.position += self._velocity * dt
 
 class Planet(Entity):
 	minable=True
@@ -212,6 +226,7 @@ class Miner(Ship):
 					self.mine(e)
 
 class Gateway(Station):
+	max_speed = 0.2
 	cost = 10000000
 	size = 10
 	types = {
