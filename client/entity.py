@@ -31,7 +31,7 @@ class Entity:
 		self.id = Id
 		self.position = Vector3(*Position)
 		self._cargo = Cargo
-		self._velocity = Vector3(*Speed)
+		self._velocity = Vector3(*velocity)
 		self._minable = Minable
 		self.owner = client.player_by_id(Owner)
 		self.sprite = 0
