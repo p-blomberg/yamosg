@@ -26,12 +26,12 @@ def load_sprite(filename):
 	return texture
 
 class Entity:
-	def __init__(self, Type, Id, Position, Cargo, Speed, Minable, Owner):
+	def __init__(self, Type, Id, Position, Cargo, velocity, Minable, Owner):
 		self._type = Type
 		self.id = Id
 		self.position = Vector3(*Position)
 		self._cargo = Cargo
-		self._speed = Vector3(*Speed)
+		self._velocity = Vector3(*Speed)
 		self._minable = Minable
 		self.owner = client.player_by_id(Owner)
 		self.sprite = 0
