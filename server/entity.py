@@ -17,10 +17,12 @@ class Entity:
 		
 		self.container=container
 		self.owner=owner
-		
-		self.position=position
 		self.game=game
-		self._velocity = Vector3(0,0,0)
+		
+		self.position = position # where it currently is
+		self._velocity = Vector3(0,0,0) # current (calculated) velocity
+		self._dst = position # where it is going
+		
 		self.cargo = {}
 		self.actions = {
 			'GO': self.go
