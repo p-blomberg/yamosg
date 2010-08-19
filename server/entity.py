@@ -20,7 +20,7 @@ class Entity:
 		
 		self.position=position
 		self.game=game
-		self.speed=Vector3(0,0,0)
+		self.velocity = Vector3(0,0,0)
 		self.cargo = {}
 		self.actions = {
 			'GO': self.go
@@ -39,7 +39,7 @@ class Entity:
 	
 	def __str__(self):
 		return self.encode()
-		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", speed: "+str(self.speed)+", cargo: "+str(self.cargo);
+		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", velocity: "+str(self.velocity)+", cargo: "+str(self.cargo);
 
 	def dinmamma(self):
 		d={
@@ -47,7 +47,7 @@ class Entity:
 			"Id": self.id,
 			"Owner": self.owner and self.owner.id or None,
 			"Position": self.position and self.position.xyz() or None,
-			"Speed": self.speed.xyz(),
+			"velocity": self.velocity.xyz(),
 			"Minable": self.minable,
 			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
 		}
@@ -107,7 +107,7 @@ class Entity:
 		speed=Vector3(params[0], params[1], params[2])
 		if(speed.length() > self.max_speed):
 			return "NOT_OK: Max speed for "+self.__class__.__name__+" is "+str(self.max_speed)
-		self.speed=speed
+		self.velocity=speed
 		return "OK"
 
 	def action(self, action, args):
@@ -118,7 +118,7 @@ class Entity:
 		return response
 
 	def tick(self, key_tick):
-		self.position=self.position+(self.speed*(1./15))
+		self.position=self.position+(self.velocity*(1./15))
 
 class Planet(Entity):
 	minable=True
