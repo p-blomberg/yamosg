@@ -50,6 +50,9 @@ class CairoWidget:
 	
 	def invalidate(self):
 		self._invalidated = True
+
+	def is_invalidated(self):
+		return self._invalidated
 	
 	def display(self):
 		self.bind_texture()

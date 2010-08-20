@@ -5,6 +5,7 @@ from copy import copy, deepcopy
 
 from ui import Widget
 from ui.button import Button
+from ui.hbox import HBox
 from ui.window import Window
 from ui._cairo import ALIGN_RIGHT
 from common.vector import Vector2i, Vector3
@@ -23,7 +24,8 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		Window.__init__(self, widget=Button(), position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
+		hbox = HBox(Button(color=(1,0,1,1)), Button(color=(0,1,1,1)))
+		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 

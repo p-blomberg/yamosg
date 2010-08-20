@@ -5,10 +5,10 @@ from OpenGL.GL import *
 from OpenGL import extensions
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
-from common.vector import Vector2i
+from common.vector import Vector2i, Vector3
 
 class Widget:
-	def __init__(self, pos=Vector2i(1,1), size=Vector2i(1,1), format=GL_RGB8, filter=GL_NEAREST, **kwargs):
+	def __init__(self, pos=Vector3(1,1,0), size=Vector2i(1,1), format=GL_RGB8, filter=GL_NEAREST, **kwargs):
 		self.pos = pos
 		self.size = size
 		self.width, self.height = size.xy()
@@ -65,6 +65,9 @@ class Widget:
 
 	def invalidate(self):
 		self._invalidated = True
+
+	def is_invalidated(self):
+		return self._invalidated
 	
 	def project(self, point):
 		"""
@@ -163,11 +166,11 @@ class Widget:
 	
 	def render(self):
 		# if any of the children are invalidated this is also invalidated.
-		if any([x._invalidated for x in self.get_children()]):
-			self._invalidated = True
+		if any([x.is_invalidated() for x in self.get_children()]):
+			self.invalidate()
 	
 		# must check if a child is invalidated
-		if not self._invalidated:
+		if not self.is_invalidated():
 			return
 		
 		# mark it as not invalidated before actually rendering so that widgets

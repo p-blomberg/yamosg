@@ -6,18 +6,24 @@ from ui import Widget
 from OpenGL.GL import *
 
 class Button(Widget):
-	def __init__(self, callback=None, *args, **kwargs):
+	def __init__(self, callback=None, color=(1,0,0,1), *args, **kwargs):
 		Widget.__init__(self, *args, **kwargs)
 		self._callback = callback or (lambda *args: None)
+		self._color = color
 	
 	def on_buttondown(self, pos, button):
 		self._callback(pos, button)
 	
 	def do_render(self):
+		print 'render button', id(self), self.size
+
+		glClearColor(*self._color)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
 		glTranslate(*self.pos)
 		glBindTexture(GL_TEXTURE_2D, 0)
 		
-		glColor4f(0,1,1,1)
+		glColor4f(*self._color)
 		glBegin(GL_QUADS)
 		glTexCoord2f(0, 1)
 		glVertex2f(0, 0)
