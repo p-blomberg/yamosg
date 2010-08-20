@@ -15,8 +15,9 @@ class Button(Widget):
 	
 	def do_render(self):
 		glTranslate(*self.pos)
+		glBindTexture(GL_TEXTURE_2D, 0)
 		
-		glColor4f(1,1,1,1)
+		glColor4f(0,1,1,1)
 		glBegin(GL_QUADS)
 		glTexCoord2f(0, 1)
 		glVertex2f(0, 0)

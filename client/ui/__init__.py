@@ -5,9 +5,10 @@ from OpenGL.GL import *
 from OpenGL import extensions
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
+from common.vector import Vector2i
 
 class Widget:
-	def __init__(self, pos, size, format=GL_RGB8, filter=GL_NEAREST):
+	def __init__(self, pos=Vector2i(1,1), size=Vector2i(1,1), format=GL_RGB8, filter=GL_NEAREST, **kwargs):
 		self.pos = pos
 		self.size = size
 		self.width, self.height = size.xy()
@@ -103,6 +104,7 @@ class Widget:
 		self.width, self.height = size.xy()
 		self._projection = self.projection()
 		self._generate_framebuffer()
+		self.invalidate()
 
 	def on_mousemove(self, pos, buttons):
 		pass

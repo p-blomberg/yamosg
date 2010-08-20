@@ -3,7 +3,7 @@
 
 from ui import Widget
 from ui._cairo import CairoWidget, ALIGN_CENTER
-from common.vector import Vector2i, Vector2f
+from common.vector import Vector2i, Vector2f, Vector3
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from copy import copy
@@ -204,6 +204,34 @@ class CairoWindow(BaseWindow, CairoWidget):
 
 	def render_decoration(self):
 		WindowDecoration.render_decoration(self.cr, self.size, self._titlefont, self.title())
+
+class Window(OpenGLWindow):
+	def __init__(self, widget, *args, **kwargs):
+		OpenGLWindow.__init__(self, *args, **kwargs)
+		self._widget = widget
+
+		# force resizing (so the child widget will get the correct size
+		self.on_resize(self.size)
+
+	def get_children(self):
+		return [self._widget] + OpenGLWindow.get_children(self)
+
+	def on_resize(self, size):
+		self._widget.pos = Vector3(self._bordersize, self._bordersize)
+		self._widget.size = Vector2i(self.size.x - self._bordersize*2, self.size.y - 21) # @todo must calculate titlebar height
+		self._widget.on_resize(self._widget.size)
+		OpenGLWindow.on_resize(self, size)
+
+	def do_render(self):
+		glClearColor(0,0,0,0)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		
+		self._decoration.display()
+
+		glPushMatrix()
+		self._widget.display()
+		glPopMatrix()
+		
 
 class SampleOpenGLWindow(OpenGLWindow):
 	def __init__(self, *args, **kwargs):
