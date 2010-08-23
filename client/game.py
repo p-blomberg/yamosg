@@ -7,8 +7,9 @@ from ui import Widget
 from ui.button import Button
 from ui.hbox import HBox
 from ui.window import Window
+from ui.layout import LayoutAttachment
 from ui._cairo import ALIGN_RIGHT
-from common.vector import Vector2i, Vector3
+from common.vector import Vector2i, Vector2f, Vector3
 from common.rect import Rect
 
 import pygame, cairo, os.path
@@ -24,7 +25,11 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		hbox = HBox(Button(color=(1,0,1,1)), Button(color=(0,1,1,1)))
+		hbox = HBox()
+		hbox.add(Button(color=(1,0,1,1)), size=LayoutAttachment(Vector2f(0,1), Vector2f(100, 0)))
+		hbox.add(Button(color=(0,1,1,1)))
+		hbox.add(Button(color=(1,1,0,1)))
+
 		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info

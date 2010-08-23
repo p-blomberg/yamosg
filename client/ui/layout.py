@@ -13,5 +13,7 @@ class LayoutAttachment:
         self.relative = relative
         self.absolute = absolute
 
+    def get_absolute(self, size):
+        return self.relative * size + self.absolute
 
         
