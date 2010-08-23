@@ -15,8 +15,6 @@ class Button(Widget):
 		self._callback(pos, button)
 	
 	def do_render(self):
-		print 'render button', id(self), self.size
-
 		glClearColor(*self._color)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 

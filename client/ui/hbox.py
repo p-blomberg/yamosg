@@ -14,10 +14,8 @@ class HBox:
             return self._widgets
       
       def on_resize(self, size):
-            #dx = float(size.x) / len(self._widgets)
-            dx = 25.0
+            dx = float(size.x) / len(self._widgets)
             for n,c in enumerate(self._widgets):
-                  print n, n*dx
                   c.pos.y = 00
                   c.pos.x = n*dx
                   c.pos.z = 0.0
