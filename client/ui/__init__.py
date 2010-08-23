@@ -9,8 +9,8 @@ from common.vector import Vector2i, Vector3
 
 class Widget:
 	def __init__(self, pos=Vector3(1,1,0), size=Vector2i(1,1), format=GL_RGB8, filter=GL_NEAREST, **kwargs):
-		self.pos = pos
-		self.size = size
+		self.pos = pos.copy()
+		self.size = size.copy()
 		self.width, self.height = size.xy()
 		self._format = format
 		self._filter = filter
