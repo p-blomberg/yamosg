@@ -22,12 +22,39 @@ class _Box:
                   abs = wsize.get_absolute(size)
                   sum += getattr(abs, field)
 
-            left = float(size.x - sum)
+            left = float(getattr(size, field) - sum)
 
             if left <= 0 or n == 0:
                   return 0
             
             return left / n
+
+      def _resize_children(self, size, dx=None, dy=None):
+            x = 0.0
+            y = 0.0
+            for n, (widget, wsize, wposition) in enumerate(self._widgets):
+                  widget.pos.x = x
+                  widget.pos.y = y
+                  widget.pos.z = 0.0
+
+                  if wsize is None:
+                        ix = dx
+                        iy = dy
+                        widget.size.x = dx or size.x
+                        widget.size.y = dy or size.y
+                  else:
+                        abs = wsize.get_absolute(size)
+                        ix = abs.x
+                        iy = abs.y
+                        widget.size = abs
+
+                  # increase position
+                  if dx is not None:
+                        x += ix
+                  if dy is not None:
+                        y += iy
+
+                  widget.on_resize(widget.size)
 
       def is_invalidated(self):
             return any([x.is_invalidated() for x in self.get_children()])
@@ -56,20 +83,14 @@ class HBox(_Box):
             self._default_size = functools.partial(_Box._default_size, self, field='x')
 
       def on_resize(self, size):
-            dx = self._default_size(size)
-            x = 0.0
-            for n, (widget, wsize, wposition) in enumerate(self._widgets):
-                  widget.pos.y = 00
-                  widget.pos.x = x
-                  widget.pos.z = 0.0
+            delta = self._default_size(size)
+            self._resize_children(size, dx=delta)
 
-                  if wsize is None:
-                        x += dx
-                        widget.size.x = dx
-                        widget.size.y = size.y
-                  else:
-                        abs = wsize.get_absolute(size)
-                        x += abs.x
-                        widget.size = abs
+class VBox(_Box):
+      def __init__(self, *widgets):
+            _Box.__init__(self, *widgets)
+            self._default_size = functools.partial(_Box._default_size, self, field='y')
 
-                  widget.on_resize(widget.size)
+      def on_resize(self, size):
+            delta = self._default_size(size)
+            self._resize_children(size, dy=delta)
