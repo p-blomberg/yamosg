@@ -29,6 +29,7 @@ class EntityWindow(Window):
 		hbox.add(Button(color=(1,0,1,1)), size=LayoutAttachment(Vector2f(0,1), Vector2f(100, 0)))
 		hbox.add(Button(color=(0,1,1,1)))
 		hbox.add(Button(color=(1,1,0,1)))
+		hbox.add(Button(color=(1,1,1,1)))
 
 		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
