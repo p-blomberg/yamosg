@@ -51,13 +51,12 @@ class _Box:
             self._widgets.append((widget, size, position))
 
 class HBox(_Box):
-      _default_size = functools.partial(_Box._default_size, field='x')
-
       def __init__(self, *widgets):
             _Box.__init__(self, *widgets)
+            self._default_size = functools.partial(_Box._default_size, self, field='x')
 
       def on_resize(self, size):
-            dx = self._default_size(self, size)
+            dx = self._default_size(size)
             x = 0.0
             for n, (widget, wsize, wposition) in enumerate(self._widgets):
                   widget.pos.y = 00
