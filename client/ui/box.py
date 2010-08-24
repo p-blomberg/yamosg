@@ -3,9 +3,12 @@
 
 from OpenGL.GL import *
 import functools
+from common.vector import Vector3
 
 class _Box:
-      def __init__(self, *widgets):
+      def __init__(self, position=Vector3(0,0,0), size=Vector3(0,0,0), *widgets):
+            self.pos = position.copy()
+            self.size = size.copy()
             self._widgets = []
             for c in widgets:
                   self.add(c)
@@ -69,6 +72,7 @@ class _Box:
                   glPopMatrix()
 
       def display(self):
+            glTranslatef(*self.pos)
             for c in self.get_children():
                   glPushMatrix()
                   c.display()
@@ -83,6 +87,7 @@ class HBox(_Box):
             self._default_size = functools.partial(_Box._default_size, self, field='x')
 
       def on_resize(self, size):
+            self.size = size
             delta = self._default_size(size)
             self._resize_children(size, dx=delta)
 
@@ -92,5 +97,6 @@ class VBox(_Box):
             self._default_size = functools.partial(_Box._default_size, self, field='y')
 
       def on_resize(self, size):
+            self.size = size
             delta = self._default_size(size)
             self._resize_children(size, dy=delta)
