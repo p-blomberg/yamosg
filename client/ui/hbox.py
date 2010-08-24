@@ -60,7 +60,9 @@ class HBox:
 
       def display(self):
             for c in self.get_children():
+                  glPushMatrix()
                   c.display()
+                  glPopMatrix()
 
       def add(self, widget, size=None, position=None):
             self._widgets.append((widget, size, position))
