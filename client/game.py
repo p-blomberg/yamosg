@@ -5,7 +5,7 @@ from copy import copy, deepcopy
 
 from ui import Widget
 from ui.button import Button
-from ui.hbox import VBox
+from ui.box import HBox
 from ui.window import Window
 from ui.layout import LayoutAttachment
 from ui._cairo import ALIGN_RIGHT
@@ -25,8 +25,8 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		hbox = VBox()
-		#hbox.add(Button(color=(1,0,1,1)), size=LayoutAttachment(Vector2f(0,1), Vector2f(100, 0)))
+		hbox = HBox()
+		hbox.add(Button(color=(1,0,1,1)), size=LayoutAttachment(Vector2f(0,1), Vector2f(100, 0)))
 		hbox.add(Button(color=(0,1,1,1)))
 		hbox.add(Button(color=(1,1,0,1)))
 		hbox.add(Button(color=(1,1,1,1)))

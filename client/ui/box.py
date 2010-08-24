@@ -15,7 +15,7 @@ class _Box:
             n = 0
             sum = 0.0
             for _, wsize, _ in self._widgets:
-                  if wsize is None:
+                  if wsize is None or getattr(wsize, field, None) is None:
                         n += 1
                         continue
 
