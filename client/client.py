@@ -152,9 +152,6 @@ class Client:
 		self._playerid = None
 		self._players = {}
 		
-		#self.add_window(SampleCairoWindow(Vector2i(70,20), Vector2i(320,480)))
-		self.add_window(SampleOpenGLWindow(Vector2i(70,20), Vector2i(320,480)))
-
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
 	
