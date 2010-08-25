@@ -233,15 +233,20 @@ class Window(OpenGLWindow):
 		self.on_resize(self.size)
 
 	def hit_test(self, point, project=True):
-		# @todo initial hit test should be done on window, then on contained object.
-
 		if project:
 			point = self.project(point)
 
-		if self._decoration.hit_test(point) is not None:
-			return self, point
+		# perform an initial hit test to determine if the window was hit at all.
+		window_hit = OpenGLWindow.hit_test(self, point, False)
+		if window_hit is None:
+			return None
 
-		return self._widget.hit_test(point, True) or OpenGLWindow.hit_test(self, point, False)
+		# check if the window decoration was hit
+		if self._decoration.hit_test(point) is not None:
+			return window_hit
+
+		# assume the child was hit
+		return self._widget.hit_test(point, True)
 
 	def get_children(self):
 		return [self._widget] + OpenGLWindow.get_children(self)
