@@ -213,6 +213,12 @@ class Window(OpenGLWindow):
 		# force resizing (so the child widget will get the correct size
 		self.on_resize(self.size)
 
+	def hit_test(self, point, project=True):
+		if project:
+			point = self.project(point)
+
+		return self._widget.hit_test(point, True) or OpenGLWindow.hit_test(self, point, False)
+
 	def get_children(self):
 		return [self._widget] + OpenGLWindow.get_children(self)
 

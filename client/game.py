@@ -28,9 +28,12 @@ class EntityWindow(Window):
 		hbox = HBox()
 		vbox = VBox()
 		vbox2 = VBox()
+
+		def test(msg):
+			print msg
 		
 		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(150, 0)))
-		hbox.add(Button(color=(0,1,1,1)))
+		hbox.add(Button(color=(0,1,1,1), callback=lambda x,y: test("foo")))
 		hbox.add(vbox2)
 
 		vbox.add(Button(color=(1,0,1,1)), size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 150)))

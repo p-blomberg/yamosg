@@ -59,6 +59,20 @@ class _Box:
 
                   widget.on_resize(widget.size)
 
+      def project(self, point):
+            return point - self.pos
+
+      def hit_test(self, point, project=True):
+            if project:
+                  point = self.project(point)
+
+            for widget in self.get_children():
+                  hit = widget.hit_test(point, True)
+                  if hit is not None:
+                        return hit
+
+            return None
+
       def is_invalidated(self):
             return any([x.is_invalidated() for x in self.get_children()])
 
