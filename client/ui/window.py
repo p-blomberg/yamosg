@@ -233,6 +233,8 @@ class Window(OpenGLWindow):
 		self.on_resize(self.size)
 
 	def hit_test(self, point, project=True):
+		# @todo initial hit test should be done on window, then on contained object.
+
 		if project:
 			point = self.project(point)
 
