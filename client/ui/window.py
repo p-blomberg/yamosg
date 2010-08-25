@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from ui import Widget
+from ui import FBOWidget
 from ui._cairo import CairoWidget, ALIGN_CENTER
 from common.vector import Vector2i, Vector2f, Vector3
 from OpenGL.GL import *
@@ -192,13 +192,13 @@ def get_autopos(size):
 
 	return v
 
-class OpenGLWindow(BaseWindow, Widget):
+class OpenGLWindow(BaseWindow, FBOWidget):
 	def __init__(self, position, size, bordersize=1, format=GL_RGBA8, *args, **kwargs):
 		if position is None:
 			position = get_autopos(size)
 
 		BaseWindow.__init__(self, **kwargs)
-		Widget.__init__(self, position, size, *args, format=format, **kwargs)
+		FBOWidget.__init__(self, position, size, *args, format=format, **kwargs)
 	
 		self._bordersize = bordersize
 		self._decoration = WindowDecoration(size, self.title())
@@ -207,7 +207,7 @@ class OpenGLWindow(BaseWindow, Widget):
 		return [self._decoration]
 	
 	def on_resize(self, size):
-		Widget.on_resize(self, size)
+		FBOWidget.on_resize(self, size)
 		self._decoration.on_resize(size)
 
 class CairoWindow(BaseWindow, CairoWidget):

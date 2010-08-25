@@ -1,15 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from ui import Widget
+from ui import FBOWidget
 from window import BaseWindow
 
 from OpenGL.GL import *
 from copy import copy
 
-class Container(Widget):
+class Container(FBOWidget):
 	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
-		Widget.__init__(self, position, size, *args, format=format, **kwargs)
+		FBOWidget.__init__(self, position, size, *args, format=format, **kwargs)
 		self._children = []
 
 		for i, child in enumerate(children):
@@ -32,7 +32,7 @@ class Container(Widget):
 			if hit:
 				return hit
 		
-		return Widget.hit_test(self, point, False)
+		return FBOWidget.hit_test(self, point, False)
 
 	def bring_to_front(self, widget):
 		for c in self._children:

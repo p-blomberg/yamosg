@@ -3,7 +3,7 @@
 
 from copy import copy, deepcopy
 
-from ui import Widget
+from ui import FBOWidget
 from ui.button import Button
 from ui.box import HBox, VBox
 from ui.window import Window
@@ -50,9 +50,9 @@ class EntityWindow(Window):
 		if not 'actions' in self._info:
 			self._info['actions'] = {}
 
-class GameWidget(Widget):
+class GameWidget(FBOWidget):
 	def __init__(self, client, size):
-		Widget.__init__(self, Vector2i(0,0), size)
+		FBOWidget.__init__(self, Vector2i(0,0), size)
 		self._client = client
 		self.entities = []
 		self._scale = 1.0
@@ -124,7 +124,7 @@ class GameWidget(Widget):
 		return min + (max - min) * u
 
 	def projection(self):
-		self._ortho_projection = Widget.projection(self)
+		self._ortho_projection = FBOWidget.projection(self)
 		fov = 90.0
 		near = 0.1
 		far = 1000.0

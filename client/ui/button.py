@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from ui import Widget
+from ui import FBOWidget
 
 from OpenGL.GL import *
 
-class Button(Widget):
+class Button(FBOWidget):
 	def __init__(self, callback=None, color=(1,0,0,1), *args, **kwargs):
-		Widget.__init__(self, *args, **kwargs)
+		FBOWidget.__init__(self, *args, **kwargs)
 		self._callback = callback or (lambda *args: None)
 		self._color = color
 	
