@@ -3,12 +3,12 @@
 
 from OpenGL.GL import *
 import functools
-from common.vector import Vector3
+from common.vector import Vector3, Vector2i
+from ui import Widget
 
-class _Box:
-      def __init__(self, position=Vector3(0,0,0), size=Vector3(0,0,0), *widgets):
-            self.pos = position.copy()
-            self.size = size.copy()
+class _Box(Widget):
+      def __init__(self, position=Vector3(0,0,0), size=Vector2i(1,1), *widgets):
+            Widget.__init__(self, position, size)
             self._widgets = []
             for c in widgets:
                   self.add(c)
@@ -59,9 +59,6 @@ class _Box:
 
                   widget.on_resize(widget.size)
 
-      def project(self, point):
-            return point - self.pos
-
       def hit_test(self, point, project=True):
             if project:
                   point = self.project(point)
@@ -101,7 +98,7 @@ class HBox(_Box):
             self._default_size = functools.partial(_Box._default_size, self, field='x')
 
       def on_resize(self, size):
-            self.size = size
+            _Box.on_resize(self, size)
             delta = self._default_size(size)
             self._resize_children(size, dx=delta)
 
@@ -111,6 +108,6 @@ class VBox(_Box):
             self._default_size = functools.partial(_Box._default_size, self, field='y')
 
       def on_resize(self, size):
-            self.size = size
+            _Box.on_resize(self, size)
             delta = self._default_size(size)
             self._resize_children(size, dy=delta)
