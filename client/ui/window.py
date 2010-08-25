@@ -100,6 +100,25 @@ class WindowDecoration(CairoWidget):
 		self._title = title
 		self._titlefont = self.create_font(size=9)
 	
+	# hit constants
+	TITLEBAR = 1
+	CLOSE = 2
+	RESIZE = 3
+	def hit_test(self, point):
+		# @todo invert logic
+
+		border = 1
+		if point.y > self.height- border - 20:
+			if point.x > self.width - 20:
+				return self.CLOSE
+			return self.TITLEBAR
+		
+		if point.y < 20 and (point.x < 20 or point.x > self.width - 20):
+			return self.RESIZE
+
+		return None
+		
+
 	def do_render(self):
 		self.render_decoration(self.cr, self.size, self._titlefont, self._title)
 	
@@ -216,6 +235,9 @@ class Window(OpenGLWindow):
 	def hit_test(self, point, project=True):
 		if project:
 			point = self.project(point)
+
+		if self._decoration.hit_test(point) is not None:
+			return self, point
 
 		return self._widget.hit_test(point, True) or OpenGLWindow.hit_test(self, point, False)
 
