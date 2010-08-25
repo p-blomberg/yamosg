@@ -137,7 +137,7 @@ class WindowDecoration(CairoWidget):
 		cr.line_to (border, radius + border/2)
 		cr.close_path ()
 		
-		cr.set_source_rgba (1.0, 1.0, 1.0, 0.95)
+		cr.set_source_rgba (1.0, 1.0, 1.0, 0.0)
 		cr.fill()
 		
 		# titlebar
@@ -261,11 +261,11 @@ class Window(OpenGLWindow):
 		glClearColor(0,0,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
-		self._decoration.display()
-
 		glPushMatrix()
 		self._widget.display()
 		glPopMatrix()
+
+		self._decoration.display()
 		
 
 class SampleOpenGLWindow(OpenGLWindow):
