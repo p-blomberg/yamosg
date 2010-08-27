@@ -20,7 +20,7 @@ from state import Initial, StateManager
 from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
-from ui.container import Container
+from ui.container import Composite
 from ui.window import SampleCairoWindow, SampleOpenGLWindow
 
 import pygame
@@ -143,7 +143,7 @@ class Client:
 		self._running = False
 		self._state = StateManager()
 		self._game = GameWidget(self, resolution)
-		self._container = Container(Vector2i(0,0), resolution, children=[self._game])
+		self._container = Composite(Vector2i(0,0), resolution, children=[self._game])
 		self._state.push(GameState(resolution, self._container))
 		self._network = Network(self, host, port)
 		self._command_store = {}

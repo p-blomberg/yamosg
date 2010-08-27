@@ -7,7 +7,7 @@ from window import BaseWindow
 from OpenGL.GL import *
 from copy import copy
 
-class Container(FBOWidget):
+class Composite(FBOWidget):
 	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
 		FBOWidget.__init__(self, position, size, *args, format=format, **kwargs)
 		self._children = []
