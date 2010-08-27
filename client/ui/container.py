@@ -9,18 +9,18 @@ from copy import copy
 import inspect
 
 class Container:
-	def __init__(self, children=[], *args, **kwargs):
+	def __init__(self, sort_key, children=[], *args, **kwargs):
 		assert isinstance(self, Widget)
 
+		self._sort_key = sort_key
 		self._children = []
 		for i, child in enumerate(children):
 			self.add(child, zorder=i)
 		
 		self.sort()
 
-	def add(self, widget, zorder=0):
+	def add(self, widget):
 		widget.parent = self
-		widget.__zorder = zorder
 
 		self._children.append(widget)
 		self.invalidate()
@@ -41,7 +41,7 @@ class Container:
 		self.sort()
 
 	def sort(self):
-		self._children.sort(key=lambda x: x.__zorder, reverse=True)
+		self._children.sort(key=self._sort_key, reverse=True)
 
 		# renumber
 		n = len(self._children)
@@ -67,8 +67,12 @@ class Container:
 
 class Composite(Container, FBOWidget):
 	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
-		Container.__init__(self, children=children)
+		Container.__init__(self, sort_key=lambda x: x.__zorder, children=children)
 		FBOWidget.__init__(self, position, size, *args, format=format, **kwargs)
+
+	def add(self, widget, zorder=0):
+		widget.__zorder = zorder
+		Container.add(self, widget)
 
 	def find_window(self, name):
 		# to make sure we dont find a window with id None
