@@ -40,8 +40,8 @@ class Vector2:
 	def __mul__(self, rhs):
 		try:
 			# componentwise multiplication
-			return self.__class__(self.x * rhs.x, self.y * rhs.y)
-		except AttributeError:
+			return self.__class__(self.x * rhs[0], self.y * rhs[1])
+		except TypeError:
 			# scalar multiplication
 			return self.__class__(self.x * rhs, self.y * rhs)
 
