@@ -2,7 +2,7 @@
 #on windows.
 import os
 try:
-	import rsvg
+	from rsvg import *
 	WINDOWS=False
 except ImportError:
 	print "Warning, could not import 'rsvg'"
