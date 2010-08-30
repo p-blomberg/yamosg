@@ -8,7 +8,7 @@ from OpenGL.GL.EXT.framebuffer_object import *
 from common.vector import Vector2i, Vector3
 
 class Widget:
-	def __init__(self, pos, size, **kwargs):
+	def __init__(self, pos=Vector3(0,0,0), size=Vector2i(1,1), **kwargs):
 		self.pos = pos.copy()
 		self.size = size.copy()
 		self.width, self.height = size.xy()
