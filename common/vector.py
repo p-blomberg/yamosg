@@ -161,9 +161,9 @@ if __name__ == '__main__':
 			self.assertRaises(ValueError, Vector2, (1.0, 2.0), 3.0)
 		
 		def test_alias(self):
-			v = Vector2(1.0, 2.0)
-			self.assertEqual(v.x, 1.0)
-			self.assertEqual(v.y, 2.0)
+			v = Vector2(1.0, 2.0) * 2.0
+			self.assertEqual(v.x, 2.0)
+			self.assertEqual(v.y, 4.0)
 			self.assertEqual(v.width, v.x)
 			self.assertEqual(v.height, v.y)
 			self.assertEqual(v[0], v.x)
@@ -258,10 +258,10 @@ if __name__ == '__main__':
 			self.assertRaises(ValueError, Vector3, (1.0, 2.0, 3.0), 4.0, 5.0)
 
 		def test_alias(self):
-			v = Vector3(1.0, 2.0, 3.0)
-			self.assertEqual(v.x, 1.0)
-			self.assertEqual(v.y, 2.0)
-			self.assertEqual(v.z, 3.0)
+			v = Vector3(1.0, 2.0, 3.0) * 2.0
+			self.assertEqual(v.x, 2.0)
+			self.assertEqual(v.y, 4.0)
+			self.assertEqual(v.z, 6.0)
 			self.assertEqual(v[0], v.x)
 			self.assertEqual(v[1], v.y)
 			self.assertEqual(v[2], v.z)
