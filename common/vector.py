@@ -37,13 +37,13 @@ class Vector2:
 	def __sub__(self, rhs):
 		return self.__class__(self.x - rhs.x, self.y - rhs.y)
 	
-	# scalar multiplication
-	def __mul__(self, scalar):
-		return self.__class__(self.x * scalar, self.y * scalar)
-	
-	# componentwise multiplication
 	def __mul__(self, rhs):
-		return self.__class__(self.x * rhs.x, self.y * rhs.y)
+		try:
+			# componentwise multiplication
+			return self.__class__(self.x * rhs.x, self.y * rhs.y)
+		except AttributeError:
+			# scalar multiplication
+			return self.__class__(self.x * rhs, self.y * rhs)
 
 	def __repr__(self):
 		return '<vector (%.3f, %.3f)>' % (self.x, self.y)
