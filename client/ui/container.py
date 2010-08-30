@@ -9,7 +9,7 @@ from copy import copy
 import inspect
 
 class Container:
-	def __init__(self, sort_key, children=[], *args, **kwargs):
+	def __init__(self, sort_key=None, children=[], *args, **kwargs):
 		assert isinstance(self, Widget)
 
 		self._sort_key = sort_key
@@ -41,6 +41,9 @@ class Container:
 		self.sort()
 
 	def sort(self):
+		if self._sort_key is None:
+			return
+
 		self._children.sort(key=self._sort_key, reverse=True)
 
 		# renumber
