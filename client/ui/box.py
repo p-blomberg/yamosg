@@ -31,7 +31,7 @@ class _Box(Container, Widget):
             
             return left / n
 
-      def _resize_children(self, size, dx=None, dy=None):
+      def _resize_children(self, size, final, dx=None, dy=None):
             x = 0.0
             y = 0.0
             for n, widget in enumerate(self.get_children()):
@@ -56,7 +56,7 @@ class _Box(Container, Widget):
                   if dy is not None:
                         y += iy
 
-                  widget.on_resize(widget.size)
+                  widget.on_resize(widget.size, final)
 
       def add(self, widget, size=None, position=None):
             widget.__size = size
@@ -81,17 +81,17 @@ class HBox(_Box):
             _Box.__init__(self, *widgets)
             self._default_size = functools.partial(_Box._default_size, self, field='x')
 
-      def on_resize(self, size):
-            _Box.on_resize(self, size)
+      def on_resize(self, size, final):
+            _Box.on_resize(self, size, final)
             delta = self._default_size(size)
-            self._resize_children(size, dx=delta)
+            self._resize_children(size, final, dx=delta)
 
 class VBox(_Box):
       def __init__(self, *widgets):
             _Box.__init__(self, *widgets)
             self._default_size = functools.partial(_Box._default_size, self, field='y')
 
-      def on_resize(self, size):
-            _Box.on_resize(self, size)
+      def on_resize(self, size, final):
+            _Box.on_resize(self, size, final)
             delta = self._default_size(size)
-            self._resize_children(size, dy=delta)
+            self._resize_children(size, final, dy=delta)

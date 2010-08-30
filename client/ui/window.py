@@ -54,6 +54,9 @@ class BaseWindow:
 			self.focus_lock()
 	
 	def on_buttonup(self, pos, button):
+		if self._is_resizing:
+			self.on_resize(self.size, final=True)
+
 		self._is_moving = False
 		self._is_resizing = False
 		self._resize_mode = None
@@ -91,7 +94,7 @@ class BaseWindow:
 			if self._resize_mode == 1:
 				self.pos.x = self._posref.x + delta.x
 						
-			self.on_resize(self.size)
+			self.on_resize(self.size, final=False)
 			self.invalidate()
 
 class WindowDecoration(CairoWidget):
@@ -206,8 +209,8 @@ class OpenGLWindow(BaseWindow, FBOWidget):
 	def get_children(self):
 		return [self._decoration]
 	
-	def on_resize(self, size):
-		FBOWidget.on_resize(self, size)
+	def on_resize(self, size, final):
+		FBOWidget.on_resize(self, size, final)
 		self._decoration.on_resize(size)
 
 class CairoWindow(BaseWindow, CairoWidget):
@@ -230,7 +233,7 @@ class Window(OpenGLWindow):
 		self._widget = widget
 
 		# force resizing (so the child widget will get the correct size
-		self.on_resize(self.size)
+		self.on_resize(self.size, final=True)
 
 	def hit_test(self, point, project=True):
 		if project:
@@ -251,11 +254,11 @@ class Window(OpenGLWindow):
 	def get_children(self):
 		return [self._widget] + OpenGLWindow.get_children(self)
 
-	def on_resize(self, size):
+	def on_resize(self, size, final):
 		self._widget.pos = Vector3(self._bordersize, self._bordersize)
 		self._widget.size = Vector2i(self.size.x - self._bordersize*2, self.size.y - 21) # @todo must calculate titlebar height
-		self._widget.on_resize(self._widget.size)
-		OpenGLWindow.on_resize(self, size)
+		self._widget.on_resize(self._widget.size, final)
+		OpenGLWindow.on_resize(self, size, final)
 
 	def do_render(self):
 		glClearColor(0,0,0,0)

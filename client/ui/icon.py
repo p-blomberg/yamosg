@@ -18,9 +18,9 @@ class Icon(Widget):
 		self._filename = filename
 		(self._texture, real_size) = self.load_texture(filename)
 	
-	def on_resize(self, size):
-		Widget.on_resize(self, size)
-		if self._filename[-4:] == '.svg':
+	def on_resize(self, size, final):
+		Widget.on_resize(self, size, final)
+		if final and self._filename[-4:] == '.svg':
 			self._texture,_ = self._rasterize_svg(self._filename)
 	
 	def load_texture(self, file):

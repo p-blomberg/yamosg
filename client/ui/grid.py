@@ -26,8 +26,8 @@ class Grid(Container, Widget):
             x.display()
             glPopMatrix()
     
-    def on_resize(self, size):
-        Widget.on_resize(self, size)
+    def on_resize(self, size, final):
+        Widget.on_resize(self, size, final)
         
         dx, dy = size * (1.0/self._cols, 1.0/self._rows)
 
@@ -41,4 +41,4 @@ class Grid(Container, Widget):
             widget.size.x = dx
             widget.size.y = dy
 
-            widget.on_resize(widget.size)
+            widget.on_resize(widget.size, final)

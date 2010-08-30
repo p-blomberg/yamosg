@@ -69,7 +69,7 @@ class Widget:
 		
 		return self, point
 
-	def on_resize(self, size):
+	def on_resize(self, size, final):
 		self.size = size
 		self.width, self.height = size.xy()
 		self.invalidate()
@@ -138,8 +138,8 @@ class FBOWidget(Widget):
 		
 		self.unbind_fbo()
 
-	def on_resize(self, size):
-		Widget.on_resize(self, size)
+	def on_resize(self, size, final):
+		Widget.on_resize(self, size, final)
 		self._projection = self.projection()
 		self._generate_framebuffer()
 		self.invalidate()
