@@ -16,12 +16,12 @@ class Icon(Widget):
 		Widget.__init__(self)
 		
 		self._filename = filename
-		(self.texture, real_size) = self.load_texture(filename)
+		(self._texture, real_size) = self.load_texture(filename)
 	
 	def on_resize(self, size):
 		Widget.on_resize(self, size)
 		if self._filename[-4:] == '.svg':
-			return self._rasterize_svg(self.filename)
+			self._texture,_ = self._rasterize_svg(self._filename)
 	
 	def load_texture(self, file):
 		if file[-4:] == '.svg':
@@ -37,7 +37,7 @@ class Icon(Widget):
 			surface = pygame.image.load(fp).convert_alpha()
 		
 		try:
-			data = pygame.image.tostring(surface, "RGBA", 0)
+			data = pygame.image.tostring(surface, "RGBA", True)
 			
 			glBindTexture(GL_TEXTURE_2D, texture)
 			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, surface.get_width(), surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
@@ -49,10 +49,12 @@ class Icon(Widget):
 		return (texture, surface.get_size())
 	
 	def _rasterize_svg(self, file):
-		svg = rsvg.Handle(buffer=open(file, 'rb').read())
+		svg = rsvg.Handle(file)
 		real_size = svg.get_dimension_data()
 		
 		s = self.size
+
+		print 'real', real_size, 'size', s
 		
 		if s[0] == -1 and s[0] == -1:
 			scale = (1.0, 1.0)
@@ -64,8 +66,11 @@ class Icon(Widget):
 			scale = (r, r)
 		else: # non uniform
 			scale = (float(s[0]) / real_size[0], float(s[1]) / real_size[1])
-		
+			
 		(width, height) = size = (int(real_size[0] * scale[0]), int(real_size[1] * scale[1]))
+
+		print 'scale', scale
+		print 'new size', size
 		
 		data = array.array('c', chr(0) * width * height * 4)
 		stride = width * 4
@@ -74,7 +79,8 @@ class Icon(Widget):
 		texture = glGenTextures(1);
 		
 		cr = cairo.Context(surface)			
-		cr.scale(scale[0], scale[1])
+		cr.translate(0, height)
+		cr.scale(scale[0], -scale[1])
 		svg.render_cairo(cr)
 		
 		glBindTexture(GL_TEXTURE_2D, texture);
@@ -85,3 +91,26 @@ class Icon(Widget):
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, data.tostring());
 		
 		return (texture, size)
+
+	def display(self):
+		glBindTexture(GL_TEXTURE_2D, self._texture);
+		glColor4f(1,1,1,1)
+		
+		glTranslatef(self.pos.x, self.pos.y, 0.0)
+		
+		glBegin(GL_QUADS)
+		glTexCoord2f(0, 0)
+		glVertex3f(0, 0, 0)
+		
+		glTexCoord2f(0, 1)
+		glVertex3f(0, self.height, 0)
+		
+		glTexCoord2f(1, 1)
+		glVertex3f(self.width, self.height, 0)
+		
+		glTexCoord2f(1, 0)
+		glVertex3f(self.width, 0, 0)
+		glEnd()
+
+	def render(self):
+		pass
