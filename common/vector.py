@@ -64,6 +64,9 @@ class Vector2:
 	def __iter__(self):
 		return [self.x, self.y].__iter__()
 
+	def __getitem__(self, index):
+		return [self.x, self.y][index]
+
 class Vector2f (Vector2):
 	""" Alias for Vector2, just for consistency """
 	pass
@@ -129,6 +132,9 @@ class Vector3:
 	def __iter__(self):
 		return [self.x, self.y, self.z].__iter__()
 
+	def __getitem__(self, index):
+		return [self.x, self.y, self.z][index]
+
 # ------------------------------------------------------------------------------
 #
 # Unittesting
@@ -160,6 +166,8 @@ if __name__ == '__main__':
 			self.assertEqual(v.y, 2.0)
 			self.assertEqual(v.width, v.x)
 			self.assertEqual(v.height, v.y)
+			self.assertEqual(v[0], v.x)
+			self.assertEqual(v[1], v.y)
 			
 		def test_copy(self):
 			v1 = Vector2(1.0, 2.0)
@@ -248,6 +256,15 @@ if __name__ == '__main__':
 		def test_constructor_tuple_number(self):
 			self.assertRaises(ValueError, Vector3, (1.0, 2.0, 3.0), 4.0)
 			self.assertRaises(ValueError, Vector3, (1.0, 2.0, 3.0), 4.0, 5.0)
+
+		def test_alias(self):
+			v = Vector3(1.0, 2.0, 3.0)
+			self.assertEqual(v.x, 1.0)
+			self.assertEqual(v.y, 2.0)
+			self.assertEqual(v.z, 3.0)
+			self.assertEqual(v[0], v.x)
+			self.assertEqual(v[1], v.y)
+			self.assertEqual(v[2], v.z)
 		
 		def test_copy(self):
 			v1 = Vector3(1.0, 2.0, 3.0)
