@@ -5,24 +5,23 @@ from OpenGL.GL import *
 import functools
 from common.vector import Vector3, Vector2i
 from ui import Widget
+from ui.container import Container
 
-class _Box(Widget):
+class _Box(Container, Widget):
       def __init__(self, position=Vector3(0,0,0), size=Vector2i(1,1), *widgets):
+            Container.__init__(self, children=widgets)
             Widget.__init__(self, position, size)
-            self._widgets = []
-            for c in widgets:
-                  self.add(c)
 
       def _default_size(self, size, field):
             # get the sum of the requested widths
             n = 0
             sum = 0.0
-            for _, wsize, _ in self._widgets:
-                  if wsize is None:
+            for widget in self.get_children():
+                  if widget.__size is None:
                         n += 1
                         continue
 
-                  abs = wsize.get_absolute(size)
+                  abs = widget.__size.get_absolute(size)
                   sum += getattr(abs, field)
 
             left = float(getattr(size, field) - sum)
@@ -35,18 +34,18 @@ class _Box(Widget):
       def _resize_children(self, size, dx=None, dy=None):
             x = 0.0
             y = 0.0
-            for n, (widget, wsize, wposition) in enumerate(self._widgets):
+            for n, widget in enumerate(self.get_children()):
                   widget.pos.x = x
                   widget.pos.y = y
                   widget.pos.z = 0.0
 
-                  if wsize is None:
+                  if widget.__size is None:
                         ix = dx
                         iy = dy
                         widget.size.x = dx or size.x
                         widget.size.y = dy or size.y
                   else:
-                        abs = wsize.get_absolute(size)
+                        abs = widget.__size.get_absolute(size)
                         ix = abs.x
                         iy = abs.y
                         widget.size = abs
@@ -59,22 +58,10 @@ class _Box(Widget):
 
                   widget.on_resize(widget.size)
 
-      def hit_test(self, point, project=True):
-            if project:
-                  point = self.project(point)
-
-            for widget in self.get_children():
-                  hit = widget.hit_test(point, True)
-                  if hit is not None:
-                        return hit
-
-            return None
-
-      def is_invalidated(self):
-            return any([x.is_invalidated() for x in self.get_children()])
-
-      def get_children(self):
-            return [widget for (widget, _, _) in self._widgets]
+      def add(self, widget, size=None, position=None):
+            widget.__size = size
+            widget.__position = position
+            Container.add(self, widget)
 
       def render(self):
             for x in self.get_children():
@@ -84,13 +71,10 @@ class _Box(Widget):
 
       def display(self):
             glTranslatef(*self.pos)
-            for c in self.get_children():
+            for x in self.get_children():
                   glPushMatrix()
-                  c.display()
+                  x.display()
                   glPopMatrix()
-
-      def add(self, widget, size=None, position=None):
-            self._widgets.append((widget, size, position))
 
 class HBox(_Box):
       def __init__(self, *widgets):
