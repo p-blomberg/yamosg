@@ -2,11 +2,11 @@
 #on windows.
 import os
 try:
-    import rsvg
-    WINDOWS=False
+	import rsvg
+	WINDOWS=False
 except ImportError:
-    print "Warning, could not import 'rsvg'"
-    if os.name != 'nt':
+	print "Warning, could not import 'rsvg'"
+	if os.name != 'nt':
 		raise
 	
 	print "Detected windows, creating rsvg."
