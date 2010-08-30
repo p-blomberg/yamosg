@@ -6,8 +6,10 @@ from copy import copy, deepcopy
 from ui import FBOWidget
 from ui.button import Button
 from ui.box import HBox, VBox
+from ui.grid import Grid
 from ui.window import Window
 from ui.layout import LayoutAttachment
+from ui.icon import Icon
 from ui._cairo import ALIGN_RIGHT
 from common.vector import Vector2i, Vector2f, Vector3
 from common.rect import Rect
@@ -25,25 +27,14 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		hbox = HBox()
-		vbox = VBox()
-		vbox2 = VBox()
-
-		def test(msg):
-			print msg
+		box = Grid(2,2)
 		
-		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(150, 0)))
-		hbox.add(Button(color=(0,1,1,1), callback=lambda x,y: test("foo")))
-		hbox.add(vbox2)
+		box.add(Icon(filename='../textures/BTNHumanBuild.png'))
+		box.add(Icon(filename='../textures/BTNLoad.png'))
+		box.add(Icon(filename='../textures/BTNMove.png'))
+		box.add(Icon(filename='../textures/tiger.svg'))
 
-		vbox.add(Button(color=(1,0,1,1)), size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 150)))
-		vbox.add(Button(color=(1,0.5,1,1)))
-
-		vbox2.add(Button(color=(1,0,0,1)))
-		vbox2.add(Button(color=(0,1,0,1)))
-		vbox2.add(Button(color=(0,0,1,1)))
-
-		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
+		Window.__init__(self, widget=box, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 
