@@ -54,8 +54,6 @@ class Icon(Widget):
 		
 		s = self.size
 
-		print 'real', real_size, 'size', s
-		
 		if s[0] == -1 and s[0] == -1:
 			scale = (1.0, 1.0)
 		elif s[0] == -1:
@@ -69,8 +67,6 @@ class Icon(Widget):
 			
 		(width, height) = size = (int(real_size[0] * scale[0]), int(real_size[1] * scale[1]))
 
-		print 'scale', scale
-		print 'new size', size
 		
 		data = array.array('c', chr(0) * width * height * 4)
 		stride = width * 4
