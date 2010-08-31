@@ -511,6 +511,8 @@ class Game:
 	def entity_info(self, connection, entity):
 		d = entity.dinmamma()
 		
+		# append actions, empty list if no actions are available
+		d['actions'] = []
 		if entity.owner == connection.player:
 			d['actions'] = entity.actions.keys()
 		
