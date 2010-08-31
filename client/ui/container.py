@@ -34,12 +34,6 @@ class Container:
 	def get_children(self):
 		return self._children
 
-	def bring_to_front(self, widget):
-		for c in self._children:
-			c.__zorder += 1
-		widget.__zorder = 0
-		self.sort()
-
 	def sort(self):
 		if self._sort_key is None:
 			return
@@ -49,7 +43,7 @@ class Container:
 		# renumber
 		n = len(self._children)
 		for i,c in enumerate(self._children):
-			c.__zorder = n - 1
+			c.__zorder = n - i
 
 	def is_invalidated(self):
 		return any([x.is_invalidated() for x in self.get_children()])
@@ -74,8 +68,15 @@ class Composite(Container, FBOWidget):
 		FBOWidget.__init__(self, position, size, *args, format=format, **kwargs)
 
 	def add(self, widget, zorder=0):
-		widget.__zorder = zorder
+		widget.__zorder = copy(zorder)
 		Container.add(self, widget)
+
+	def bring_to_front(self, widget):
+		for c in self._children:
+			c.__zorder += 1
+		widget.__zorder = 0
+		widget.invalidate()
+		self.sort()
 
 	def find_window(self, name):
 		# to make sure we dont find a window with id None
