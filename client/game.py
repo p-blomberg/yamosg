@@ -17,18 +17,27 @@ from common.rect import Rect
 import pygame, cairo, os.path
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import types, traceback
 
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
 
+_ACTION_LUT = {}
 class EntityWindow(Window):
-	ICON_LUT = {
-		'GO': 'BTNMove.png',
-		'LOAD': 'BTNLoad.png',
-		'BUILD': 'BTNHumanBuild.png'
-	}
+	def action(name, icon):
+		global _ACTION_LUT
+		def wrapper(func):
+			_ACTION_LUT[name] = (icon, func)
+			return func
+		return wrapper
+
+
+	#	'LOAD':  ('BTNLoad.png', EntityWindow.on_load),
+	#	'BUILD': ('BTNHumanBuild.png', EntityWindow.on_build)
+	#}
 
 	def __init__(self, entity, info, **kwargs):
+		global _ACTION_LUT
 		title = str(entity.id)
 		if entity.owner:
 			title += ' (%s)' % entity.owner
@@ -38,11 +47,20 @@ class EntityWindow(Window):
 		grid = Grid(3,3)
 		
 		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(192, 0)))
-
 		vbox.add(grid, size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 192)))
 
+		default = ('default_texture.png', None)
 		for action in info['actions']:
-			grid.add(Icon(filename=self.ICON_LUT.get(action, 'default_texture.png')))
+			try:
+				file, callback = _ACTION_LUT.get(action, default)
+				icon = Icon(filename=file)
+
+				callback = types.MethodType(callback, self, self.__class__)
+				button = Button(icon, callback=callback)
+
+				grid.add(button)
+			except:
+				traceback.print_exc()
 
 		grid.add(Icon(filename='../textures/tiger.svg'))
 
@@ -50,8 +68,17 @@ class EntityWindow(Window):
 		self._entity = entity
 		self._info = info
 
-		if not 'actions' in self._info:
-			self._info['actions'] = {}
+	@action('GO', 'BTNMove.png')
+	def on_go(self, pos, button):
+		print 'go'
+
+	@action('LOAD', 'BTNLoad.png')
+	def on_load(self, pos, button):
+		print 'load'
+
+	@action('BUILD', 'BTNHumanBuild.png')
+	def on_build(self, pos, button):
+		print 'build'
 
 class GameWidget(FBOWidget):
 	def __init__(self, client, size):

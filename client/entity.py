@@ -43,3 +43,6 @@ class Entity:
 
 	def __str__(self):
 		return '<Entity pos=%s>' % (str(self.position))
+
+	def on_go(self, pos, button):
+		print 'go', pos, button
