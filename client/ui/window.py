@@ -248,8 +248,12 @@ class Window(OpenGLWindow):
 		if self._decoration.hit_test(point) is not None:
 			return window_hit
 
-		# assume the child was hit
-		return self._widget.hit_test(point, True)
+		# check if child was hit
+		child_hit = self._widget.hit_test(point, True)
+		if child_hit is not None:
+			return child_hit
+
+		return window_hit
 
 	def get_children(self):
 		return [self._widget] + OpenGLWindow.get_children(self)

@@ -60,7 +60,8 @@ class Container:
 			if hit:
 				return hit
 		
-		return Widget.hit_test(self, point, False)
+		# containers cannot be hit
+		return None
 
 class Composite(Container, FBOWidget):
 	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
