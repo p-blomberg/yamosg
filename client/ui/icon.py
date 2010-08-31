@@ -5,18 +5,20 @@ from ui import Widget
 
 import pygame
 import traceback
-import os
+import os, os.path
 from OpenGL.GL import *
 import rsvg_wrapper as rsvg
 import array
 import cairo
 
+_texture_path = '../textures'
+
 class Icon(Widget):
 	def __init__(self, filename):
 		Widget.__init__(self)
 		
-		self._filename = filename
-		(self._texture, real_size) = self.load_texture(filename)
+		self._filename = os.path.join(_texture_path, filename)
+		(self._texture, real_size) = self.load_texture(self._filename)
 	
 	def on_resize(self, size, final):
 		Widget.on_resize(self, size, final)

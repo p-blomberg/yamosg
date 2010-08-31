@@ -22,6 +22,12 @@ def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
 
 class EntityWindow(Window):
+	ICON_LUT = {
+		'GO': 'BTNMove.png',
+		'LOAD': 'BTNLoad.png',
+		'BUILD': 'BTNHumanBuild.png'
+	}
+
 	def __init__(self, entity, info, **kwargs):
 		title = str(entity.id)
 		if entity.owner:
@@ -35,9 +41,9 @@ class EntityWindow(Window):
 
 		vbox.add(grid, size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 192)))
 
-		grid.add(Icon(filename='../textures/BTNHumanBuild.png'))
-		grid.add(Icon(filename='../textures/BTNLoad.png'))
-		grid.add(Icon(filename='../textures/BTNMove.png'))
+		for action in info['actions']:
+			grid.add(Icon(filename=self.ICON_LUT.get(action, 'default_texture.png')))
+
 		grid.add(Icon(filename='../textures/tiger.svg'))
 
 		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
