@@ -27,14 +27,20 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		box = Grid(2,2)
+		hbox = HBox()
+		vbox = VBox()
+		grid = Grid(3,3)
 		
-		box.add(Icon(filename='../textures/BTNHumanBuild.png'))
-		box.add(Icon(filename='../textures/BTNLoad.png'))
-		box.add(Icon(filename='../textures/BTNMove.png'))
-		box.add(Icon(filename='../textures/tiger.svg'))
+		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(192, 0)))
 
-		Window.__init__(self, widget=box, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
+		vbox.add(grid, size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 192)))
+
+		grid.add(Icon(filename='../textures/BTNHumanBuild.png'))
+		grid.add(Icon(filename='../textures/BTNLoad.png'))
+		grid.add(Icon(filename='../textures/BTNMove.png'))
+		grid.add(Icon(filename='../textures/tiger.svg'))
+
+		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 
