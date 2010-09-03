@@ -195,17 +195,6 @@ class GameWidget(FBOWidget):
 	def on_mousemove(self, pos, buttons):
 		world_pos = self._unproject(pos)
 
-		for e in self._entities:
-			if world_pos.x < e.position.x or world_pos.y < e.position.y:
-				e.hover = False
-				continue
-			
-			if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
-				e.hover = False
-				continue
-
-			e.hover = True
-
 		if buttons[1] and self._is_selecting:
 			self.on_select_move(pos)
 
