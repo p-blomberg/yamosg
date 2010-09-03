@@ -404,16 +404,16 @@ class GameWidget(FBOWidget):
 				1.0 + i * 0.4,
 				1.0 + i * 0.6)
 			glBegin(GL_QUADS)
-			glTexCoord2f(t.x, t.y)
+			glTexCoord2f(t.x, 1-t.y)
 			glVertex2f(0, 0)
 			
-			glTexCoord2f(t.x, t.y + t.h)
+			glTexCoord2f(t.x, 1-t.y + t.h)
 			glVertex2f(0, self.height)
 			
-			glTexCoord2f(t.x + t.w, t.y + t.h)
+			glTexCoord2f(t.x + t.w, 1-t.y + t.h)
 			glVertex2f(self.width, self.height)
 			
-			glTexCoord2f(t.x + t.w, t.y)
+			glTexCoord2f(t.x + t.w, 1-t.y)
 			glVertex2f(self.width, 0)
 			glEnd()
 		
