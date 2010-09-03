@@ -90,6 +90,7 @@ class GameWidget(FBOWidget):
 		self._panstart = None # position where the panning has started
 		self._panref = None
 		self._is_panning = False
+		self._is_selecting = False
 		self._foo = 0.0
 		
 		self._background = [None, None, None]
@@ -192,7 +193,7 @@ class GameWidget(FBOWidget):
 
 	def on_buttonup(self, pos, button):
 		if button == 1:
-			self.on_select_end(pos)
+			self.on_select_stop(pos)
 		elif button == 3:
 			self.on_pan_stop(pos)
 	
@@ -257,10 +258,10 @@ class GameWidget(FBOWidget):
 	#
 	
 	def on_select_start(self, pos):
-		pass
+		self._is_selecting = True
 
 	def on_select_stop(self, pos):
-		pass
+		self._is_selecting = False
 
 	def on_select_move(self, pos):
 		pass
