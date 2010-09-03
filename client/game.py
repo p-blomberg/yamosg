@@ -181,6 +181,7 @@ class GameWidget(FBOWidget):
 				
 				self.on_selection(e)
 				break
+			self.on_select_start(pos)
 		elif button == 3:
 			self.on_pan_start(pos)
 		elif button == 4:
@@ -190,7 +191,9 @@ class GameWidget(FBOWidget):
 			self.on_zoom(1.1, pos)
 
 	def on_buttonup(self, pos, button):
-		if button == 3:
+		if button == 1:
+			self.on_select_end(pos)
+		elif button == 3:
 			self.on_pan_stop(pos)
 	
 	def on_mousemove(self, pos, buttons):
@@ -206,6 +209,9 @@ class GameWidget(FBOWidget):
 				continue
 
 			e.hover = True
+
+		if buttons[1] and self._is_selecting:
+			self.on_select_move(pos)
 
 		if buttons[3] and self._is_panning:
 			self.on_pan_move(pos)
@@ -245,7 +251,20 @@ class GameWidget(FBOWidget):
 		self._rect.x = self._panref.x - rel.x
 		self._rect.y = self._panref.y - rel.y
 		self._calc_view_matrix()
+
+	#
+	# Selection
+	#
 	
+	def on_select_start(self, pos):
+		pass
+
+	def on_select_stop(self, pos):
+		pass
+
+	def on_select_move(self, pos):
+		pass
+
 	#
 	# Entity selected
 	#
