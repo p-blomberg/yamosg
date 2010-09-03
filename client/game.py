@@ -190,7 +190,9 @@ class GameWidget(FBOWidget):
 		if button == 1:
 			self.on_select_stop(pos)
 		elif button == 3:
-			self.on_pan_stop(pos)
+			delta = self.on_pan_stop(pos)
+			if delta.length_squared() < 5:
+				print 'move'
 	
 	def on_mousemove(self, pos, buttons):
 		world_pos = self._unproject(pos)
@@ -222,6 +224,7 @@ class GameWidget(FBOWidget):
 
 	def on_pan_start(self, pos):
 		self._is_panning = True
+		self._panstart_screen = pos.copy()
 		self._panstart = self._unproject(pos)
 		self._panref = self._rect.copy()
 		self._panrefview = copy(self._view)
@@ -230,6 +233,7 @@ class GameWidget(FBOWidget):
 	def on_pan_stop(self, pos):
 		self._is_panning = False
 		self.focus_unlock()
+		return pos - self._panstart_screen
 
 	def on_pan_move(self, pos):
 		rel = self._unproject(pos,self._panrefview) - self._panstart
