@@ -311,7 +311,7 @@ class Client:
 	
 	@server_call('LIST_OF_ENTITIES', decode=True)
 	def list_of_entities(self, descriptions):
-		self._game.entities = [Entity(**x) for x in descriptions]
+		self._game.set_entities([Entity(**x) for x in descriptions])
 	
 	@server_call('ENTINFO', 'id', decode=True)
 	def entity_info(self, info):

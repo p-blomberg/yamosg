@@ -62,8 +62,6 @@ class EntityWindow(Window):
 			except:
 				traceback.print_exc()
 
-		grid.add(Icon(filename='../textures/tiger.svg'))
-
 		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
@@ -84,7 +82,8 @@ class GameWidget(FBOWidget):
 	def __init__(self, client, size):
 		FBOWidget.__init__(self, Vector2i(0,0), size)
 		self._client = client
-		self.entities = []
+		self._entities = []
+		self._selection = [] # current selected entities
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
 		self._panstart = None # position where the panning has started
@@ -108,7 +107,12 @@ class GameWidget(FBOWidget):
 		glBindTexture(GL_TEXTURE_2D, 0)
 		
 		self._calc_view_matrix()
-	
+
+	def set_entities(self, entities):
+		self._entities = entities
+		for e in entities:
+			e.__selected = False
+
 	def _calc_view_matrix(self):
 		self._rect.w = self.size.width  * self._scale
 		self._rect.h = self.size.height * self._scale
@@ -173,15 +177,6 @@ class GameWidget(FBOWidget):
 		world_pos = self._unproject(pos)
 
 		if button == 1:
-			for e in self.entities:
-				if world_pos.x < e.position.x or world_pos.y < e.position.y:
-					continue
-				
-				if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
-					continue
-				
-				self.on_selection(e)
-				break
 			self.on_select_start(pos)
 		elif button == 3:
 			self.on_pan_start(pos)
@@ -200,7 +195,7 @@ class GameWidget(FBOWidget):
 	def on_mousemove(self, pos, buttons):
 		world_pos = self._unproject(pos)
 
-		for e in self.entities:
+		for e in self._entities:
 			if world_pos.x < e.position.x or world_pos.y < e.position.y:
 				e.hover = False
 				continue
@@ -263,15 +258,18 @@ class GameWidget(FBOWidget):
 		self._selection_ref_b = self._unproject(pos)
 
 	def on_select_stop(self, pos):
+		if not self._is_selecting:
+			return
+
 		self._is_selecting = False
-		print 'selection:'
+
 		a = self._selection_ref_a
 		b = self._selection_ref_b
 		a_min = Vector3(min(a.x,b.x), min(a.y,b.y), 0)
 		a_max = Vector3(max(a.x,b.x), max(a.y,b.y), 0)
 
 		selection = []
-		for e in self.entities:
+		for e in self._entities:
 			p = e.position
 
 			# @todo @refactor AABB-AABB overlapping
@@ -285,7 +283,8 @@ class GameWidget(FBOWidget):
 
 
 			selection.append(e)
-		print selection
+		
+		self.on_selection(selection)
 
 	def on_select_move(self, pos):
 		self._selection_ref_b = self._unproject(pos)
@@ -294,12 +293,25 @@ class GameWidget(FBOWidget):
 	# Entity selected
 	#
 	
-	def on_selection(self, entity):
-		if self.parent.find_window(entity.id) is not None:
-			return
+	def on_selection(self, selection):
+		print 'selection:', selection
 
-		info = self._client.entity_info(entity.id)
-		self._client.add_window(EntityWindow(entity, info))
+		for e in self._selection:
+			e.__selected = False
+
+		for e in selection:
+			e.__selected = True
+
+		self._selection = selection
+		
+		if len(selection) == 1:
+			entity = selection[0]
+			if self.parent.find_window(entity.id) is not None:
+				return
+
+			info = self._client.entity_info(entity.id)
+			self._client.add_window(EntityWindow(entity, info))
+			return
 	
 	#
 	# Rendering
@@ -321,7 +333,7 @@ class GameWidget(FBOWidget):
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 
 		glColor4f(1,1,1,1)		
-		for e in self.entities:
+		for e in self._entities:
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
 			
@@ -341,7 +353,7 @@ class GameWidget(FBOWidget):
 			glVertex3f(50, 0, 0)
 			glEnd()
 
-			if getattr(e, 'hover', False):
+			if e.__selected:
 				glDisable(GL_TEXTURE_2D)
 				glColor4f(1,1,0,1)
 				glBegin(GL_LINE_STRIP)
