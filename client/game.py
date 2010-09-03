@@ -259,12 +259,14 @@ class GameWidget(FBOWidget):
 	
 	def on_select_start(self, pos):
 		self._is_selecting = True
+		self._selection_ref_a = self._unproject(pos)
+		self._selection_ref_b = self._unproject(pos)
 
 	def on_select_stop(self, pos):
 		self._is_selecting = False
 
 	def on_select_move(self, pos):
-		pass
+		self._selection_ref_b = self._unproject(pos)
 
 	#
 	# Entity selected
@@ -331,6 +333,22 @@ class GameWidget(FBOWidget):
 				glEnable(GL_TEXTURE_2D)
 			
 			glPopMatrix()
+
+		if self._is_selecting:
+			a = self._selection_ref_a
+			b = self._selection_ref_b
+
+			glDisable(GL_TEXTURE_2D)
+			glColor4f(1,1,0,1)
+			glBegin(GL_LINE_STRIP)
+			glVertex3f(a.x, a.y, 0)
+			glVertex3f(a.x, b.y, 0)
+			glVertex3f(b.x, b.y, 0)
+			glVertex3f(b.x, a.y, 0)
+			glVertex3f(a.x, a.y, 0)
+			glEnd()
+			glColor4f(1,1,1,1)
+			glEnable(GL_TEXTURE_2D)
 
 		self.invalidate()
 	
