@@ -264,6 +264,28 @@ class GameWidget(FBOWidget):
 
 	def on_select_stop(self, pos):
 		self._is_selecting = False
+		print 'selection:'
+		a = self._selection_ref_a
+		b = self._selection_ref_b
+		a_min = Vector3(min(a.x,b.x), min(a.y,b.y), 0)
+		a_max = Vector3(max(a.x,b.x), max(a.y,b.y), 0)
+
+		selection = []
+		for e in self.entities:
+			p = e.position
+
+			# @todo @refactor AABB-AABB overlapping
+			b_min = p
+			b_max = p + Vector3(50,50,0) # @todo Hardcoded size @entsize
+
+			if a_max.x <  b_min.x or a_min.x > b_max.x:
+				continue
+			if a_max.y <  b_min.y or a_min.y > b_max.y:
+				continue
+
+
+			selection.append(e)
+		print selection
 
 	def on_select_move(self, pos):
 		self._selection_ref_b = self._unproject(pos)
