@@ -193,7 +193,7 @@ class Miner(Ship):
 		self.actions['SET_CARGO_TYPE']=self.set_cargo_type
 
 	def set_cargo_type(self, type):
-		self.cargo_type=type[0]
+		self.cargo_type=type
 		return "OK"
 
 	def go_to_planet(self):
