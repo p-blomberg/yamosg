@@ -10,7 +10,8 @@ from ui.grid import Grid
 from ui.window import Window
 from ui.layout import LayoutAttachment
 from ui.icon import Icon
-from ui._cairo import ALIGN_RIGHT
+from ui._cairo import CairoWidget, ALIGN_RIGHT
+from ui.tabview import TabView, Tab
 from common.vector import Vector2i, Vector2f, Vector3
 from common.rect import Rect
 
@@ -42,27 +43,18 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		hbox = HBox()
-		vbox = VBox()
-		grid = Grid(3,3)
+		actions = info['actions']
+		tabs = []
+
+		print actions
+
+		if 'BUILD' in actions:
+			tabs.append(Tab('Build', Button(Icon(filename='tiger.svg'))))
 		
-		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(192, 0)))
-		vbox.add(grid, size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 192)))
+		tabs.append(Tab('Stats', EntityStats(info)))
+		tab = TabView(tabs=tabs)
 
-		default = ('default_texture.png', None)
-		for action in info['actions']:
-			try:
-				file, callback = _ACTION_LUT.get(action, default)
-				icon = Icon(filename=file)
-
-				callback = types.MethodType(callback, self, self.__class__)
-				button = Button(icon, callback=callback)
-
-				grid.add(button)
-			except:
-				traceback.print_exc()
-
-		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
+		Window.__init__(self, widget=tab, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 
@@ -77,6 +69,22 @@ class EntityWindow(Window):
 	@action('BUILD', 'BTNHumanBuild.png')
 	def on_build(self, pos, button):
 		print 'build'
+
+class EntityStats(CairoWidget):
+	def __init__(self, info):
+		CairoWidget.__init__(self, Vector2i(0,0), Vector2i(1,1))
+		self._info = info
+		self._font = self.create_font()
+
+	def do_render(self):
+		cr = self.cr
+		self.clear(cr, (1,0,0,1))
+
+		text = ''
+		for k, v in self._info.items():
+			text += "%s: %s\n" % (k,v)
+
+		self.text(cr, text, self._font)
 
 class GameWidget(FBOWidget):
 	def __init__(self, client, size):

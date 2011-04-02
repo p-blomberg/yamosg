@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ui import Widget, FBOWidget
+from ui._cairo import CairoWidget
 from window import BaseWindow
 
 from OpenGL.GL import *
@@ -10,7 +11,7 @@ import inspect
 
 class Container:
 	def __init__(self, sort_key=None, children=[], *args, **kwargs):
-		assert isinstance(self, Widget)
+		assert isinstance(self, Widget) or isinstance(self, CairoWidget)
 
 		self._sort_key = sort_key
 		self._children = []
@@ -19,7 +20,7 @@ class Container:
 		
 		self.sort()
 
-	def add(self, widget):
+	def add(self, widget, zorder=None):
 		widget.parent = self
 
 		self._children.append(widget)
@@ -31,7 +32,9 @@ class Container:
 		self._children.remove(widget)
 		self.invalidate()
 
-	def get_children(self):
+	def get_children(self, index=None):
+		if index is not None:
+			return self._children[index]
 		return self._children
 
 	def sort(self):
