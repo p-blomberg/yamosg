@@ -257,7 +257,7 @@ class Gateway(Station):
 		self.owner.entities.append(ent)
 		
 		# Successful unit is successful
-		return "OK: ID="+str(ent.id)
+		return "OK "+str(ent.id)
 
 	def load(self, ship_id):
 		entity = self.game.entity_by_id(ship_id)
