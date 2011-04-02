@@ -232,9 +232,9 @@ class Gateway(Station):
 	cost = 10000000
 	size = 10
 	buildlist = {
-		"STATION": Station,
-		"SHIP": Ship,
-		"MINER": Miner
+		"Station": Station,
+		"Ship": Ship,
+		"Miner": Miner
 	}
 	
 	def build(self, type):
