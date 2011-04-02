@@ -44,7 +44,7 @@ class Entity:
 		return self.encode()
 		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", velocity: "+str(self._velocity)+", cargo: "+str(self.cargo);
 
-	def dinmamma(self):
+	def info(self):
 		d={
 			"Type" : self.__class__.__name__,
 			"Id": self.id,

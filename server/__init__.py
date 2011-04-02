@@ -440,7 +440,7 @@ class Game:
 			o.tick(key_tick)
 
 	def list_of_entities(self, connection):
-		return [x.dinmamma() for x in self._entities.values()]
+		return [x.info() for x in self._entities.values()]
 
 	def NewUser(self, connection, name, password):
 		# verify
@@ -509,7 +509,7 @@ class Game:
 	
 	@entity_param('entity')
 	def entity_info(self, connection, entity):
-		d = entity.dinmamma()
+		d = entity.info()
 		
 		# append actions, empty list if no actions are available
 		d['actions'] = []
