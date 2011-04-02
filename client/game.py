@@ -276,6 +276,8 @@ class GameWidget(FBOWidget):
 		a_min = Vector3(min(a.x,b.x), min(a.y,b.y), 0)
 		a_max = Vector3(max(a.x,b.x), max(a.y,b.y), 0)
 
+		multiselect = (a-b).length() > 0.1
+
 		selection = []
 		for e in self._entities:
 			p = e.position
@@ -289,8 +291,10 @@ class GameWidget(FBOWidget):
 			if a_max.y <  b_min.y or a_min.y > b_max.y:
 				continue
 
-
 			selection.append(e)
+
+		if not multiselect and len(selection)>1:
+			selection = [selection[-1]]
 		
 		self.on_selection(selection)
 
