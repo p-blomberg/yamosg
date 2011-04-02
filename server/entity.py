@@ -52,7 +52,7 @@ class Entity:
 			"Position": self.position and self.position.xyz() or None,
 			"velocity": self._velocity.xyz(),
 			"Minable": self.minable,
-			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
+			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()],
 			"Buildlist":self.buildlist.keys()
 		}
 		return d
