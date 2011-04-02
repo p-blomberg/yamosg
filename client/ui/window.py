@@ -265,7 +265,7 @@ class Window(OpenGLWindow):
 		OpenGLWindow.on_resize(self, size, final)
 
 	def do_render(self):
-		glClearColor(0,0,0,0)
+		glClearColor(0,0,0,1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
 		glPushMatrix()
