@@ -8,6 +8,7 @@ class Entity:
 	mass=None
 	minable=False
 	max_cargo=0
+	buildlist={}
 	
 	# used to autogenerate id
 	_id_counter = 0
@@ -52,6 +53,7 @@ class Entity:
 			"velocity": self._velocity.xyz(),
 			"Minable": self.minable,
 			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
+			"Buildlist":self.buildlist.keys()
 		}
 		return d
 
@@ -229,7 +231,7 @@ class Gateway(Station):
 	max_speed = 0.2
 	cost = 10000000
 	size = 10
-	types = {
+	buildlist = {
 		"STATION": Station,
 		"SHIP": Ship,
 		"MINER": Miner
@@ -237,7 +239,7 @@ class Gateway(Station):
 	
 	def build(self, type):
 		# Get factory
-		unit_type = self.types.get(type, None)
+		unit_type = self.buildlist.get(type, None)
 		
 		# See if we are able to build the specified unit
 		if unit_type is None:

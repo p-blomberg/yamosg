@@ -515,7 +515,7 @@ class Game:
 		d['actions'] = []
 		if entity.owner == connection.player:
 			d['actions'] = entity.actions.keys()
-		
+
 		return d
 	
 	def EntAction(self, connection, id, action, *args):
