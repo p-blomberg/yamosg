@@ -323,6 +323,10 @@ class Client:
 	@server_call('ENTINFO', 'id', decode=True)
 	def entity_info(self, info):
 		return info
+
+	@server_call('ENTACTION', 'id', 'action', 'what', decode=False)
+	def entity_action(self, info):
+		return info
 	
 	@server_call('LOGIN', 'username', 'password')
 	def login(self, playerid):

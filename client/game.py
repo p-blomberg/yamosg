@@ -49,7 +49,7 @@ class EntityWindow(Window):
 
 		if 'BUILD' in actions:
 			build = []
-			for type in ['foo', 'bar', 'baz']:
+			for type in info['Buildlist']:
 				callback = functools.partial(EntityWindow.on_build, self, what=type)
 				build.append(Button(Icon(filename='tiger.svg'), callback=callback))
 			grid = Grid(3, 3, *build)
@@ -73,6 +73,8 @@ class EntityWindow(Window):
 	@action('BUILD', 'BTNHumanBuild.png')
 	def on_build(self, pos, button, what):
 		print 'build', what
+		info = client.entity_action(self._entity.id, 'BUILD', what)
+		print info
 
 class EntityStats(CairoWidget):
 	def __init__(self, info):
