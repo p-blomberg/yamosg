@@ -47,8 +47,6 @@ class EntityWindow(Window):
 		actions = info['actions']
 		tabs = []
 
-		print actions
-
 		if 'BUILD' in actions:
 			build = []
 			for type in ['foo', 'bar', 'baz']:
