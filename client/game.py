@@ -45,7 +45,17 @@ class EntityWindow(Window):
 			title += ' (%s)' % entity.owner
 
 		actions = info['actions']
+		act = []
 		tabs = []
+
+		if 'MOVE' in actions:
+			act.append(Button(Icon(filename='tiger.svg'), 
+				functools.partial(EntityWindow.on_move, self)
+			))
+
+		if len(act) > 0:
+			grid = Grid(3, 3, *act)
+			tabs.append(Tab('Act', grid))
 
 		if 'BUILD' in actions:
 			build = []
@@ -62,17 +72,10 @@ class EntityWindow(Window):
 		self._entity = entity
 		self._info = info
 
-	@action('GO', 'BTNMove.png')
-	def on_go(self, pos, button):
-		print 'go'
+	def on_move(self, pos, button):
+		client.capture_position(callback=client.entity_action, id=self._entity.id, action='MOVE', args=None)
 
-	@action('LOAD', 'BTNLoad.png')
-	def on_load(self, pos, button):
-		print 'load'
-
-	@action('BUILD', 'BTNHumanBuild.png')
 	def on_build(self, pos, button, what):
-		print 'build', what
 		info = client.entity_action(self._entity.id, 'BUILD', what)
 		print info
 

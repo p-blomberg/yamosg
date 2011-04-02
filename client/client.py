@@ -136,11 +136,17 @@ class Network(threading.Thread):
 		self._s.send(str)
 
 class Client:
+	cursor_default = None
+	cursor_capture = None
+
 	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
 		# opengl must be initialized first
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
 		setup_opengl()
+
+		Client.cursor_default = pygame.cursors.arrow
+		Client.cursor_capture = pygame.cursors.diamond
 		
 		self._resolution = resolution
 		self._split = split
@@ -155,6 +161,7 @@ class Client:
 		self._command_lock = threading.Lock()
 		self._playerid = None
 		self._players = {}
+		self._capture_position = None
 		
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
@@ -166,8 +173,7 @@ class Client:
 		self._running = False
 	
 	def is_running(self):
-		return self._running
-	
+		return self._running	
 
 	def resolution(self):
 		return self._resolution
@@ -232,6 +238,19 @@ class Client:
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				pos = Vector2i(event.pos)
 				pos.y = self._resolution.height - pos.y
+
+				if self._capture_position is not None:
+					if event.button == 1:
+						callback, args, kwargs = self._capture_position
+						try:
+							callback(*args, **kwargs)
+						except:
+							traceback.print_exc()
+					
+					self._capture_position = None
+					pygame.mouse.set_cursor(*Client.cursor_default)
+					continue
+
 				self._state.on_buttondown(pos, event.button)
 			elif event.type == pygame.MOUSEBUTTONUP:
 				pos = Vector2i(event.pos)
@@ -327,7 +346,7 @@ class Client:
 	@server_call('ENTACTION', 'id', 'action', 'what', decode=False)
 	def entity_action(self, info):
 		return info
-	
+
 	@server_call('LOGIN', 'username', 'password')
 	def login(self, playerid):
 		self.playerid = playerid
@@ -345,6 +364,10 @@ class Client:
 		self.login(password='bar', username='foo')
 		self._players = self.players()
 		self.list_of_entities()
+
+	def capture_position(self, callback, *args, **kwargs):
+		self._capture_position = (callback, args, kwargs)
+		pygame.mouse.set_cursor(*Client.cursor_capture)
 
 if __name__ == '__main__':
 	pygame.display.init()
