@@ -74,7 +74,7 @@ class EntityStats(CairoWidget):
 	def __init__(self, info):
 		CairoWidget.__init__(self, Vector2i(0,0), Vector2i(1,1))
 		self._info = info
-		self._font = self.create_font()
+		self._font = self.create_font('Monospace')
 
 	def do_render(self):
 		cr = self.cr
@@ -82,8 +82,9 @@ class EntityStats(CairoWidget):
 
 		text = ''
 		for k, v in self._info.items():
-			text += "%s: %s\n" % (k,v)
+			text += "%-10s: %s\n" % (k,v)
 
+		cr.move_to(5,0)
 		self.text(cr, text, self._font)
 
 class GameWidget(FBOWidget):
