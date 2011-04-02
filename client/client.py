@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os.path, sys
+try:
+	import Foundation
+except:
+	pass
 
 # relative path to this script
 scriptfile = sys.modules[__name__].__file__
