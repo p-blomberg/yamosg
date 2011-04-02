@@ -188,6 +188,8 @@ class Client:
 				traceback.print_exc()
 	
 	def _resize(self, resolution):
+		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
+
 		self._resolution = resolution
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
@@ -196,6 +198,7 @@ class Client:
 		glLoadIdentity()
 
 		self._state.resize(resolution)
+		self._game.on_resize(resolution, True)
 	
 	def _flush_queue(self):
 		while True:

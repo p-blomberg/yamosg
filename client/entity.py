@@ -26,7 +26,7 @@ def load_sprite(filename):
 	return texture
 
 class Entity:
-	def __init__(self, Type, Id, Position, Cargo, velocity, Minable, Owner):
+	def __init__(self, Type, Id, Position, Cargo, velocity, Minable, Owner, **kwargs):
 		self._type = Type
 		self.id = Id
 		self.position = Vector3(*Position)
