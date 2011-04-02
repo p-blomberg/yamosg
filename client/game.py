@@ -19,6 +19,7 @@ import pygame, cairo, os.path
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import types, traceback
+import functools
 
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
@@ -49,7 +50,12 @@ class EntityWindow(Window):
 		print actions
 
 		if 'BUILD' in actions:
-			tabs.append(Tab('Build', Button(Icon(filename='tiger.svg'))))
+			build = []
+			for type in ['foo', 'bar', 'baz']:
+				callback = functools.partial(EntityWindow.on_build, self, what=type)
+				build.append(Button(Icon(filename='tiger.svg'), callback=callback))
+			grid = Grid(3, 3, *build)
+			tabs.append(Tab('Build', grid))
 		
 		tabs.append(Tab('Stats', EntityStats(info)))
 		tab = TabView(tabs=tabs)
@@ -67,8 +73,8 @@ class EntityWindow(Window):
 		print 'load'
 
 	@action('BUILD', 'BTNHumanBuild.png')
-	def on_build(self, pos, button):
-		print 'build'
+	def on_build(self, pos, button, what):
+		print 'build', what
 
 class EntityStats(CairoWidget):
 	def __init__(self, info):
