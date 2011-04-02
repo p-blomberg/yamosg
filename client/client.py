@@ -24,24 +24,73 @@ from state import Initial, StateManager
 from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
-from ui.container import Container
-from ui.window import Window
+from ui.container import Composite
+from ui.window import SampleCairoWindow, SampleOpenGLWindow
 
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
-
+import itertools
 
 def expose(func):
 	""" Exposes a method, eg is callable by server """
 	func.exposed = True
 	return func
 
-def server_call(alias):
+def server_call(alias, *in_args, **params):
+	"""
+	Wrapper for a server call.
+
+	:param alias: is the name of the server call.
+	:param in_args: is the names of the arguments (as strings.)
+	:param raw: if True the raw reply will be passed instead of parsed into positional arguments.
+	:param decode: if True the reply will be json decoded.
+
+	eg:
+
+	@server_call('FOO', 'spam', 'bacon')
+	def foo(self, fred, barney, wilma):
+		pass
+
+	will make a function `foo(self, spam, bacon)`
+	which calls the user implemented function with the reply
+	from the server and arguments passed as *args
+
+	Calling foo(1, 2) yields the server command 'FOO 1 2' and
+	if the reply is 'OK a b c' user function will be called as
+	foo('a', 'b', 'c')
+
+	It accepts both positional- and keyword arguments.
+	"""
+
+	raw = params.get('raw', False)
+	decode = params.get('decode', False)
+	en = len(in_args) # expected number of arguments
+
 	def wrap(f):
 		def wrapped_f(self, *args, **kwargs):
-			status, args2, line = self.call(alias, *args, **kwargs)
-			f(self, status, line, *args2)
+			# make sure the correct number of arguments is passed
+			gn = len(args) + len(kwargs) # passed number of arguments
+			if en != gn:
+				raise TypeError, '%s takes exactly %d argument%s (%d given)' % (alias, en, en > 1 and 's' or '', gn)
+			
+			# parse arguments into a new args list
+			d = dict(itertools.izip_longest(in_args, args, fillvalue=None))
+			d.update(kwargs)
+			real_args = [d.pop(k) for k in in_args]
+
+			# pass command to server
+			status, reply_args, line = self.call(alias, *real_args)
+			if status != 'OK':
+				raise RuntimeError, reply_args[0]
+
+			# pass reply to callback
+			if decode:
+				return f(self, json.loads(line))
+			elif raw:
+				return f(self, line)
+			else:
+				return f(self, *reply_args)
 		return wrapped_f
 	return wrap
 
@@ -97,16 +146,21 @@ class Client:
 		self._split = split
 		self._running = False
 		self._state = StateManager()
-		self._game = GameWidget(resolution)
-		self._state.push(GameState(resolution, Container(Vector2i(0,0), resolution, children=[self._game, Window(Vector2i(100,100), Vector2i(320,240))])))
+		self._game = GameWidget(self, resolution)
+		self._container = Composite(Vector2i(0,0), resolution, children=[self._game])
+		self._state.push(GameState(resolution, self._container))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
 		self._command_lock = threading.Lock()
 		self._playerid = None
-
+		self._players = {}
+		
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
+	
+	def add_window(self, win):
+		self._container.add(win)
 	
 	def quit(self):
 		self._running = False
@@ -114,6 +168,10 @@ class Client:
 	def is_running(self):
 		return self._running
 	
+
+	def resolution(self):
+		return self._resolution
+
 	def run(self):
 		self._running = True
 		self._network.start()
@@ -161,7 +219,7 @@ class Client:
 			elif event.type == pygame.VIDEOEXPOSE:
 				pass
 			elif event.type == pygame.VIDEORESIZE:
-				self._resize(event.w, event.h)
+				self._resize(Vector2i(event.w, event.h))
 			elif event.type == pygame.ACTIVEEVENT:
 				pass
 			elif event.type == pygame.MOUSEMOTION:
@@ -255,23 +313,39 @@ class Client:
 		
 		return reply
 	
-	@server_call('LIST_OF_ENTITIES')
-	def list_of_entities(self, status, line, *args):
-		if status == 'NOT_OK':
-			return
-		
-		self._game.entities = [Entity(**x) for x in json.loads(line)]
+	@server_call('LIST_OF_ENTITIES', decode=True)
+	def list_of_entities(self, descriptions):
+		self._game.set_entities([Entity(**x) for x in descriptions])
 	
+	@server_call('ENTINFO', 'id', decode=True)
+	def entity_info(self, info):
+		return info
+	
+	@server_call('LOGIN', 'username', 'password')
+	def login(self, playerid):
+		self.playerid = playerid
+	
+	@server_call('PLAYERS', decode=True)
+	def players(self, players):
+		return players
+
+	def player_by_id(self, id):
+		return self._players.get(unicode(id), None)
+
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
-		_, self.playerid, _ = self.call('LOGIN', 'foo', 'bar')
+		self.login(password='bar', username='foo')
+		self._players = self.players()
 		self.list_of_entities()
-		#_, entities = self.call('LIST_OF_ENTITIES')
-		#print json.loads(entities)
 
 if __name__ == '__main__':
 	pygame.display.init()
 	
 	client = Client()
+
+	# create "superglobal" access to the client- and game instances
+	__builtins__.client = client
+	__builtins__.game = client._game # hack
+
 	client.run()

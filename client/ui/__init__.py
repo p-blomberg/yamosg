@@ -5,39 +5,16 @@ from OpenGL.GL import *
 from OpenGL import extensions
 from OpenGL.GL.ARB.framebuffer_object import *
 from OpenGL.GL.EXT.framebuffer_object import *
+from common.vector import Vector2i, Vector3
 
 class Widget:
-	def __init__(self, pos, size, format=GL_RGB8, filter=GL_NEAREST):
-		self.pos = pos
-		self.size = size
+	def __init__(self, pos=Vector3(0,0,0), size=Vector2i(1,1), **kwargs):
+		self.pos = pos.copy()
+		self.size = size.copy()
 		self.width, self.height = size.xy()
-		self._format = format
-		self._filter = filter
 		self.parent = None
 		self._focus_lock = None
-		
-		self._fbo = glGenFramebuffers(1)
-		self._texture = glGenTextures(1)
 		self._invalidated = True
-		self._projection = self.projection()
-		
-		self._generate_framebuffer()
-	
-	def _generate_framebuffer(self):
-		self.bind_fbo()
-		
-		glBindTexture(GL_TEXTURE_2D, self._texture)
-		glTexImage2D(GL_TEXTURE_2D, 0, self._format, self.width, self.height, 0, GL_RGBA, GL_FLOAT, None)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self._filter)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self._filter)
-		
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, self._texture, 0)
-		
-		glBindTexture(GL_TEXTURE_2D, 0)
-		
-		self.unbind_fbo()
 	
 	def focus_lock(self, widget=None):
 		widget = widget or self
@@ -53,17 +30,11 @@ class Widget:
 		if self.parent:
 			self.parent.focus_unlock()
 	
-	def bind_fbo(self):
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, self._fbo)
-
-	def unbind_fbo(self):
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)
-
-	def bind_texture(self):
-		glBindTexture(GL_TEXTURE_2D, self._texture)
-
 	def invalidate(self):
 		self._invalidated = True
+
+	def is_invalidated(self):
+		return self._invalidated
 	
 	def project(self, point):
 		"""
@@ -98,11 +69,10 @@ class Widget:
 		
 		return self, point
 
-	def on_resize(self, size):
+	def on_resize(self, size, final):
 		self.size = size
 		self.width, self.height = size.xy()
-		self._projection = self.projection()
-		self._generate_framebuffer()
+		self.invalidate()
 
 	def on_mousemove(self, pos, buttons):
 		pass
@@ -128,9 +98,52 @@ class Widget:
 		if hit:
 			hit.on_mousemove(projection, buttons)
 	
-	def do_render(self):
+
+	def display(self):
+		""" Called when the widget is suppsed to be displayed on screen. """
 		raise NotImplementedError
+
+	def render(self):
+		""" Called when the widget should be redrawn (eg to cache, fbo etc) """
+		raise NotImplementedError
+
+
+class FBOWidget(Widget):
+	def __init__(self, pos=Vector3(0,0), size=Vector2i(1,1), format=GL_RGB8, filter=GL_NEAREST, **kwargs):
+		Widget.__init__(self, pos, size, **kwargs)
+		self._format = format
+		self._filter = filter
+		self._fbo = glGenFramebuffers(1)
+		self._texture = glGenTextures(1)
+		self._projection = self.projection()
+		
+		self._generate_framebuffer()
 	
+	def _generate_framebuffer(self):
+		assert self.size.x > 0
+		assert self.size.y > 0
+
+		self.bind_fbo()
+		
+		glBindTexture(GL_TEXTURE_2D, self._texture)
+		glTexImage2D(GL_TEXTURE_2D, 0, self._format, self.width, self.height, 0, GL_RGBA, GL_FLOAT, None)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self._filter)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self._filter)
+		
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, self._texture, 0)
+		
+		glBindTexture(GL_TEXTURE_2D, 0)
+		
+		self.unbind_fbo()
+
+	def on_resize(self, size, final):
+		Widget.on_resize(self, size, final)
+		self._projection = self.projection()
+		self._generate_framebuffer()
+		self.invalidate()
+
 	def projection(self):
 		glPushMatrix()
 		glLoadIdentity()
@@ -138,7 +151,19 @@ class Widget:
 		p = glGetDouble(GL_MODELVIEW_MATRIX)
 		glPopMatrix()
 		return p
+
+	def bind_fbo(self):
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, self._fbo)
+
+	def unbind_fbo(self):
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)
+
+	def bind_texture(self):
+		glBindTexture(GL_TEXTURE_2D, self._texture)
 	
+	def do_render(self):
+		raise NotImplementedError
+
 	def display(self):
 		self.bind_texture()
 		glColor4f(1,1,1,1)
@@ -161,11 +186,11 @@ class Widget:
 	
 	def render(self):
 		# if any of the children are invalidated this is also invalidated.
-		if any([x._invalidated for x in self.get_children()]):
-			self._invalidated = True
+		if any([x.is_invalidated() for x in self.get_children()]):
+			self.invalidate()
 	
 		# must check if a child is invalidated
-		if not self._invalidated:
+		if not self.is_invalidated():
 			return
 		
 		# mark it as not invalidated before actually rendering so that widgets
@@ -174,7 +199,11 @@ class Widget:
 		
 		# First render all children
 		for x in self.get_children():
-			x.render()
+			try:
+				x.render()
+			except:
+				print 'when rendering', x, '(%s)' % x.__class__.__name__
+				raise
 		
 		#print 'viewport:', int(self.width)
 		glViewport(0, 0, int(self.width), int(self.height));
@@ -188,6 +217,6 @@ class Widget:
 		glPushMatrix()
 		self.do_render()
 		glPopMatrix()
-		self.unbind_fbo()
+		self.unbind_fbo()	
 
 from button import Button

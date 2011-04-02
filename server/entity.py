@@ -17,10 +17,12 @@ class Entity:
 		
 		self.container=container
 		self.owner=owner
-		
-		self.position=position
 		self.game=game
-		self.speed=Vector3(0,0,0)
+		
+		self.position = position # where it currently is
+		self._velocity = Vector3(0,0,0) # current (calculated) velocity
+		self._dst = position # where it is going
+		
 		self.cargo = {}
 		self.actions = {
 			'GO': self.go
@@ -39,7 +41,7 @@ class Entity:
 	
 	def __str__(self):
 		return self.encode()
-		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", speed: "+str(self.speed)+", cargo: "+str(self.cargo);
+		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", velocity: "+str(self._velocity)+", cargo: "+str(self.cargo);
 
 	def dinmamma(self):
 		d={
@@ -47,7 +49,7 @@ class Entity:
 			"Id": self.id,
 			"Owner": self.owner and self.owner.id or None,
 			"Position": self.position and self.position.xyz() or None,
-			"Speed": self.speed.xyz(),
+			"velocity": self._velocity.xyz(),
 			"Minable": self.minable,
 			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
 		}
@@ -102,12 +104,8 @@ class Entity:
 			
 		return actual_amount
 
-	def go(self, params):
-		print params
-		speed=Vector3(params[0], params[1], params[2])
-		if(speed.length() > self.max_speed):
-			return "NOT_OK: Max speed for "+self.__class__.__name__+" is "+str(self.max_speed)
-		self.speed=speed
+	def go(self, x, y, z):
+		self._dst = Vector3(x, y, z)
 		return "OK"
 
 	def action(self, action, args):
@@ -116,9 +114,27 @@ class Entity:
 		except KeyError:
 			response="NOT_OK: ENTACTION %s is not valid" %(action)
 		return response
-
+	
+	def _distance(self):
+		""" Distance to destination """
+		return (self.position - self._dst).length()
+	
 	def tick(self, key_tick):
-		self.position=self.position+(self.speed*(1./15))
+		dt = 1./15
+		
+		# only move if we are to far from the target position
+		if self._distance() > 1.0: # @todo use radius (or something better)
+			# calculate new velocity
+			f = 5000.0 # force
+			a = f / self.mass # acceleration
+			dir = (self._dst - self.position).normalize() # direction
+			self._velocity += dir * a
+			
+			# clamp at max speed
+			if self._velocity.length() > self.max_speed:
+				self._velocity = self._velocity.normalize() * self.max_speed
+		
+			self.position += self._velocity * dt
 
 class Planet(Entity):
 	minable=True
@@ -210,6 +226,7 @@ class Miner(Ship):
 					self.mine(e)
 
 class Gateway(Station):
+	max_speed = 0.2
 	cost = 10000000
 	size = 10
 	types = {

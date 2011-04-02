@@ -3,23 +3,93 @@
 
 from copy import copy, deepcopy
 
-from ui import Widget
-from common.vector import Vector2i, Vector3
+from ui import FBOWidget
+from ui.button import Button
+from ui.box import HBox, VBox
+from ui.grid import Grid
+from ui.window import Window
+from ui.layout import LayoutAttachment
+from ui.icon import Icon
+from ui._cairo import ALIGN_RIGHT
+from common.vector import Vector2i, Vector2f, Vector3
 from common.rect import Rect
 
-import pygame
+import pygame, cairo, os.path
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import types, traceback
 
-class GameWidget(Widget):
-	def __init__(self, size):
-		Widget.__init__(self, Vector2i(0,0), size)
-		self.entities = []
+def load(path):
+	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
+
+_ACTION_LUT = {}
+class EntityWindow(Window):
+	def action(name, icon):
+		global _ACTION_LUT
+		def wrapper(func):
+			_ACTION_LUT[name] = (icon, func)
+			return func
+		return wrapper
+
+
+	#	'LOAD':  ('BTNLoad.png', EntityWindow.on_load),
+	#	'BUILD': ('BTNHumanBuild.png', EntityWindow.on_build)
+	#}
+
+	def __init__(self, entity, info, **kwargs):
+		global _ACTION_LUT
+		title = str(entity.id)
+		if entity.owner:
+			title += ' (%s)' % entity.owner
+
+		hbox = HBox()
+		vbox = VBox()
+		grid = Grid(3,3)
+		
+		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(192, 0)))
+		vbox.add(grid, size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 192)))
+
+		default = ('default_texture.png', None)
+		for action in info['actions']:
+			try:
+				file, callback = _ACTION_LUT.get(action, default)
+				icon = Icon(filename=file)
+
+				callback = types.MethodType(callback, self, self.__class__)
+				button = Button(icon, callback=callback)
+
+				grid.add(button)
+			except:
+				traceback.print_exc()
+
+		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
+		self._entity = entity
+		self._info = info
+
+	@action('GO', 'BTNMove.png')
+	def on_go(self, pos, button):
+		print 'go'
+
+	@action('LOAD', 'BTNLoad.png')
+	def on_load(self, pos, button):
+		print 'load'
+
+	@action('BUILD', 'BTNHumanBuild.png')
+	def on_build(self, pos, button):
+		print 'build'
+
+class GameWidget(FBOWidget):
+	def __init__(self, client, size):
+		FBOWidget.__init__(self, Vector2i(0,0), size)
+		self._client = client
+		self._entities = []
+		self._selection = [] # current selected entities
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
 		self._panstart = None # position where the panning has started
 		self._panref = None
 		self._is_panning = False
+		self._is_selecting = False
 		self._foo = 0.0
 		
 		self._background = [None, None, None]
@@ -37,7 +107,12 @@ class GameWidget(Widget):
 		glBindTexture(GL_TEXTURE_2D, 0)
 		
 		self._calc_view_matrix()
-	
+
+	def set_entities(self, entities):
+		self._entities = entities
+		for e in entities:
+			e.__selected = False
+
 	def _calc_view_matrix(self):
 		self._rect.w = self.size.width  * self._scale
 		self._rect.h = self.size.height * self._scale
@@ -84,7 +159,7 @@ class GameWidget(Widget):
 		return min + (max - min) * u
 
 	def projection(self):
-		self._ortho_projection = Widget.projection(self)
+		self._ortho_projection = FBOWidget.projection(self)
 		fov = 90.0
 		near = 0.1
 		far = 1000.0
@@ -102,15 +177,7 @@ class GameWidget(Widget):
 		world_pos = self._unproject(pos)
 
 		if button == 1:
-			for e in self.entities:
-				if world_pos.x < e.position.x or world_pos.y < e.position.y:
-					continue
-				
-				if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
-					continue
-				
-				print e
-				break
+			self.on_select_start(pos)
 		elif button == 3:
 			self.on_pan_start(pos)
 		elif button == 4:
@@ -120,22 +187,18 @@ class GameWidget(Widget):
 			self.on_zoom(1.1, pos)
 
 	def on_buttonup(self, pos, button):
-		if button == 3:
-			self.on_pan_stop(pos)
+		if button == 1:
+			self.on_select_stop(pos)
+		elif button == 3:
+			delta = self.on_pan_stop(pos)
+			if delta.length_squared() < 5:
+				print 'move'
 	
 	def on_mousemove(self, pos, buttons):
 		world_pos = self._unproject(pos)
 
-		for e in self.entities:
-			if world_pos.x < e.position.x or world_pos.y < e.position.y:
-				e.hover = False
-				continue
-			
-			if world_pos.x > e.position.x + 50 or world_pos.y > e.position.y + 50:
-				e.hover = False
-				continue
-
-			e.hover = True
+		if buttons[1] and self._is_selecting:
+			self.on_select_move(pos)
 
 		if buttons[3] and self._is_panning:
 			self.on_pan_move(pos)
@@ -161,6 +224,7 @@ class GameWidget(Widget):
 
 	def on_pan_start(self, pos):
 		self._is_panning = True
+		self._panstart_screen = pos.copy()
 		self._panstart = self._unproject(pos)
 		self._panref = self._rect.copy()
 		self._panrefview = copy(self._view)
@@ -169,6 +233,7 @@ class GameWidget(Widget):
 	def on_pan_stop(self, pos):
 		self._is_panning = False
 		self.focus_unlock()
+		return pos - self._panstart_screen
 
 	def on_pan_move(self, pos):
 		rel = self._unproject(pos,self._panrefview) - self._panstart
@@ -176,6 +241,71 @@ class GameWidget(Widget):
 		self._rect.y = self._panref.y - rel.y
 		self._calc_view_matrix()
 
+	#
+	# Selection
+	#
+	
+	def on_select_start(self, pos):
+		self._is_selecting = True
+		self._selection_ref_a = self._unproject(pos)
+		self._selection_ref_b = self._unproject(pos)
+
+	def on_select_stop(self, pos):
+		if not self._is_selecting:
+			return
+
+		self._is_selecting = False
+
+		a = self._selection_ref_a
+		b = self._selection_ref_b
+		a_min = Vector3(min(a.x,b.x), min(a.y,b.y), 0)
+		a_max = Vector3(max(a.x,b.x), max(a.y,b.y), 0)
+
+		selection = []
+		for e in self._entities:
+			p = e.position
+
+			# @todo @refactor AABB-AABB overlapping
+			b_min = p
+			b_max = p + Vector3(50,50,0) # @todo Hardcoded size @entsize
+
+			if a_max.x <  b_min.x or a_min.x > b_max.x:
+				continue
+			if a_max.y <  b_min.y or a_min.y > b_max.y:
+				continue
+
+
+			selection.append(e)
+		
+		self.on_selection(selection)
+
+	def on_select_move(self, pos):
+		self._selection_ref_b = self._unproject(pos)
+
+	#
+	# Entity selected
+	#
+	
+	def on_selection(self, selection):
+		print 'selection:', selection
+
+		for e in self._selection:
+			e.__selected = False
+
+		for e in selection:
+			e.__selected = True
+
+		self._selection = selection
+		
+		if len(selection) == 1:
+			entity = selection[0]
+			if self.parent.find_window(entity.id) is not None:
+				return
+
+			info = self._client.entity_info(entity.id)
+			self._client.add_window(EntityWindow(entity, info))
+			return
+	
 	#
 	# Rendering
 	#
@@ -196,7 +326,7 @@ class GameWidget(Widget):
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 
 		glColor4f(1,1,1,1)		
-		for e in self.entities:
+		for e in self._entities:
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
 			
@@ -216,7 +346,7 @@ class GameWidget(Widget):
 			glVertex3f(50, 0, 0)
 			glEnd()
 
-			if getattr(e, 'hover', False):
+			if e.__selected:
 				glDisable(GL_TEXTURE_2D)
 				glColor4f(1,1,0,1)
 				glBegin(GL_LINE_STRIP)
@@ -230,6 +360,22 @@ class GameWidget(Widget):
 				glEnable(GL_TEXTURE_2D)
 			
 			glPopMatrix()
+
+		if self._is_selecting:
+			a = self._selection_ref_a
+			b = self._selection_ref_b
+
+			glDisable(GL_TEXTURE_2D)
+			glColor4f(1,1,0,1)
+			glBegin(GL_LINE_STRIP)
+			glVertex3f(a.x, a.y, 0)
+			glVertex3f(a.x, b.y, 0)
+			glVertex3f(b.x, b.y, 0)
+			glVertex3f(b.x, a.y, 0)
+			glVertex3f(a.x, a.y, 0)
+			glEnd()
+			glColor4f(1,1,1,1)
+			glEnable(GL_TEXTURE_2D)
 
 		self.invalidate()
 	
@@ -251,16 +397,16 @@ class GameWidget(Widget):
 				1.0 + i * 0.4,
 				1.0 + i * 0.6)
 			glBegin(GL_QUADS)
-			glTexCoord2f(t.x, t.y)
+			glTexCoord2f(t.x, 1-t.y)
 			glVertex2f(0, 0)
 			
-			glTexCoord2f(t.x, t.y + t.h)
+			glTexCoord2f(t.x, 1-t.y + t.h)
 			glVertex2f(0, self.height)
 			
-			glTexCoord2f(t.x + t.w, t.y + t.h)
+			glTexCoord2f(t.x + t.w, 1-t.y + t.h)
 			glVertex2f(self.width, self.height)
 			
-			glTexCoord2f(t.x + t.w, t.y)
+			glTexCoord2f(t.x + t.w, 1-t.y)
 			glVertex2f(self.width, 0)
 			glEnd()
 		

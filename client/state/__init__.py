@@ -12,7 +12,7 @@ class State:
 	
 	def resize(self, size):
 		self.size = self.width, self.height = size.xy()
-		self._root.on_resize(size)
+		self._root.on_resize(size, final=True)
 
 	def render(self):
 		glClearColor(0,1,0,0)

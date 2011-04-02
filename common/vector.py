@@ -37,9 +37,13 @@ class Vector2:
 	def __sub__(self, rhs):
 		return self.__class__(self.x - rhs.x, self.y - rhs.y)
 	
-	# scalar multiplication
-	def __mul__(self, scalar):
-		return self.__class__(self.x * scalar, self.y * scalar)
+	def __mul__(self, rhs):
+		try:
+			# componentwise multiplication
+			return self.__class__(self.x * rhs[0], self.y * rhs[1])
+		except TypeError:
+			# scalar multiplication
+			return self.__class__(self.x * rhs, self.y * rhs)
 
 	def __repr__(self):
 		return '<vector (%.3f, %.3f)>' % (self.x, self.y)
@@ -59,6 +63,9 @@ class Vector2:
 
 	def __iter__(self):
 		return [self.x, self.y].__iter__()
+
+	def __getitem__(self, index):
+		return [self.x, self.y][index]
 
 class Vector2f (Vector2):
 	""" Alias for Vector2, just for consistency """
@@ -125,6 +132,9 @@ class Vector3:
 	def __iter__(self):
 		return [self.x, self.y, self.z].__iter__()
 
+	def __getitem__(self, index):
+		return [self.x, self.y, self.z][index]
+
 # ------------------------------------------------------------------------------
 #
 # Unittesting
@@ -151,11 +161,13 @@ if __name__ == '__main__':
 			self.assertRaises(ValueError, Vector2, (1.0, 2.0), 3.0)
 		
 		def test_alias(self):
-			v = Vector2(1.0, 2.0)
-			self.assertEqual(v.x, 1.0)
-			self.assertEqual(v.y, 2.0)
+			v = Vector2(1.0, 2.0) * 2.0
+			self.assertEqual(v.x, 2.0)
+			self.assertEqual(v.y, 4.0)
 			self.assertEqual(v.width, v.x)
 			self.assertEqual(v.height, v.y)
+			self.assertEqual(v[0], v.x)
+			self.assertEqual(v[1], v.y)
 			
 		def test_copy(self):
 			v1 = Vector2(1.0, 2.0)
@@ -244,6 +256,15 @@ if __name__ == '__main__':
 		def test_constructor_tuple_number(self):
 			self.assertRaises(ValueError, Vector3, (1.0, 2.0, 3.0), 4.0)
 			self.assertRaises(ValueError, Vector3, (1.0, 2.0, 3.0), 4.0, 5.0)
+
+		def test_alias(self):
+			v = Vector3(1.0, 2.0, 3.0) * 2.0
+			self.assertEqual(v.x, 2.0)
+			self.assertEqual(v.y, 4.0)
+			self.assertEqual(v.z, 6.0)
+			self.assertEqual(v[0], v.x)
+			self.assertEqual(v[1], v.y)
+			self.assertEqual(v[2], v.z)
 		
 		def test_copy(self):
 			v1 = Vector3(1.0, 2.0, 3.0)

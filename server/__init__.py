@@ -22,6 +22,7 @@ from common import command
 import socket
 import traceback
 import json
+import inspect
 
 class CommandError (Exception):
 	pass
@@ -54,6 +55,7 @@ class Client (Connection):
 			"PLAYERINFO": self.game.playerinfo,
 			"NEWUSER": self.game.NewUser,
 			"LIST_OF_ENTITIES": self.game.list_of_entities,
+			"ENTINFO": self.game.entity_info,
 			"ENTACTION": self.game.EntAction,
 			"PLAYERS": self.game.Players
 		}
@@ -241,6 +243,39 @@ class Server(ServerSocket):
 			if(st>0):
 				sleep(st)
 			t=new_time
+
+# decorators
+
+def entity_param(param):
+	"""
+	Converts an entity id to an actual entity, raising CommandError if the id
+	is invalid.
+	"""
+	
+	def get_entity(self, id):
+		ent = self.entity_by_id(id)
+		if ent is None:
+			raise CommandError, 'Invalid ID'
+		return ent
+	
+	def outer(func):
+		# locate the parameter
+		arg_names = inspect.getargspec(func)[0]
+		try:
+			index = arg_names.index(param) - 1 # subtract 'self'
+		except ValueError:
+			raise SyntaxError, "'%s' is not a parameter of function '%s'" % (param, func.__name__)
+		
+		def inner(self, *args, **kwargs):
+			# convert id -> entity
+			args = list(args)
+			args[index] = get_entity(self, args[index])
+			
+			# call function
+			return func(self, *args, **kwargs)
+		
+		return inner
+	return outer
 
 class Game:
 	def __init__(self, server):
@@ -471,7 +506,18 @@ class Game:
 		# This is kind of hackish, but it assures that no reply is passed to
 		# the (now) disconnected peer.
 		raise NoData
-
+	
+	@entity_param('entity')
+	def entity_info(self, connection, entity):
+		d = entity.dinmamma()
+		
+		# append actions, empty list if no actions are available
+		d['actions'] = []
+		if entity.owner == connection.player:
+			d['actions'] = entity.actions.keys()
+		
+		return d
+	
 	def EntAction(self, connection, id, action, *args):
 		ent = self.entity_by_id(id)
 		if ent is None:
