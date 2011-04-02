@@ -25,7 +25,7 @@ class Entity:
 		
 		self.cargo = {}
 		self.actions = {
-			'GO': self.go
+			'MOVE': self.move
 		}
 
 	@classmethod
@@ -104,7 +104,7 @@ class Entity:
 			
 		return actual_amount
 
-	def go(self, x, y, z):
+	def move(self, x, y, z):
 		self._dst = Vector3(x, y, z)
 		return "OK"
 
