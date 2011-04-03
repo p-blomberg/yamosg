@@ -73,7 +73,9 @@ class EntityWindow(Window):
 		self._info = info
 
 	def on_move(self, pos, button):
-		client.capture_position(callback=client.entity_action, id=self._entity.id, action='MOVE', args=None)
+		def callback(p):
+			client.entity_action(id=self._entity.id, action='MOVE', varargs=(p.x, p.y, 0))
+		client.capture_position(callback=callback)
 
 	def on_build(self, pos, button, what):
 		info = client.entity_action(self._entity.id, 'BUILD', what)
