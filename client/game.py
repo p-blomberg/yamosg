@@ -74,7 +74,8 @@ class EntityWindow(Window):
 
 	def on_move(self, pos, button):
 		def callback(p):
-			client.entity_action(id=self._entity.id, action='MOVE', varargs=(p.x, p.y, 0))
+			p = game.unproject(p)
+			client.entity_action(id=self._entity.id, action='MOVE', varargs=(p.x, p.y, p.z))
 		client.capture_position(callback=callback)
 
 	def on_build(self, pos, button, what):
@@ -151,7 +152,7 @@ class GameWidget(FBOWidget):
 		p.y += self._rect.y
 		return p
 
-	def _unproject(self, point, view=None):
+	def unproject(self, point, view=None):
 		"""
 		Unprojects a 2D viewport point to a 3D point on the plane <0,0,1,0>
 		"""
@@ -194,7 +195,7 @@ class GameWidget(FBOWidget):
 	
 	def on_buttondown(self, pos, button):
 		# transform position by camera
-		world_pos = self._unproject(pos)
+		world_pos = self.unproject(pos)
 
 		if button == 1:
 			self.on_select_start(pos)
@@ -215,7 +216,7 @@ class GameWidget(FBOWidget):
 				print 'move'
 	
 	def on_mousemove(self, pos, buttons):
-		world_pos = self._unproject(pos)
+		world_pos = self.unproject(pos)
 
 		if buttons[1] and self._is_selecting:
 			self.on_select_move(pos)
@@ -228,10 +229,10 @@ class GameWidget(FBOWidget):
 	#
 
 	def on_zoom(self, amount, ref):
-		a = self._unproject(ref)
+		a = self.unproject(ref)
 		self._scale += amount
 		self._calc_view_matrix()
-		b = self._unproject(ref)
+		b = self.unproject(ref)
 
 		delta = b-a
 		self._rect.x -= delta.x
@@ -245,7 +246,7 @@ class GameWidget(FBOWidget):
 	def on_pan_start(self, pos):
 		self._is_panning = True
 		self._panstart_screen = pos.copy()
-		self._panstart = self._unproject(pos)
+		self._panstart = self.unproject(pos)
 		self._panref = self._rect.copy()
 		self._panrefview = copy(self._view)
 		self.focus_lock()
@@ -256,7 +257,7 @@ class GameWidget(FBOWidget):
 		return pos - self._panstart_screen
 
 	def on_pan_move(self, pos):
-		rel = self._unproject(pos,self._panrefview) - self._panstart
+		rel = self.unproject(pos,self._panrefview) - self._panstart
 		self._rect.x = self._panref.x - rel.x
 		self._rect.y = self._panref.y - rel.y
 		self._calc_view_matrix()
@@ -267,8 +268,8 @@ class GameWidget(FBOWidget):
 	
 	def on_select_start(self, pos):
 		self._is_selecting = True
-		self._selection_ref_a = self._unproject(pos)
-		self._selection_ref_b = self._unproject(pos)
+		self._selection_ref_a = self.unproject(pos)
+		self._selection_ref_b = self.unproject(pos)
 
 	def on_select_stop(self, pos):
 		if not self._is_selecting:
@@ -304,7 +305,7 @@ class GameWidget(FBOWidget):
 		self.on_selection(selection)
 
 	def on_select_move(self, pos):
-		self._selection_ref_b = self._unproject(pos)
+		self._selection_ref_b = self.unproject(pos)
 
 	#
 	# Entity selected
