@@ -314,6 +314,10 @@ class Game:
 		self._server.unicast(client, command, *args)
 	
 	def broadcast(self, command, *args):
+		print '{peer} {line}'.format(
+			peer='BROADCAST',
+			line=str([command] + list(args)))
+
 		self._server.broadcast(command, *args)
 	
 	def add_entity(self, ent):
@@ -438,6 +442,23 @@ class Game:
 			p.tick(key_tick)
 		for o in self.all_entities():
 			o.tick(key_tick)
+
+
+		if key_tick:
+			# @todo cull
+			all = {}
+			for x in self.all_entities():
+				if x._dst is None:
+					continue
+				info = {
+					'Position': x.position and x.position.xyz() or None, 
+					'Destination': x._dst and x._dst.xyz() or None, 
+					'Velocity': x._velocity and x._velocity.xyz() or None
+					}
+				all[x.id] = info
+			if len(all) > 0:
+				self.broadcast('UPDENT', json.dumps(all))
+				
 
 	def list_of_entities(self, connection):
 		return [x.info() for x in self._entities.values()]

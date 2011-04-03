@@ -79,7 +79,7 @@ class EntityWindow(Window):
 		client.capture_position(callback=callback)
 
 	def on_build(self, pos, button, what):
-		info = client.entity_action(self._entity.id, 'BUILD', what)
+		info = client.entity_action(self._entity.id, 'BUILD', varargs=(what,))
 		print info
 
 class EntityStats(CairoWidget):
@@ -103,7 +103,7 @@ class GameWidget(FBOWidget):
 	def __init__(self, client, size):
 		FBOWidget.__init__(self, Vector2i(0,0), size)
 		self._client = client
-		self._entities = []
+		self._entities = {}
 		self._selection = [] # current selected entities
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
@@ -130,9 +130,13 @@ class GameWidget(FBOWidget):
 		self._calc_view_matrix()
 
 	def set_entities(self, entities):
-		self._entities = entities
+		self._entities = {}
 		for e in entities:
+			self._entities[e.id] = e
 			e.__selected = False
+
+	def entity_named(self, key):
+		return self._entities[key]
 
 	def _calc_view_matrix(self):
 		self._rect.w = self.size.width  * self._scale
@@ -285,7 +289,7 @@ class GameWidget(FBOWidget):
 		multiselect = (a-b).length() > 0.1
 
 		selection = []
-		for e in self._entities:
+		for e in self._entities.values():
 			p = e.position
 
 			# @todo @refactor AABB-AABB overlapping
@@ -351,7 +355,7 @@ class GameWidget(FBOWidget):
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 
 		glColor4f(1,1,1,1)		
-		for e in self._entities:
+		for e in self._entities.values():
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
 			

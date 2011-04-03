@@ -50,9 +50,10 @@ class Entity:
 			"Id": self.id,
 			"Owner": self.owner and self.owner.id or None,
 			"Position": self.position and self.position.xyz() or None,
-			"velocity": self._velocity.xyz(),
+			"Destination": self._dst and self._dst.xyz() or None,
+			"Velocity": self._velocity and self._velocity.xyz() or None,
 			"Minable": self.minable,
-			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()],
+			"Cargo": [(cargo.info(), amount) for cargo,amount in self.cargo.items()],
 			"Buildlist":self.buildlist.keys()
 		}
 		return d
@@ -124,6 +125,9 @@ class Entity:
 	def tick(self, key_tick):
 		dt = 1./15
 		
+		if self._dst is None:
+			return
+		
 		# only move if we are to far from the target position
 		if self._distance() > 1.0: # @todo use radius (or something better)
 			# calculate new velocity
@@ -137,6 +141,9 @@ class Entity:
 				self._velocity = self._velocity.normalize() * self.max_speed
 		
 			self.position += self._velocity * dt
+		else:
+			self._dst = None
+			self._velocity = Vector3(0,0,0)
 
 class Planet(Entity):
 	minable=True

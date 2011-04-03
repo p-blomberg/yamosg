@@ -382,6 +382,12 @@ class Client:
 		self._players = self.players()
 		self.list_of_entities()
 
+	@expose
+	def UPDENT(self, line):
+		data = json.loads(line)
+		for id, info in data.items():
+			game.entity_named(id).update(info)
+
 	def capture_position(self, callback, *args, **kwargs):
 		self._capture_position = (callback, args, kwargs)
 		pygame.mouse.set_cursor(*Client.cursor_capture)
