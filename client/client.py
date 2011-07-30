@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os.path, sys
+try:
+	import Foundation
+except:
+	pass
 
 # relative path to this script
 scriptfile = sys.modules[__name__].__file__
@@ -65,15 +69,23 @@ def server_call(alias, *in_args, **params):
 
 	def wrap(f):
 		def wrapped_f(self, *args, **kwargs):
+			# parse varargs. Parsed before arg count checking because
+			# varargs aren't counted in the expected number.
+			varargs = []
+			if 'varargs' in kwargs:
+				varargs = kwargs['varargs']
+				del kwargs['varargs']
+
 			# make sure the correct number of arguments is passed
 			gn = len(args) + len(kwargs) # passed number of arguments
-			if en != gn:
+			if gn != en:
 				raise TypeError, '%s takes exactly %d argument%s (%d given)' % (alias, en, en > 1 and 's' or '', gn)
 			
 			# parse arguments into a new args list
 			d = dict(itertools.izip_longest(in_args, args, fillvalue=None))
 			d.update(kwargs)
 			real_args = [d.pop(k) for k in in_args]
+			real_args += varargs
 
 			# pass command to server
 			status, reply_args, line = self.call(alias, *real_args)
@@ -81,12 +93,21 @@ def server_call(alias, *in_args, **params):
 				raise RuntimeError, reply_args[0]
 
 			# pass reply to callback
-			if decode:
-				return f(self, json.loads(line))
-			elif raw:
-				return f(self, line)
-			else:
-				return f(self, *reply_args)
+			try:
+				if decode:
+					decoded = None
+					if line != '': # handle when servery reply is empty
+						decoded = json.loads(line)
+					return f(self, decoded)
+				elif raw:
+					return f(self, line)
+				else:
+					return f(self, *reply_args)
+			except:
+				traceback.print_exc()
+				print 'server reply was:', line
+				return None
+
 		return wrapped_f
 	return wrap
 
@@ -132,11 +153,17 @@ class Network(threading.Thread):
 		self._s.send(str)
 
 class Client:
+	cursor_default = None
+	cursor_capture = None
+
 	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
 		# opengl must be initialized first
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
 		setup_opengl()
+
+		Client.cursor_default = pygame.cursors.arrow
+		Client.cursor_capture = pygame.cursors.diamond
 		
 		self._resolution = resolution
 		self._split = split
@@ -151,6 +178,7 @@ class Client:
 		self._command_lock = threading.Lock()
 		self._playerid = None
 		self._players = {}
+		self._capture_position = None
 		
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
@@ -162,8 +190,7 @@ class Client:
 		self._running = False
 	
 	def is_running(self):
-		return self._running
-	
+		return self._running	
 
 	def resolution(self):
 		return self._resolution
@@ -184,6 +211,8 @@ class Client:
 				traceback.print_exc()
 	
 	def _resize(self, resolution):
+		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
+
 		self._resolution = resolution
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
@@ -192,6 +221,7 @@ class Client:
 		glLoadIdentity()
 
 		self._state.resize(resolution)
+		self._game.on_resize(resolution, True)
 	
 	def _flush_queue(self):
 		while True:
@@ -225,6 +255,19 @@ class Client:
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				pos = Vector2i(event.pos)
 				pos.y = self._resolution.height - pos.y
+
+				if self._capture_position is not None:
+					if event.button == 1:
+						callback, args, kwargs = self._capture_position
+						try:
+							callback(pos, *args, **kwargs)
+						except:
+							traceback.print_exc()
+					
+					self._capture_position = None
+					pygame.mouse.set_cursor(*Client.cursor_default)
+					continue
+
 				self._state.on_buttondown(pos, event.button)
 			elif event.type == pygame.MOUSEBUTTONUP:
 				pos = Vector2i(event.pos)
@@ -316,7 +359,11 @@ class Client:
 	@server_call('ENTINFO', 'id', decode=True)
 	def entity_info(self, info):
 		return info
-	
+
+	@server_call('ENTACTION', 'id', 'action', decode=True)
+	def entity_action(self, info):
+		return info
+
 	@server_call('LOGIN', 'username', 'password')
 	def login(self, playerid):
 		self.playerid = playerid
@@ -334,6 +381,16 @@ class Client:
 		self.login(password='bar', username='foo')
 		self._players = self.players()
 		self.list_of_entities()
+
+	@expose
+	def UPDENT(self, line):
+		data = json.loads(line)
+		for id, info in data.items():
+			game.entity_named(id).update(info)
+
+	def capture_position(self, callback, *args, **kwargs):
+		self._capture_position = (callback, args, kwargs)
+		pygame.mouse.set_cursor(*Client.cursor_capture)
 
 if __name__ == '__main__':
 	pygame.display.init()

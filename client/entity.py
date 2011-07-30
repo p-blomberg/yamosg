@@ -26,12 +26,12 @@ def load_sprite(filename):
 	return texture
 
 class Entity:
-	def __init__(self, Type, Id, Position, Cargo, velocity, Minable, Owner):
+	def __init__(self, Type, Id, Position, Cargo, Velocity, Minable, Owner, **kwargs):
 		self._type = Type
 		self.id = Id
 		self.position = Vector3(*Position)
 		self._cargo = Cargo
-		self._velocity = Vector3(*velocity)
+		self._velocity = Velocity and Vector3(*Velocity) or None
 		self._minable = Minable
 		self.owner = client.player_by_id(Owner)
 		self.sprite = 0
@@ -46,3 +46,7 @@ class Entity:
 
 	def on_go(self, pos, button):
 		print 'go', pos, button
+
+	def update(self, info):
+		if 'Position' in info:
+			self.position = Vector3(*info['Position'])

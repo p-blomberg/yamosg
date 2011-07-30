@@ -211,7 +211,7 @@ class OpenGLWindow(BaseWindow, FBOWidget):
 	
 	def on_resize(self, size, final):
 		FBOWidget.on_resize(self, size, final)
-		self._decoration.on_resize(size)
+		self._decoration.on_resize(size, final)
 
 class CairoWindow(BaseWindow, CairoWidget):
 	def __init__(self, position, size, bordersize=1, *args, **kwargs):
@@ -265,7 +265,7 @@ class Window(OpenGLWindow):
 		OpenGLWindow.on_resize(self, size, final)
 
 	def do_render(self):
-		glClearColor(0,0,0,1)
+		glClearColor(0,0,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
 		glPushMatrix()

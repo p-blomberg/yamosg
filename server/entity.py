@@ -8,6 +8,7 @@ class Entity:
 	mass=None
 	minable=False
 	max_cargo=0
+	buildlist={}
 	
 	# used to autogenerate id
 	_id_counter = 0
@@ -25,7 +26,7 @@ class Entity:
 		
 		self.cargo = {}
 		self.actions = {
-			'GO': self.go
+			'MOVE': self.move
 		}
 
 	@classmethod
@@ -43,15 +44,17 @@ class Entity:
 		return self.encode()
 		return str(self.__class__)+", id: "+str(self.id)+", position: "+str(self.position)+", owner: "+str(self.owner)+", velocity: "+str(self._velocity)+", cargo: "+str(self.cargo);
 
-	def dinmamma(self):
+	def info(self):
 		d={
 			"Type" : self.__class__.__name__,
 			"Id": self.id,
 			"Owner": self.owner and self.owner.id or None,
 			"Position": self.position and self.position.xyz() or None,
-			"velocity": self._velocity.xyz(),
+			"Destination": self._dst and self._dst.xyz() or None,
+			"Velocity": self._velocity and self._velocity.xyz() or None,
 			"Minable": self.minable,
-			"Cargo": [(cargo.dinmamma(), amount) for cargo,amount in self.cargo.items()]
+			"Cargo": [(cargo.info(), amount) for cargo,amount in self.cargo.items()],
+			"Buildlist":self.buildlist.keys()
 		}
 		return d
 
@@ -104,7 +107,7 @@ class Entity:
 			
 		return actual_amount
 
-	def go(self, x, y, z):
+	def move(self, x, y, z):
 		self._dst = Vector3(x, y, z)
 		return "OK"
 
@@ -122,6 +125,9 @@ class Entity:
 	def tick(self, key_tick):
 		dt = 1./15
 		
+		if self._dst is None:
+			return
+		
 		# only move if we are to far from the target position
 		if self._distance() > 1.0: # @todo use radius (or something better)
 			# calculate new velocity
@@ -135,6 +141,9 @@ class Entity:
 				self._velocity = self._velocity.normalize() * self.max_speed
 		
 			self.position += self._velocity * dt
+		else:
+			self._dst = None
+			self._velocity = Vector3(0,0,0)
 
 class Planet(Entity):
 	minable=True
@@ -191,7 +200,7 @@ class Miner(Ship):
 		self.actions['SET_CARGO_TYPE']=self.set_cargo_type
 
 	def set_cargo_type(self, type):
-		self.cargo_type=type[0]
+		self.cargo_type=type
 		return "OK"
 
 	def go_to_planet(self):
@@ -229,15 +238,15 @@ class Gateway(Station):
 	max_speed = 0.2
 	cost = 10000000
 	size = 10
-	types = {
-		"STATION": Station,
-		"SHIP": Ship,
-		"MINER": Miner
+	buildlist = {
+		"Station": Station,
+		"Ship": Ship,
+		"Miner": Miner
 	}
 	
 	def build(self, type):
 		# Get factory
-		unit_type = self.types.get(type, None)
+		unit_type = self.buildlist.get(type, None)
 		
 		# See if we are able to build the specified unit
 		if unit_type is None:
@@ -255,7 +264,7 @@ class Gateway(Station):
 		self.owner.entities.append(ent)
 		
 		# Successful unit is successful
-		return "OK: ID="+str(ent.id)
+		return "OK "+str(ent.id)
 
 	def load(self, ship_id):
 		entity = self.game.entity_by_id(ship_id)

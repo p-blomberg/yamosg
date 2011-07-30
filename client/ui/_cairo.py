@@ -47,7 +47,16 @@ class CairoWidget:
 	
 	def bind_texture(self):
 		glBindTexture(GL_TEXTURE_2D, self._texture)
-	
+
+	def on_mousemove(self, pos, buttons):
+		pass
+
+	def on_buttondown(self, pos, button):
+		pass
+
+	def on_buttonup(self, pos, button):
+		pass
+
 	def invalidate(self):
 		self._invalidated = True
 
@@ -122,7 +131,7 @@ class CairoWidget:
 		
 		return self, point
 	
-	def on_resize(self, size):
+	def on_resize(self, size, final):
 		self.size = size
 		self.width, self.height = size.xy()
 		self._generate_surface()
@@ -169,3 +178,5 @@ class CairoWidget:
 		
 		layout.set_markup(text);
 		ctx.show_layout(layout)
+
+		return layout.get_pixel_extents()

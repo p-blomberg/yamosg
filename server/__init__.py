@@ -314,6 +314,10 @@ class Game:
 		self._server.unicast(client, command, *args)
 	
 	def broadcast(self, command, *args):
+		print '{peer} {line}'.format(
+			peer='BROADCAST',
+			line=str([command] + list(args)))
+
 		self._server.broadcast(command, *args)
 	
 	def add_entity(self, ent):
@@ -439,8 +443,25 @@ class Game:
 		for o in self.all_entities():
 			o.tick(key_tick)
 
+
+		if key_tick:
+			# @todo cull
+			all = {}
+			for x in self.all_entities():
+				if x._dst is None:
+					continue
+				info = {
+					'Position': x.position and x.position.xyz() or None, 
+					'Destination': x._dst and x._dst.xyz() or None, 
+					'Velocity': x._velocity and x._velocity.xyz() or None
+					}
+				all[x.id] = info
+			if len(all) > 0:
+				self.broadcast('UPDENT', json.dumps(all))
+				
+
 	def list_of_entities(self, connection):
-		return [x.dinmamma() for x in self._entities.values()]
+		return [x.info() for x in self._entities.values()]
 
 	def NewUser(self, connection, name, password):
 		# verify
@@ -509,13 +530,13 @@ class Game:
 	
 	@entity_param('entity')
 	def entity_info(self, connection, entity):
-		d = entity.dinmamma()
+		d = entity.info()
 		
 		# append actions, empty list if no actions are available
 		d['actions'] = []
 		if entity.owner == connection.player:
 			d['actions'] = entity.actions.keys()
-		
+
 		return d
 	
 	def EntAction(self, connection, id, action, *args):

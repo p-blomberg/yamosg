@@ -112,9 +112,7 @@ class Player:
 		return self.name
 
 	def can_afford(self, amount):
-		if(self.cash >= amount):
-			return True
-		return False
+		return self.cash >= amount
 
 	def buy(self, amount):
 		if self.can_afford(amount):

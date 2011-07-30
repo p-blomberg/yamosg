@@ -10,7 +10,8 @@ from ui.grid import Grid
 from ui.window import Window
 from ui.layout import LayoutAttachment
 from ui.icon import Icon
-from ui._cairo import ALIGN_RIGHT
+from ui._cairo import CairoWidget, ALIGN_RIGHT
+from ui.tabview import TabView, Tab
 from common.vector import Vector2i, Vector2f, Vector3
 from common.rect import Rect
 
@@ -18,6 +19,7 @@ import pygame, cairo, os.path
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import types, traceback
+import functools
 
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
@@ -42,47 +44,66 @@ class EntityWindow(Window):
 		if entity.owner:
 			title += ' (%s)' % entity.owner
 
-		hbox = HBox()
-		vbox = VBox()
-		grid = Grid(3,3)
+		actions = info['actions']
+		act = []
+		tabs = []
+
+		if 'MOVE' in actions:
+			act.append(Button(Icon(filename='tiger.svg'), 
+				functools.partial(EntityWindow.on_move, self)
+			))
+
+		if len(act) > 0:
+			grid = Grid(3, 3, *act)
+			tabs.append(Tab('Act', grid))
+
+		if 'BUILD' in actions:
+			build = []
+			for type in info['Buildlist']:
+				callback = functools.partial(EntityWindow.on_build, self, what=type)
+				build.append(Button(Icon(filename='tiger.svg'), callback=callback))
+			grid = Grid(3, 3, *build)
+			tabs.append(Tab('Build', grid))
 		
-		hbox.add(vbox, size=LayoutAttachment(Vector2f(0,1), Vector2f(192, 0)))
-		vbox.add(grid, size=LayoutAttachment(Vector2f(1,0), Vector2f(0, 192)))
+		tabs.append(Tab('Stats', EntityStats(info)))
+		tab = TabView(tabs=tabs)
 
-		default = ('default_texture.png', None)
-		for action in info['actions']:
-			try:
-				file, callback = _ACTION_LUT.get(action, default)
-				icon = Icon(filename=file)
-
-				callback = types.MethodType(callback, self, self.__class__)
-				button = Button(icon, callback=callback)
-
-				grid.add(button)
-			except:
-				traceback.print_exc()
-
-		Window.__init__(self, widget=hbox, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
+		Window.__init__(self, widget=tab, position=None, size=Vector2i(300,200), id=entity.id, title=title, **kwargs)
 		self._entity = entity
 		self._info = info
 
-	@action('GO', 'BTNMove.png')
-	def on_go(self, pos, button):
-		print 'go'
+	def on_move(self, pos, button):
+		def callback(p):
+			p = game.unproject(p)
+			client.entity_action(id=self._entity.id, action='MOVE', varargs=(p.x, p.y, p.z))
+		client.capture_position(callback=callback)
 
-	@action('LOAD', 'BTNLoad.png')
-	def on_load(self, pos, button):
-		print 'load'
+	def on_build(self, pos, button, what):
+		info = client.entity_action(self._entity.id, 'BUILD', varargs=(what,))
+		print info
 
-	@action('BUILD', 'BTNHumanBuild.png')
-	def on_build(self, pos, button):
-		print 'build'
+class EntityStats(CairoWidget):
+	def __init__(self, info):
+		CairoWidget.__init__(self, Vector2i(0,0), Vector2i(1,1))
+		self._info = info
+		self._font = self.create_font('Monospace')
+
+	def do_render(self):
+		cr = self.cr
+		self.clear(cr, (1,0,0,1))
+
+		text = ''
+		for k, v in self._info.items():
+			text += "%-10s: %s\n" % (k,v)
+
+		cr.move_to(5,0)
+		self.text(cr, text, self._font)
 
 class GameWidget(FBOWidget):
 	def __init__(self, client, size):
 		FBOWidget.__init__(self, Vector2i(0,0), size)
 		self._client = client
-		self._entities = []
+		self._entities = {}
 		self._selection = [] # current selected entities
 		self._scale = 1.0
 		self._rect = Rect(0,0,0,0)
@@ -109,9 +130,13 @@ class GameWidget(FBOWidget):
 		self._calc_view_matrix()
 
 	def set_entities(self, entities):
-		self._entities = entities
+		self._entities = {}
 		for e in entities:
+			self._entities[e.id] = e
 			e.__selected = False
+
+	def entity_named(self, key):
+		return self._entities[key]
 
 	def _calc_view_matrix(self):
 		self._rect.w = self.size.width  * self._scale
@@ -131,7 +156,7 @@ class GameWidget(FBOWidget):
 		p.y += self._rect.y
 		return p
 
-	def _unproject(self, point, view=None):
+	def unproject(self, point, view=None):
 		"""
 		Unprojects a 2D viewport point to a 3D point on the plane <0,0,1,0>
 		"""
@@ -174,7 +199,7 @@ class GameWidget(FBOWidget):
 	
 	def on_buttondown(self, pos, button):
 		# transform position by camera
-		world_pos = self._unproject(pos)
+		world_pos = self.unproject(pos)
 
 		if button == 1:
 			self.on_select_start(pos)
@@ -195,7 +220,7 @@ class GameWidget(FBOWidget):
 				print 'move'
 	
 	def on_mousemove(self, pos, buttons):
-		world_pos = self._unproject(pos)
+		world_pos = self.unproject(pos)
 
 		if buttons[1] and self._is_selecting:
 			self.on_select_move(pos)
@@ -208,10 +233,10 @@ class GameWidget(FBOWidget):
 	#
 
 	def on_zoom(self, amount, ref):
-		a = self._unproject(ref)
+		a = self.unproject(ref)
 		self._scale += amount
 		self._calc_view_matrix()
-		b = self._unproject(ref)
+		b = self.unproject(ref)
 
 		delta = b-a
 		self._rect.x -= delta.x
@@ -225,7 +250,7 @@ class GameWidget(FBOWidget):
 	def on_pan_start(self, pos):
 		self._is_panning = True
 		self._panstart_screen = pos.copy()
-		self._panstart = self._unproject(pos)
+		self._panstart = self.unproject(pos)
 		self._panref = self._rect.copy()
 		self._panrefview = copy(self._view)
 		self.focus_lock()
@@ -236,7 +261,7 @@ class GameWidget(FBOWidget):
 		return pos - self._panstart_screen
 
 	def on_pan_move(self, pos):
-		rel = self._unproject(pos,self._panrefview) - self._panstart
+		rel = self.unproject(pos,self._panrefview) - self._panstart
 		self._rect.x = self._panref.x - rel.x
 		self._rect.y = self._panref.y - rel.y
 		self._calc_view_matrix()
@@ -247,8 +272,8 @@ class GameWidget(FBOWidget):
 	
 	def on_select_start(self, pos):
 		self._is_selecting = True
-		self._selection_ref_a = self._unproject(pos)
-		self._selection_ref_b = self._unproject(pos)
+		self._selection_ref_a = self.unproject(pos)
+		self._selection_ref_b = self.unproject(pos)
 
 	def on_select_stop(self, pos):
 		if not self._is_selecting:
@@ -261,8 +286,10 @@ class GameWidget(FBOWidget):
 		a_min = Vector3(min(a.x,b.x), min(a.y,b.y), 0)
 		a_max = Vector3(max(a.x,b.x), max(a.y,b.y), 0)
 
+		multiselect = (a-b).length() > 0.1
+
 		selection = []
-		for e in self._entities:
+		for e in self._entities.values():
 			p = e.position
 
 			# @todo @refactor AABB-AABB overlapping
@@ -274,13 +301,15 @@ class GameWidget(FBOWidget):
 			if a_max.y <  b_min.y or a_min.y > b_max.y:
 				continue
 
-
 			selection.append(e)
+
+		if not multiselect and len(selection)>1:
+			selection = [selection[-1]]
 		
 		self.on_selection(selection)
 
 	def on_select_move(self, pos):
-		self._selection_ref_b = self._unproject(pos)
+		self._selection_ref_b = self.unproject(pos)
 
 	#
 	# Entity selected
@@ -326,7 +355,7 @@ class GameWidget(FBOWidget):
 		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
 
 		glColor4f(1,1,1,1)		
-		for e in self._entities:
+		for e in self._entities.values():
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
 			

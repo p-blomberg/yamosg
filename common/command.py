@@ -56,15 +56,13 @@ class Command:
 	def __str__(self):
 		# convert to string and quote if it contains a space.
 		def quote(x):
-			x = str(x)
 			if ' ' in x:
 				return '"%s"' % x
 			if x == '':
 				return '""'
-			else:
-				return x
+			return x
 		
-		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=' '.join([quote(x) for x in self.args]))
+		return '{id} {cmd} {args}'.format(id=self.id, cmd=self.command, args=' '.join([quote(str(x).replace('"', '\\"')) for x in self.args]))
 	
 	def reply(self, status, args, line):
 		""" Mark that this command has recieved a reply """
