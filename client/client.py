@@ -21,7 +21,7 @@ from select import select
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector2i, Vector3
 from state import Initial, StateManager
-from entity import Entity
+from entity import Entity, load_sprite
 from state.game import Game as GameState
 from game import GameWidget
 from ui.container import Composite
@@ -160,6 +160,7 @@ class Client:
 		# opengl must be initialized first
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
+		pygame.mouse.set_visible(False)
 		setup_opengl()
 
 		Client.cursor_default = pygame.cursors.arrow
@@ -179,6 +180,8 @@ class Client:
 		self._playerid = None
 		self._players = {}
 		self._capture_position = None
+		self._mouse = (0,0)
+		self._cursor = load_sprite('cursor.png')
 		
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
@@ -251,6 +254,7 @@ class Client:
 			elif event.type == pygame.MOUSEMOTION:
 				pos = Vector2i(event.pos)
 				pos.y = self._resolution.height - pos.y
+				self._mouse = pos
 				self._state.on_mousemove(pos)
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				pos = Vector2i(event.pos)
@@ -284,6 +288,24 @@ class Client:
 		glClearColor(1,0,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		self._state.render()
+
+		glPushMatrix()
+		glBindTexture(GL_TEXTURE_2D, self._cursor)
+		glTranslatef(self._mouse[0], self._mouse[1], 0)
+		glBegin(GL_QUADS)
+		glTexCoord2f(0, 0.25)
+		glVertex3f(0, -32, 0)
+		
+		glTexCoord2f(0, 0)
+		glVertex3f(0, 0, 0)
+		
+		glTexCoord2f(0.25, 0)
+		glVertex3f(32, 0, 0)
+		
+		glTexCoord2f(0.25, 0.25)
+		glVertex3f(32, -32, 0)
+		glEnd()
+		glPopMatrix()
 		
 		pygame.display.flip()
 	
