@@ -32,10 +32,18 @@ from pygame.locals import *
 from OpenGL.GL import *
 import itertools
 
+event_table = {}
+
 def expose(func):
 	""" Exposes a method, eg is callable by server """
 	func.exposed = True
 	return func
+
+def handle_event(type):
+    def wrapper(func):
+        event_table[type] = func
+        return func
+    return wrapper
 
 def server_call(alias, *in_args, **params):
 	"""
@@ -184,12 +192,13 @@ class Client:
 		self._cursor = load_sprite('cursor.png')
 		
 		# resizing must be done after state has been created so the event is propagated proper.
-		self._resize(resolution)
+		self.on_resize(resolution=resolution)
 	
 	def add_window(self, win):
 		self._container.add(win)
 	
-	def quit(self):
+	@handle_event(pygame.QUIT)
+	def quit(self, event):
 		self._running = False
 	
 	def is_running(self):
@@ -205,6 +214,7 @@ class Client:
 		while self._running:
 			try:
 				self._flush_queue()
+				self._poll()
 				self._logic()
 				self._render()
 			except GLError:
@@ -213,7 +223,10 @@ class Client:
 			except:
 				traceback.print_exc()
 	
-	def _resize(self, resolution):
+	@handle_event(pygame.VIDEORESIZE)
+	def on_resize(self, event=None, resolution=None):
+		if resolution is None:
+			resolution = Vector2i(event.w, event.h)
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 
 		self._resolution = resolution
@@ -225,7 +238,47 @@ class Client:
 
 		self._state.resize(resolution)
 		self._game.on_resize(resolution, True)
-	
+
+	@handle_event(pygame.MOUSEMOTION)
+	def on_mousemotion(self, event):
+		pos = Vector2i(event.pos)
+		pos.y = self._resolution.height - pos.y
+		self._mouse = pos
+		self._state.on_mousemove(pos)
+
+	@handle_event(pygame.MOUSEBUTTONDOWN)
+	def on_buttondown(self, event):
+		pos = Vector2i(event.pos)
+		pos.y = self._resolution.height - pos.y
+
+		if self._capture_position is not None:
+			if event.button == 1:
+				callback, args, kwargs = self._capture_position
+				try:
+					callback(pos, *args, **kwargs)
+				except:
+					traceback.print_exc()
+					
+			self._capture_position = None
+			pygame.mouse.set_cursor(*Client.cursor_default)
+			return
+
+		self._state.on_buttondown(pos, event.button)
+
+	@handle_event(pygame.MOUSEBUTTONUP)
+	def on_buttonup(self, event):
+		pos = Vector2i(event.pos)
+		pos.y = self._resolution.height - pos.y
+		self._state.on_buttonup(pos, event.button)
+
+	@handle_event(pygame.VIDEOEXPOSE)
+	def on_expose(self, event):
+		pass
+
+	@handle_event(pygame.ACTIVEEVENT)
+	def on_activeevent(self, event):
+		pass
+
 	def _flush_queue(self):
 		while True:
 			self._command_lock.acquire()
@@ -240,49 +293,18 @@ class Client:
 				self._dispatch(command, args)
 			except:
 				traceback.print_exc()
-		
-	def _logic(self):
+	
+	def _poll(self):
+		global event_table
 		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				self.quit()
-			elif event.type == pygame.VIDEOEXPOSE:
-				pass
-			elif event.type == pygame.VIDEORESIZE:
-				self._resize(Vector2i(event.w, event.h))
-			elif event.type == pygame.ACTIVEEVENT:
-				pass
-			elif event.type == pygame.MOUSEMOTION:
-				pos = Vector2i(event.pos)
-				pos.y = self._resolution.height - pos.y
-				self._mouse = pos
-				self._state.on_mousemove(pos)
-			elif event.type == pygame.MOUSEBUTTONDOWN:
-				pos = Vector2i(event.pos)
-				pos.y = self._resolution.height - pos.y
-
-				if self._capture_position is not None:
-					if event.button == 1:
-						callback, args, kwargs = self._capture_position
-						try:
-							callback(pos, *args, **kwargs)
-						except:
-							traceback.print_exc()
-					
-					self._capture_position = None
-					pygame.mouse.set_cursor(*Client.cursor_default)
-					continue
-
-				self._state.on_buttondown(pos, event.button)
-			elif event.type == pygame.MOUSEBUTTONUP:
-				pos = Vector2i(event.pos)
-				pos.y = self._resolution.height - pos.y
-				self._state.on_buttonup(pos, event.button)
-			elif event.type == pygame.KEYDOWN:
-				pass
-			elif event.type == pygame.KEYUP:
-				pass
-			else:
+			func = event_table.get(event.type, None)
+			if func is None:
 				print 'Unhandled pygame event', event
+				continue
+			func(self, event)
+
+	def _logic(self):
+		pass
 	
 	def _render(self):
 		glClearColor(1,0,0,0)
