@@ -40,10 +40,10 @@ def expose(func):
 	return func
 
 def handle_event(type):
-    def wrapper(func):
-        event_table[type] = func
-        return func
-    return wrapper
+	def wrapper(func):
+		event_table[type] = func
+		return func
+	return wrapper
 
 def server_call(alias, *in_args, **params):
 	"""
