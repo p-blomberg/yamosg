@@ -26,6 +26,7 @@ from state.game import Game as GameState
 from game import GameWidget
 from ui.container import Composite
 from ui.window import SampleCairoWindow, SampleOpenGLWindow
+from ui.cursor import Cursor
 
 import pygame
 from pygame.locals import *
@@ -188,8 +189,7 @@ class Client:
 		self._playerid = None
 		self._players = {}
 		self._capture_position = None
-		self._mouse = (0,0)
-		self._cursor = load_sprite('cursor.png')
+		self._cursor = Cursor('cursor.png')
 		
 		# resizing must be done after state has been created so the event is propagated proper.
 		self.on_resize(resolution=resolution)
@@ -243,7 +243,7 @@ class Client:
 	def on_mousemotion(self, event):
 		pos = Vector2i(event.pos)
 		pos.y = self._resolution.height - pos.y
-		self._mouse = pos
+		self._cursor.set_position(pos)
 		self._state.on_mousemove(pos)
 
 	@handle_event(pygame.MOUSEBUTTONDOWN)
@@ -310,25 +310,7 @@ class Client:
 		glClearColor(1,0,0,0)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		self._state.render()
-
-		glPushMatrix()
-		glBindTexture(GL_TEXTURE_2D, self._cursor)
-		glTranslatef(self._mouse[0], self._mouse[1], 0)
-		glBegin(GL_QUADS)
-		glTexCoord2f(0, 0.25)
-		glVertex3f(0, -32, 0)
-		
-		glTexCoord2f(0, 0)
-		glVertex3f(0, 0, 0)
-		
-		glTexCoord2f(0.25, 0)
-		glVertex3f(32, 0, 0)
-		
-		glTexCoord2f(0.25, 0.25)
-		glVertex3f(32, -32, 0)
-		glEnd()
-		glPopMatrix()
-		
+		self._cursor.render()
 		pygame.display.flip()
 	
 	def _dispatch(self, cmd, args):
