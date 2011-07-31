@@ -198,7 +198,7 @@ class Client:
 		self._container.add(win)
 	
 	@handle_event(pygame.QUIT)
-	def quit(self, event):
+	def quit(self, event=None):
 		self._running = False
 	
 	def is_running(self):
