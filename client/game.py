@@ -20,6 +20,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import types, traceback
 import functools
+import resources
 
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
@@ -117,7 +118,7 @@ class GameWidget(FBOWidget):
 		for i, filename in enumerate(['space_0.png', 'space_1.png', 'space_2.png']):
 			self._background[i] = glGenTextures(1)
 		
-			fp = open('../textures/background/' + filename, 'rb')
+			fp = resources.open(('textures/background', filename), 'rb')
 			surface = pygame.image.load(fp).convert_alpha()
 			data = pygame.image.tostring(surface, "RGBA", 0)
 			
