@@ -157,7 +157,7 @@ class Server(ServerSocket):
 			'CAPS': self._get_caps
 		}
 		
-		print "ready"
+		print "Listening on port {}".format(port)
 	
 	def unicast(self, connection, command, *args):
 		""" Send a message to a specific client """
