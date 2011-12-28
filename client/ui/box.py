@@ -58,7 +58,7 @@ class _Box(Container, Widget):
 
                   widget.on_resize(widget.size, final)
 
-      def add(self, widget, size=None, position=None):
+      def add(self, widget, size=None, position=None, zorder=None):
             widget.__size = size
             widget.__position = position
             Container.add(self, widget)
@@ -78,7 +78,7 @@ class _Box(Container, Widget):
 
 class HBox(_Box):
       def __init__(self, *widgets):
-            _Box.__init__(self, *widgets)
+            _Box.__init__(self, Vector3(0,0,0), Vector2i(1,1), *widgets)
             self._default_size = functools.partial(_Box._default_size, self, field='x')
 
       def on_resize(self, size, final):
@@ -88,8 +88,8 @@ class HBox(_Box):
 
 class VBox(_Box):
       def __init__(self, *widgets):
-            _Box.__init__(self, *widgets)
-            self._default_size = functools.partial(_Box._default_size, self, field='y')
+		  _Box.__init__(self, Vector3(0,0,0), Vector2i(1,1), *widgets)
+		  self._default_size = functools.partial(_Box._default_size, self, field='y')
 
       def on_resize(self, size, final):
             _Box.on_resize(self, size, final)
