@@ -12,8 +12,8 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 sys.path.append(root)
 print 'Platform is', platform.system()
 if platform.system() == 'Darwin':
-	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'Python-2.7.2', 'Lib', 'site-packages'))
-	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'Python-2.7.2', 'Lib', 'site-packages', 'gtk-2.0'))
+	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'site-packages'))
+	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'site-packages', 'gtk-2.0'))
 
 import socket, threading, traceback
 import json
