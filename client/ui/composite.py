@@ -8,6 +8,9 @@ from OpenGL.GL import *
 from copy import copy
 
 class Composite(Container, FBOWidget):
+	""" A composite container allows free-form position and sizing of its
+	children. """
+	
 	def __init__(self, position, size, children=[], format=GL_RGB8, *args, **kwargs):
 		Container.__init__(self, sort_key=lambda x: x.__zorder, children=children)
 		FBOWidget.__init__(self, position, size, *args, format=format, **kwargs)
