@@ -393,13 +393,16 @@ class Client:
 		self._capture_position = (callback, args, kwargs)
 		pygame.mouse.set_cursor(*Client.cursor_capture)
 
-if __name__ == '__main__':
+def run():
 	pygame.display.init()
 	
 	client = Client()
 
 	# create "superglobal" access to the client- and game instances
-	__builtins__.client = client
-	__builtins__.game = client._game # hack
+	__builtins__['client'] = client
+	__builtins__['game'] = client._game # hack
 
 	client.run()
+	
+if __name__ == '__main__':
+	run()

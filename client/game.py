@@ -50,7 +50,7 @@ class EntityWindow(Window):
 		tabs = []
 
 		if 'MOVE' in actions:
-			act.append(Button(Icon(filename='tiger.svg'), 
+			act.append(Button(Icon(filename='textures/tiger.svg'), 
 				functools.partial(EntityWindow.on_move, self)
 			))
 
@@ -62,7 +62,7 @@ class EntityWindow(Window):
 			build = []
 			for type in info['Buildlist']:
 				callback = functools.partial(EntityWindow.on_build, self, what=type)
-				build.append(Button(Icon(filename='tiger.svg'), callback=callback))
+				build.append(Button(Icon(filename='textures/tiger.svg'), callback=callback))
 			grid = Grid(3, 3, *build)
 			tabs.append(Tab('Build', grid))
 		
