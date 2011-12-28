@@ -1,11 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os.path, sys
-try:
-	import Foundation
-except:
-	pass
+import os.path, sys, platform
 
 # relative path to this script
 scriptfile = sys.modules[__name__].__file__
@@ -14,6 +10,10 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 
 # add rootdir to pythonpath
 sys.path.append(root)
+print 'Platform is', platform.system()
+if platform.system() == 'Darwin':
+	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'Python-2.7.2', 'Lib', 'site-packages'))
+	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'Python-2.7.2', 'Lib', 'site-packages', 'gtk-2.0'))
 
 import socket, threading, traceback
 import json
