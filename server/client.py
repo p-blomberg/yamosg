@@ -1,5 +1,7 @@
 from serversocket import Connection
 from common.transcoder import encoder
+from common.error import *
+import traceback
 
 class Client (Connection):
 	def __init__(self, sock, server, game):

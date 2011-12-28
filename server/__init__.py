@@ -20,16 +20,13 @@ from common.vector import Vector3
 from common.command import Command
 from common.transcoder import encoder, encoders
 from common import command
+from common.error import *
 import socket
 import traceback
 import json
 import inspect
 
-class CommandError (Exception):
-	pass
 
-class NoData (Exception):
-	pass
 
 def smart_truncate(content, length=100, suffix='...'):
 	# Based on implementation found at:
