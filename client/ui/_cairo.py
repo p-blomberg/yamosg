@@ -24,12 +24,12 @@ class CairoWidget:
 		
 	def _generate_surface(self):
 		bpp = 4
-		#if self._format == cairo.FORMAT_RGB32:
-		#	bpp = 3
-		
-		self._data = array.array('c', chr(0) * self.width * self.height * bpp)
-		stride = self.width * bpp
-		self.surface = cairo.ImageSurface.create_for_data(self._data, self._format, self.width, self.height, stride)
+
+		width = int(self.width)
+		height = int(self.height)
+		stride = width * bpp
+		self._data = array.array('c', chr(0) * stride * height)
+		self.surface = cairo.ImageSurface.create_for_data(self._data, self._format, width, height, stride)
 		self._texture = glGenTextures(1);
 		
 		self.cr = cairo.Context(self.surface)
