@@ -59,7 +59,7 @@ class Entity:
 		return d
 
 	def encode(self):
-		return json.dumps(self.dinmamma())
+		return json.dumps(self.info())
 
 	def remaining_cargo_space(self):
 		return self.max_cargo - self.cargo_sum()
@@ -262,6 +262,7 @@ class Gateway(Station):
 		# Add unit to world
 		self.game.add_entity(ent)
 		self.owner.entities.append(ent)
+		self.game.broadcast("NEWENT " + ent.encode())
 		
 		# Successful unit is successful
 		return "OK "+str(ent.id)
