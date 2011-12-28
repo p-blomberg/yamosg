@@ -409,15 +409,10 @@ class Game:
 	def logout(self, connection):
 		p = connection.player
 		
-		if p is None:
-			# @TODO should still disconnect socket
-			raise CommandError, 'Not logged in'
-		
-		# logout
-		p.logout()
-		
-		# Send info to all players
-		self.broadcast('USER_LOGOUT', p.id, p.name)
+		if p is not None:
+			p.logout()
+
+		connection.disconnect("c u l8r m8")
 		
 		# This is kind of hackish, but it assures that no reply is passed to
 		# the (now) disconnected peer.
