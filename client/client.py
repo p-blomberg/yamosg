@@ -33,6 +33,13 @@ from pygame.locals import *
 from OpenGL.GL import *
 import itertools
 
+event_table = {}
+def event(type, adapter=lambda x:x):
+    def wrapper(func):
+        event_table[type] = func, adapter
+        return func
+    return wrapper
+
 def expose(func):
 	""" Exposes a method, eg is callable by server """
 	func.exposed = True
@@ -180,14 +187,15 @@ class Client:
 		self._playerid = None
 		self._players = {}
 		self._capture_position = None
-		
+
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(resolution)
 	
 	def add_window(self, win):
 		self._container.add(win)
 	
-	def quit(self):
+	@event(pygame.QUIT)
+	def quit(self, event=None):
 		self._running = False
 	
 	def is_running(self):
@@ -211,6 +219,7 @@ class Client:
 			except:
 				traceback.print_exc()
 	
+	@event(pygame.VIDEORESIZE, lambda event: Vector2i(event.w, event.h))
 	def _resize(self, resolution):
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		setup_opengl()
@@ -241,46 +250,42 @@ class Client:
 				traceback.print_exc()
 		
 	def _logic(self):
+		global event_table
 		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				self.quit()
-			elif event.type == pygame.VIDEOEXPOSE:
-				pass
-			elif event.type == pygame.VIDEORESIZE:
-				self._resize(Vector2i(event.w, event.h))
-			elif event.type == pygame.ACTIVEEVENT:
-				pass
-			elif event.type == pygame.MOUSEMOTION:
-				pos = Vector2i(event.pos)
-				pos.y = self._resolution.height - pos.y
-				self._state.on_mousemove(pos)
-			elif event.type == pygame.MOUSEBUTTONDOWN:
-				pos = Vector2i(event.pos)
-				pos.y = self._resolution.height - pos.y
+			func, adapter = event_table.get(event.type, (None,None))
+			if func is None:
+				continue
+			func(self, adapter(event))
 
-				if self._capture_position is not None:
-					if event.button == 1:
-						callback, args, kwargs = self._capture_position
-						try:
-							callback(pos, *args, **kwargs)
-						except:
-							traceback.print_exc()
+	@event(pygame.MOUSEMOTION)
+	def _mousemotion(self, event):
+		pos = Vector2i(event.pos)
+		pos.y = self._resolution.height - pos.y
+		self._state.on_mousemove(pos)
+	
+	@event(pygame.MOUSEBUTTONDOWN)
+	def _mousebuttondown(self, event):
+		pos = Vector2i(event.pos)
+		pos.y = self._resolution.height - pos.y
+
+		if self._capture_position is not None:
+			if event.button == 1:
+				callback, args, kwargs = self._capture_position
+				try:
+					callback(pos, *args, **kwargs)
+				except:
+					traceback.print_exc()
 					
-					self._capture_position = None
-					pygame.mouse.set_cursor(*Client.cursor_default)
-					continue
+			self._capture_position = None
+			pygame.mouse.set_cursor(*Client.cursor_default)
+			return
+		self._state.on_buttondown(pos, event.button)
 
-				self._state.on_buttondown(pos, event.button)
-			elif event.type == pygame.MOUSEBUTTONUP:
-				pos = Vector2i(event.pos)
-				pos.y = self._resolution.height - pos.y
-				self._state.on_buttonup(pos, event.button)
-			elif event.type == pygame.KEYDOWN:
-				pass
-			elif event.type == pygame.KEYUP:
-				pass
-			else:
-				print 'Unhandled pygame event', event
+	@event(pygame.MOUSEBUTTONUP)
+	def _mousebuttonup(self, event):
+		pos = Vector2i(event.pos)
+		pos.y = self._resolution.height - pos.y
+		self._state.on_buttonup(pos, event.button)
 	
 	def _render(self):
 		glClearColor(1,0,0,0)
@@ -415,6 +420,6 @@ def run():
 	__builtins__['game'] = client._game # hack
 
 	client.run()
-	
+
 if __name__ == '__main__':
 	run()
