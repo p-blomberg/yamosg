@@ -17,6 +17,7 @@ if platform.system() == 'Darwin':
 
 import socket, threading, traceback
 import json
+from signal import signal, SIGINT
 from select import select
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector2i, Vector3
@@ -393,13 +394,27 @@ class Client:
 		self._capture_position = (callback, args, kwargs)
 		pygame.mouse.set_cursor(*Client.cursor_capture)
 
-if __name__ == '__main__':
+terminating = False
+def quit(*args):
+	global terminating
+	if terminating:
+		print >> sys.stderr, '\rGot SIGINT again, aborting.'
+		sys.exit(0)
+	client.quit()
+	print >> sys.stderr, '\rGot SIGINT, stopping.'
+	terminating = True
+
+def run():
 	pygame.display.init()
 	
 	client = Client()
+	signal(SIGINT, quit)
 
 	# create "superglobal" access to the client- and game instances
-	__builtins__.client = client
-	__builtins__.game = client._game # hack
+	__builtins__['client'] = client
+	__builtins__['game'] = client._game # hack
 
 	client.run()
+	
+if __name__ == '__main__':
+	run()

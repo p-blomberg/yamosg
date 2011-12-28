@@ -11,10 +11,11 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 
 real_open = open
 
-def open(name, mode='r'):
+def realpath(name):
 	global root
-
 	if not isinstance(name, basestring):
 		name = os.path.join(*name)
+	return os.path.join(root, name)
 
-	return real_open(os.path.join(root, name), mode)
+def open(name, mode='r'):
+	return real_open(realpath(name), mode)

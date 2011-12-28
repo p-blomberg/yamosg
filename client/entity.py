@@ -1,6 +1,7 @@
 from common.vector import Vector3
 from OpenGL.GL import *
 import pygame
+import resources
 
 import os.path
 
@@ -12,7 +13,7 @@ def load_sprite(filename):
 
 	texture = glGenTextures(1)
 	
-	fp = open(os.path.join('../textures/',filename), 'rb')
+	fp = resources.open(('textures',filename), 'rb')
 	surface = pygame.image.load(fp).convert_alpha()
 	data = pygame.image.tostring(surface, "RGBA", 0)
 

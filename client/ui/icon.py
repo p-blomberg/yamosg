@@ -10,14 +10,13 @@ from OpenGL.GL import *
 import rsvg_wrapper as rsvg
 import array
 import cairo
-
-_texture_path = '../textures'
+import resources
 
 class Icon(Widget):
 	def __init__(self, filename):
 		Widget.__init__(self)
 		
-		self._filename = os.path.join(_texture_path, filename)
+		self._filename = resources.realpath(filename)
 		(self._texture, real_size) = self.load_texture(self._filename)
 	
 	def on_resize(self, size, final):
@@ -35,7 +34,7 @@ class Icon(Widget):
 			surface = pygame.image.load(open(file, 'rb')).convert_alpha()
 		except:
 			traceback.print_exc()
-			fp = open('data/default_texture.png', 'rb')
+			fp = resources.open('data/default_texture.png', 'rb')
 			surface = pygame.image.load(fp).convert_alpha()
 		
 		try:
