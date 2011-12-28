@@ -212,6 +212,7 @@ class Client:
 	
 	def _resize(self, resolution):
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
+		setup_opengl()
 
 		self._resolution = resolution
 		glMatrixMode(GL_PROJECTION)
