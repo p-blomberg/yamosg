@@ -25,7 +25,7 @@ from state import Initial, StateManager
 from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
-from ui.container import Composite
+from ui.composite import Composite
 from ui.window import SampleCairoWindow, SampleOpenGLWindow
 
 import pygame
