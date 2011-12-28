@@ -1,0 +1,13 @@
+# Python
+*.py[co]
+
+# Emacs
+*~
+.\#*
+\#*\#
+
+# Vim
+*.swp
+
+# Yamosg
+players.db
