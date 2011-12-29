@@ -23,6 +23,7 @@ class Client (Connection):
 			"LIST_OF_ENTITIES": self.game.list_of_entities,
 			"ENTINFO": self.game.entity_info,
 			"ENTACTION": self.game.EntAction,
+			"TYPEINFO": entity.typeinfo,
 			"PLAYERS": self.game.Players,
 			"QUIT": self.game.logout
 		}

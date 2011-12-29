@@ -2,6 +2,7 @@ from common.vector import Vector3
 from common.error import CommandError
 from copy import copy
 import json
+import sys
 
 class Entity:
 	max_speed=None
@@ -297,3 +298,18 @@ class Gateway(Station):
 		self.actions['SELL_TO_EARTH']=self.sell_to_earth
 		self.actions['INFO']=self.info
 
+m = sys.modules[__name__]
+def typeinfo(name):
+	""" Look up entity type by name. Quite ugly solution but works """
+	try:
+		cls = m.__dict__[name]
+		if not issubclass(cls, Entity): raise TypeError
+	except:
+		return CommandError("No such type")
+
+	return {
+		'max_speed': cls.max_speed,
+		'size': cls.size,
+		'minable': cls.minable,
+		'max_cargo': cls.max_cargo,
+	}
