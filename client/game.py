@@ -158,6 +158,10 @@ class GameWidget(FBOWidget):
 			self._entities[e.id] = e
 			e.__selected = False
 
+	def add_entity(self, entity):
+		self._entities[entity.id] = entity
+		entity.__selected = False
+
 	def entity_named(self, key):
 		return self._entities[key]
 

@@ -260,7 +260,7 @@ class Gateway(Station):
 		# Add unit to world
 		self.game.add_entity(ent)
 		self.owner.entities.append(ent)
-		self.game.broadcast("NEWENT " + ent.encode())
+		self.game.broadcast("NEWENT" , ent.encode())
 		
 		# Successful unit is successful
 		return {'id': ent.id}
