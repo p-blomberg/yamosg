@@ -4,6 +4,7 @@ import pygame
 import common.resources as resources
 
 import os.path
+import rpc
 
 _resources = {}
 
@@ -26,9 +27,28 @@ def load_sprite(filename):
 	_resources[filename] = texture
 	return texture
 
+class TypeInfo:
+	lut = {}
+
+	def __init__(self, name):
+		TypeInfo.lut[name] = self
+		self.name = name
+		self.update()
+	
+	@staticmethod
+	def by_name(name):
+		try:
+			return TypeInfo.lut[name]
+		except KeyError:
+			return TypeInfo(name)
+
+	def update(self):
+		info = rpc.typeinfo(self.name)
+		print info
+
 class Entity:
 	def __init__(self, Type, Id, Position, Cargo, Velocity, Minable, Owner, **kwargs):
-		self._type = Type
+		self._type = TypeInfo.by_name(Type)
 		self.id = Id
 		self.position = Vector3(*Position)
 		self._cargo = Cargo
