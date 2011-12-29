@@ -112,7 +112,6 @@ class GameWidget(FBOWidget):
 		self._panref = None
 		self._is_panning = False
 		self._is_selecting = False
-		self._foo = 0.0
 		
 		self._background = [None, None, None]
 		for i, filename in enumerate(['space_0.png', 'space_1.png', 'space_2.png']):
