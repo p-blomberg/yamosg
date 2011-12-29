@@ -401,6 +401,10 @@ class Client:
 	@server_call('PLAYERINFO', 'id', decode=True)
 	def playerinfo(self, info):
 		self._toolbar.set_cash(info['cash'])
+
+	@expose
+	def CASH(self, amount):
+		self._toolbar.set_cash(int(amount))
 	
 	@server_call('LOGIN', 'username', 'password', decode=True)
 	def login(self, info):
