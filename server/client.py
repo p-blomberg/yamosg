@@ -2,6 +2,7 @@ from serversocket import Connection
 from common.transcoder import encoder
 from common.error import *
 import traceback
+import functools
 
 class Client (Connection):
 	def __init__(self, sock, server, game):
@@ -75,8 +76,12 @@ class Client (Connection):
 		except IndexError:
 			return "ERR_BAD_PARAMS"
 
+	@staticmethod
+	def _unknown_command(*args, **kwargs):
+		raise CommandError("I don't know the command %s" % kwargs['cmd'])
+	
 	def command(self, cmd, args):
-		func = self._commands.get(cmd, lambda *args: "I don't know the command " + cmd)
+		func = self._commands.get(cmd, functools.partial(self._unknown_command, cmd=cmd))
 		
 		try:
 			response = func(self, *args)
