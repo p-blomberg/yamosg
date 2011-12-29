@@ -247,7 +247,7 @@ class Client:
 	@event(pygame.VIDEORESIZE, lambda event: Vector2i(event.w, event.h))
 	def _resize(self, resolution):
 		self.log.debug("Resolution changed to %dx%d", resolution.x, resolution.y)
-		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
+		#self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		setup_opengl()
 
 		self._resolution = resolution

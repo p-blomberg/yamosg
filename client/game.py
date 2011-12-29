@@ -65,6 +65,14 @@ class EntityWindow(Window):
 				build.append(Button(Icon(filename='textures/tiger.svg'), callback=callback))
 			grid = Grid(3, 3, *build)
 			tabs.append(Tab('Build', grid))
+
+		if 'SET_CARGO_TYPE' in actions:
+			cargo_types = []
+			for type in info['Cargo_type_list']:
+				callback = functools.partial(EntityWindow.on_set_cargo_type, self, what=type)
+				cargo_types.append(Button(Icon(filename='textures/tiger.svg'), callback=callback))
+			grid = Grid(3, 3, *cargo_types)
+			tabs.append(Tab('Set cargo type', grid))
 		
 		tabs.append(Tab('Stats', EntityStats(info)))
 		tab = TabView(tabs=tabs)
@@ -82,6 +90,12 @@ class EntityWindow(Window):
 	def on_build(self, pos, button, what):
 		try:
 			info = client.entity_action(self._entity.id, 'BUILD', varargs=(what,))
+		except RuntimeError, e:
+			print e
+
+	def on_set_cargo_type(self, pos, button, what):
+		try:
+			info = client.entity_action(self._entity.id, 'SET_CARGO_TYPE', varargs=(what,))
 		except RuntimeError, e:
 			print e
 
@@ -355,7 +369,7 @@ class GameWidget(FBOWidget):
 		# use the parent size (which is a composite)
 		#FBOWidget.on_resize(self, self.parent.size, final)
 		self._viewport[2] = self.parent.size.x
-		self._viewport[3] = self.parent.size.y
+		self._viewport[3] = int(self.parent.size.y)
 		self._calc_view_matrix()
 	
 	#
