@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os.path, sys, platform
+import os.path, sys, platform as pf
 
 # relative path to this script
 scriptfile = sys.modules[__name__].__file__
@@ -10,8 +10,7 @@ root = os.path.normpath(os.path.join(scriptpath, '..'))
 
 # add rootdir to pythonpath
 sys.path.append(root)
-print 'Platform is', platform.system()
-if platform.system() == 'Darwin':
+if pf.system() == 'Darwin':
 	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'site-packages'))
 	sys.path.append(os.path.join(root, 'deps', 'osx_lion', 'site-packages', 'gtk-2.0'))
 
@@ -34,6 +33,8 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 import itertools
+from common.logger import Log
+import logging.config
 
 event_table = {}
 def event(type, adapter=lambda x:x):
@@ -167,9 +168,15 @@ class Client:
 	cursor_capture = None
 
 	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
+		self.log = Log('client')
+		self.log.logger.addHandler(logging.NullHandler()) # must have at least one handler
+		
 		# opengl must be initialized first
+		self.log.info("Initializing display (windowed at %(resolution)s)", dict(resolution='%dx%d'%resolution.xy()))
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
+
+		self.log.debug("OpenGL setup (version=\"%(version)s\", vendor=\"%(vendor)s\")", dict(version=glGetString(GL_VERSION), vendor=glGetString(GL_VENDOR)))
 		setup_opengl()
 
 		Client.cursor_default = pygame.cursors.arrow
@@ -226,6 +233,7 @@ class Client:
 	
 	@event(pygame.VIDEORESIZE, lambda event: Vector2i(event.w, event.h))
 	def _resize(self, resolution):
+		self.log.debug("Resolution changed to %dx%d", resolution.x, resolution.y)
 		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
 		setup_opengl()
 
@@ -415,6 +423,11 @@ def quit(*args):
 	terminating = True
 
 def run():
+	if os.path.exists('client.conf'):
+		logging.config.fileConfig('client.conf')
+
+	log = Log()
+	log.info('Yamosg starting (%s)', pf.system())
 	pygame.display.init()
 	
 	client = Client()
@@ -425,6 +438,7 @@ def run():
 	__builtins__['game'] = client._game # hack
 
 	client.run()
+	log.info('Yamosg stopping')
 
 if __name__ == '__main__':
 	run()
