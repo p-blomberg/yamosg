@@ -13,8 +13,8 @@ class Toolbar(CairoWidget):
 
 	def do_render(self):
 		self.clear(self.cr, (1,1,1,1))
-		self.cr.move_to(self.width-115, 5)
-		self.text(self.cr, 'Money: %d' % self.cash, self.font, alignment=ALIGN_RIGHT, width=100)
+		self.cr.move_to(self.width-205, 5)
+		self.text(self.cr, 'Money: %d' % self.cash, self.font, alignment=ALIGN_RIGHT, width=200)
 
 	def set_cash(self, cash):
 		self.cash = cash
