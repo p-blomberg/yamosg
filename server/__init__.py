@@ -404,7 +404,7 @@ class Game:
 		# Send info to all players
 		self.broadcast('USER_LOGIN', p.id, p.name)
 		
-		return "OK ID=%d" % (p.id)
+		return {'id': p.id}
 	
 	def logout(self, connection):
 		p = connection.player
