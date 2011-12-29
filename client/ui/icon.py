@@ -10,7 +10,7 @@ from OpenGL.GL import *
 import rsvg_wrapper as rsvg
 import array
 import cairo
-import resources
+import common.resources as resources
 
 class Icon(Widget):
 	def __init__(self, filename):

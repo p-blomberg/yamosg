@@ -20,7 +20,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import types, traceback
 import functools
-import resources
+import common.resources as resources
 import numpy
 
 def load(path):

@@ -1,7 +1,7 @@
 from common.vector import Vector3
 from OpenGL.GL import *
 import pygame
-import resources
+import common.resources as resources
 
 import os.path
 
