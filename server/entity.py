@@ -1,4 +1,5 @@
 from common.vector import Vector3
+from common.error import CommandError
 from copy import copy
 import json
 
@@ -246,7 +247,7 @@ class Gateway(Station):
 		
 		# Test if we can afford it
 		if not self.owner.buy(unit_type.cost):
-			return "NOT_OK: Not enough cash"
+			raise CommandError, 'Not enough cash'
 		
 		# Build it
 		ent = unit_type(self.position, self.game, owner=self.owner)
