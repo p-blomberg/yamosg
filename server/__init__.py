@@ -20,16 +20,13 @@ from common.vector import Vector3
 from common.command import Command
 from common.transcoder import encoder, encoders
 from common import command
+from common.error import *
 import socket
 import traceback
 import json
 import inspect
 
-class CommandError (Exception):
-	pass
 
-class NoData (Exception):
-	pass
 
 def smart_truncate(content, length=100, suffix='...'):
 	# Based on implementation found at:
@@ -137,7 +134,7 @@ class Server(ServerSocket):
 			self.tick()
 			self.checkSockets()
 			new_time=clock()
-			st=(1.0/15)-(new_time-t)
+			st=(1.0)-(new_time-t)
 			if(st>0):
 				sleep(st)
 			t=new_time
@@ -412,15 +409,10 @@ class Game:
 	def logout(self, connection):
 		p = connection.player
 		
-		if p is None:
-			# @TODO should still disconnect socket
-			raise CommandError, 'Not logged in'
-		
-		# logout
-		p.logout()
-		
-		# Send info to all players
-		self.broadcast('USER_LOGOUT', p.id, p.name)
+		if p is not None:
+			p.logout()
+
+		connection.disconnect("c u l8r m8")
 		
 		# This is kind of hackish, but it assures that no reply is passed to
 		# the (now) disconnected peer.

@@ -113,7 +113,7 @@ class FBOWidget(Widget):
 		Widget.__init__(self, pos, size, **kwargs)
 		self._format = format
 		self._filter = filter
-		self._fbo = glGenFramebuffers(1)
+		self._fbo = glGenFramebuffersEXT(1)
 		self._texture = glGenTextures(1)
 		self._projection = self.projection()
 		

@@ -1,5 +1,7 @@
 from serversocket import Connection
 from common.transcoder import encoder
+from common.error import *
+import traceback
 
 class Client (Connection):
 	def __init__(self, sock, server, game):
@@ -20,7 +22,8 @@ class Client (Connection):
 			"LIST_OF_ENTITIES": self.game.list_of_entities,
 			"ENTINFO": self.game.entity_info,
 			"ENTACTION": self.game.EntAction,
-			"PLAYERS": self.game.Players
+			"PLAYERS": self.game.Players,
+			"QUIT": self.game.logout
 		}
 		
 		# properties

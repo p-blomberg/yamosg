@@ -79,16 +79,7 @@ class Entity:
 		entity=cargo.container
 
 		# Calculate amount
-		if(entity.cargo[cargo] >= amount):
-			if(amount <= self.remaining_cargo_space()):
-				actual_amount=amount
-			else:
-				actual_amount=self.remaining_cargo_space()
-		else:
-			if(amount <= self.remaining_cargo_space()):
-				actual_amount=entity.cargo[cargo]
-			else:
-				actual_amount=self.remaining_cargo_space()
+		actual_amount=min(amount, entity.cargo[cargo], self.remaining_cargo_space())
 
 		# Do the transfer
 		entity.cargo[cargo]-=actual_amount
@@ -97,7 +88,7 @@ class Entity:
 			print "Adding "+str(actual_amount)+" of "+cargo.__class__.__name__+" to "+str(self.id)
 		else:
 			#print cargo.hash()+" is not "+self.cargo[0].hash()
-			print str(self.id)+" now also contains "+cargo.__class__.__name__
+			print "%s now also contains %d of %s" %(self.id, actual_amount,cargo.__class__.__name__)
 			c=copy(cargo)
 			self.cargo[c]=actual_amount
 
@@ -184,7 +175,7 @@ class Mineral(Entity):
 
 
 class CopperOre(Mineral):
-	pass
+	cost = 2
 
 class Miner(Ship):
 	max_speed=0.1
@@ -238,6 +229,7 @@ class Gateway(Station):
 	max_speed = 0.2
 	cost = 10000000
 	size = 10
+	max_cargo = 500
 	buildlist = {
 		"Station": Station,
 		"Ship": Ship,
@@ -267,11 +259,33 @@ class Gateway(Station):
 		# Successful unit is successful
 		return "OK "+str(ent.id)
 
+	def sell_to_earth(self, cargotype, amount):
+		# Check amount of cargo in container
+		for cargo, count in self.cargo.items():
+			if cargo.__class__.__name__ == cargotype:
+				actual_amount = min(amount, count)
+				break
+		else:
+			return "NOT_OK", "No such cargo here"
+
+		# Increase players cash
+		moneys = actual_amount * cargo.cost * 0.5
+		self.owner.sell(moneys)
+
+		# Remove remaining amount of cargo
+		self.cargo[cargo] -= actual_amount
+
+		# Check if remaining amount is zero - delete useless entity
+		if self.cargo[cargo]==0:
+			del self.cargo[cargo]
+
+		return "OK Recieved %i moneys." %(moneys)
+
 	def load(self, ship_id):
 		entity = self.game.entity_by_id(ship_id)
 		
-		for c in entity.cargo:
-			self.retrieve_cargo(c, entity.cargo[c])
+		for cargo, count in entity.cargo.items():
+			self.retrieve_cargo(cargo, count)
 		
 		return "OK"
 
@@ -279,4 +293,6 @@ class Gateway(Station):
 		Station.__init__(self, *args, **kwargs)
 		self.actions['BUILD']=self.build
 		self.actions['LOAD']=self.load
+		self.actions['SELL_TO_EARTH']=self.sell_to_earth
+		self.actions['INFO']=self.info
 
