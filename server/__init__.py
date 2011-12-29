@@ -134,7 +134,7 @@ class Server(ServerSocket):
 			self.tick()
 			self.checkSockets()
 			new_time=clock()
-			st=(1.0)-(new_time-t)
+			st=(1.0/15)-(new_time-t)
 			if(st>0):
 				sleep(st)
 			t=new_time
