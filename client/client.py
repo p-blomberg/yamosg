@@ -446,6 +446,9 @@ def quit(*args):
 	print >> sys.stderr, '\rGot SIGINT, stopping.'
 	terminating = True
 
+def call(*args, **kwargs):
+	return client.call(*args, **kwargs)
+
 def run():
 	if os.path.exists('client.conf'):
 		logging.config.fileConfig('client.conf')
