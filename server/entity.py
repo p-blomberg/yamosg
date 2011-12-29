@@ -159,6 +159,20 @@ class Station(Entity):
 	size = 10
 	mass = 5000
 
+class StorageStation(Station):
+	def load(self, ship_id):
+		entity = self.game.entity_by_id(ship_id)
+		for cargo, count in entity.cargo.items():
+			self.retrieve_cargo(cargo, count)
+		return "OK"
+
+class Silo(StorageStation):
+	max_speed = 0.2
+	cost = 150000
+	size = 8
+	max_cargo = 5000
+	mass = 7000
+
 class Mineral(Entity):
 	size = 0.001
 	mass = 1
@@ -232,13 +246,14 @@ class Miner(Ship):
 				for e in self._minable_entities():
 					self.mine(e)
 
-class Gateway(Station):
+class Gateway(StorageStation):
 	max_speed = 0.2
 	cost = 10000000
 	size = 10
 	max_cargo = 500
 	buildlist = {
 		"Station": Station,
+		"Silo": Silo,
 		"Ship": Ship,
 		"Miner": Miner
 	}
@@ -261,7 +276,7 @@ class Gateway(Station):
 		# Add unit to world
 		self.game.add_entity(ent)
 		self.owner.entities.append(ent)
-		self.game.broadcast("NEWENT " + ent.encode())
+		self.game.broadcast("NEWENT" , ent.encode())
 		
 		# Successful unit is successful
 		return {'id': ent.id}
@@ -287,14 +302,6 @@ class Gateway(Station):
 			del self.cargo[cargo]
 
 		return "OK Recieved %i moneys." %(moneys)
-
-	def load(self, ship_id):
-		entity = self.game.entity_by_id(ship_id)
-		
-		for cargo, count in entity.cargo.items():
-			self.retrieve_cargo(cargo, count)
-		
-		return "OK"
 
 	def __init__(self, *args, **kwargs):
 		Station.__init__(self, *args, **kwargs)
