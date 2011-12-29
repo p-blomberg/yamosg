@@ -26,8 +26,10 @@ from entity import Entity
 from state.game import Game as GameState
 from game import GameWidget
 from ui.composite import Composite
+from ui.box import HBox, VBox
 from ui.window import SampleCairoWindow, SampleOpenGLWindow
-
+from ui.toolbar import Toolbar
+from ui.layout import LayoutAttachment
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
@@ -179,7 +181,10 @@ class Client:
 		self._state = StateManager()
 		self._game = GameWidget(self, resolution)
 		self._container = Composite(Vector2i(0,0), resolution, children=[self._game])
-		self._state.push(GameState(resolution, self._container))
+		self._window = VBox()
+		self._window.add(Toolbar(), size=LayoutAttachment(Vector2i(1,0), Vector2i(0,25)))
+		self._window.add(self._container)
+		self._state.push(GameState(resolution, self._window))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []

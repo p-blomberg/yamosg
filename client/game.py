@@ -177,6 +177,8 @@ class GameWidget(FBOWidget):
 		y = point.y
 		#y = viewport[3]-point.y # [3] is the height of the viewport
 
+		self._viewport[3] = 625
+		#print x,y, self._viewport
 		# Get the min and max points
 		min = Vector3(gluUnProject(x, y, 0, view, self._projection, self._viewport))
 		max = Vector3(gluUnProject(x, y, 1, view, self._projection, self._viewport))
@@ -340,8 +342,13 @@ class GameWidget(FBOWidget):
 
 	def on_resize(self, size, final):
 		FBOWidget.on_resize(self, size, final)
-		self._viewport[2] = size.x
-		self._viewport[3] = size.y
+		#self._viewport[2] = size.x
+		#self._viewport[3] = size.y
+		
+		# use the parent size (which is a composite)
+		#FBOWidget.on_resize(self, self.parent.size, final)
+		self._viewport[2] = self.parent.size.x
+		self._viewport[3] = self.parent.size.y
 		self._calc_view_matrix()
 	
 	#
