@@ -48,6 +48,8 @@ def expose(func):
 	func.exposed = True
 	return func
 
+network_log = None
+
 def server_call(alias, *in_args, **params):
 	"""
 	Wrapper for a server call.
@@ -80,6 +82,8 @@ def server_call(alias, *in_args, **params):
 
 	def wrap(f):
 		def wrapped_f(self, *args, **kwargs):
+			global network_log
+			
 			# parse varargs. Parsed before arg count checking because
 			# varargs aren't counted in the expected number.
 			varargs = []
@@ -99,7 +103,9 @@ def server_call(alias, *in_args, **params):
 			real_args += varargs
 
 			# pass command to server
+			network_log.debug('calling %s(%s)', alias, ', '.join([str(x) for x in real_args]))
 			status, reply_args, line = self.call(alias, *real_args)
+			network_log.debug('reply: %s', line)
 			if status != 'OK':
 				raise RuntimeError, reply_args[0]
 
@@ -168,8 +174,14 @@ class Client:
 	cursor_capture = None
 
 	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
+		global network_log
+		
 		self.log = Log('client')
-		self.log.logger.addHandler(logging.NullHandler()) # must have at least one handler
+		network_log = Log('network')
+
+		# must have at least one handler
+		self.log.logger.addHandler(logging.NullHandler())
+		network_log.logger.addHandler(logging.NullHandler())
 		
 		# opengl must be initialized first
 		self.log.info("Initializing display (windowed at %(resolution)s)", dict(resolution='%dx%d'%resolution.xy()))
@@ -188,8 +200,9 @@ class Client:
 		self._state = StateManager()
 		self._game = GameWidget(self, resolution)
 		self._container = Composite(Vector2i(0,0), resolution, children=[self._game])
+		self._toolbar = Toolbar()
 		self._window = VBox()
-		self._window.add(Toolbar(), size=LayoutAttachment(Vector2i(1,0), Vector2i(0,25)))
+		self._window.add(self._toolbar, size=LayoutAttachment(Vector2i(1,0), Vector2i(0,25)))
 		self._window.add(self._container)
 		self._state.push(GameState(resolution, self._window))
 		self._network = Network(self, host, port)
@@ -309,7 +322,8 @@ class Client:
 	
 	def _dispatch(self, cmd, args):
 		""" Run command """
-		
+		global network_log
+		network_log.debug('got %s(%s)', cmd, ', '.join([str(x) for x in args]))
 		try:
 			# Try to get function
 			func = getattr(self, cmd)
@@ -384,9 +398,15 @@ class Client:
 	def entity_action(self, info):
 		return info
 
-	@server_call('LOGIN', 'username', 'password')
-	def login(self, playerid):
-		self.playerid = playerid
+	@server_call('PLAYERINFO', 'id', decode=True)
+	def playerinfo(self, info):
+		self._toolbar.set_cash(info['cash'])
+	
+	@server_call('LOGIN', 'username', 'password', decode=True)
+	def login(self, info):
+		self.playerid = info['id']
+		self.log.debug('player id is %s', self.playerid)
+		self.playerinfo(self.playerid)
 	
 	@server_call('PLAYERS', decode=True)
 	def players(self, players):
