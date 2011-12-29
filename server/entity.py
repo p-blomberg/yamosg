@@ -79,16 +79,7 @@ class Entity:
 		entity=cargo.container
 
 		# Calculate amount
-		if(entity.cargo[cargo] >= amount):
-			if(amount <= self.remaining_cargo_space()):
-				actual_amount=amount
-			else:
-				actual_amount=self.remaining_cargo_space()
-		else:
-			if(amount <= self.remaining_cargo_space()):
-				actual_amount=entity.cargo[cargo]
-			else:
-				actual_amount=self.remaining_cargo_space()
+		actual_amount=min(amount, entity.cargo[cargo], self.remaining_cargo_space())
 
 		# Do the transfer
 		entity.cargo[cargo]-=actual_amount
@@ -97,7 +88,7 @@ class Entity:
 			print "Adding "+str(actual_amount)+" of "+cargo.__class__.__name__+" to "+str(self.id)
 		else:
 			#print cargo.hash()+" is not "+self.cargo[0].hash()
-			print str(self.id)+" now also contains "+cargo.__class__.__name__
+			print "%s now also contains %d of %s" %(self.id, actual_amount,cargo.__class__.__name__)
 			c=copy(cargo)
 			self.cargo[c]=actual_amount
 
