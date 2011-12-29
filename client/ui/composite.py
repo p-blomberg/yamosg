@@ -38,6 +38,13 @@ class Composite(Container, FBOWidget):
 			if c.id() == name:
 				return c
 		return None
+
+	def on_resize(self, size, final):
+		FBOWidget.on_resize(self, size, final)
+
+		# inform children that parent has been resized, but retain original.
+		for x in self.get_children():
+			x.on_resize(x.size, True)
 	
 	def do_render(self):
 		glClearColor(0,0.5,1,1)
