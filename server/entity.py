@@ -257,7 +257,7 @@ class Gateway(Station):
 		self.game.broadcast("NEWENT " + ent.encode())
 		
 		# Successful unit is successful
-		return "OK "+str(ent.id)
+		return {'id': ent.id}
 
 	def sell_to_earth(self, cargotype, amount):
 		# Check amount of cargo in container
