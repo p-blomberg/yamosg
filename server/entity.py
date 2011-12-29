@@ -304,7 +304,7 @@ class Gateway(Station):
 		self.actions['INFO']=self.info
 
 m = sys.modules[__name__]
-def typeinfo(name):
+def typeinfo(connection, name):
 	""" Look up entity type by name. Quite ugly solution but works """
 	try:
 		cls = m.__dict__[name]
