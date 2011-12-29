@@ -120,6 +120,10 @@ class Player:
 			return True
 		return False
 
+	def sell(self, amount):
+		self.cash += amount
+		return True
+
 	def info(self):
 		return {
 			'name': self.name,

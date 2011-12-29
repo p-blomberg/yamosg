@@ -258,11 +258,33 @@ class Gateway(Station):
 		# Successful unit is successful
 		return "OK "+str(ent.id)
 
+	def sell_to_earth(self, cargotype, amount):
+		# Check amount of cargo in container
+		for cargo, count in self.cargo.items():
+			if cargo.__class__.__name__ == cargotype:
+				actual_amount = min(amount, count)
+				break
+		else:
+			return "NOT_OK", "No such cargo here"
+
+		# Increase players cash
+		moneys = actual_amount * cargo.cost * 0.5
+		self.owner.sell(moneys)
+
+		# Remove remaining amount of cargo
+		self.cargo[cargo] -= actual_amount
+
+		# Check if remaining amount is zero - delete useless entity
+		if self.cargo[cargo]==0:
+			del self.cargo[cargo]
+
+		return "OK Recieved %i moneys." %(moneys)
+
 	def load(self, ship_id):
 		entity = self.game.entity_by_id(ship_id)
 		
-		for c in entity.cargo:
-			self.retrieve_cargo(c, entity.cargo[c])
+		for cargo, count in entity.cargo.items():
+			self.retrieve_cargo(cargo, count)
 		
 		return "OK"
 
@@ -270,4 +292,6 @@ class Gateway(Station):
 		Station.__init__(self, *args, **kwargs)
 		self.actions['BUILD']=self.build
 		self.actions['LOAD']=self.load
+		self.actions['SELL_TO_EARTH']=self.sell_to_earth
+		self.actions['INFO']=self.info
 
