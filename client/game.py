@@ -21,7 +21,6 @@ from OpenGL.GLU import *
 import types, traceback
 import functools
 import common.resources as resources
-import numpy
 
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
@@ -81,8 +80,10 @@ class EntityWindow(Window):
 		client.capture_position(callback=callback)
 
 	def on_build(self, pos, button, what):
-		info = client.entity_action(self._entity.id, 'BUILD', varargs=(what,))
-		print info
+		try:
+			info = client.entity_action(self._entity.id, 'BUILD', varargs=(what,))
+		except RuntimeError, e:
+			print e
 
 class EntityStats(CairoWidget):
 	def __init__(self, info):
@@ -113,7 +114,13 @@ class GameWidget(FBOWidget):
 		self._panref = None
 		self._is_panning = False
 		self._is_selecting = False
-		self._viewport = numpy.array([0,0,0,0], numpy.int32)
+
+		# cannot use numpy directly as it might not be available on stupid OSs (OSX, I'm looking at you!)
+		self._viewport = glGetInteger(GL_VIEWPORT)
+		self._viewport[0] = 0
+		self._viewport[1] = 0
+		self._viewport[2] = 0
+		self._viewport[3] = 0
 		
 		self._background = [None, None, None]
 		for i, filename in enumerate(['space_0.png', 'space_1.png', 'space_2.png']):
