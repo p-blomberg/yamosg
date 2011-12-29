@@ -167,7 +167,7 @@ class WindowDecoration(CairoWidget):
 		cls.text(cr, title, font, alignment=ALIGN_CENTER, width=width)
 
 # autoposition
-_autopos   = Vector2i(50, 450)
+_autopos   = Vector2i(50, 350)
 _autopos_c = 50
 _autopos_d = Vector2i(20, -20)
 
