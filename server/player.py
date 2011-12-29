@@ -9,7 +9,7 @@ class Player:
 	_counter = 0
 	__salt = 'yamosg_salt_omg'
 	
-	def __init__(self, username, game, id=None, password=None, cash=100000):
+	def __init__(self, username, game, id=None, password=None, cash=1000000):
 		self.id = id or self._generate_id()
 		self.name = username
 		self.cash = cash
