@@ -34,7 +34,9 @@ from pygame.locals import *
 from OpenGL.GL import *
 import itertools
 from common.logger import Log
+import common.resources as resources
 import logging.config
+import argparse
 
 event_table = {}
 def event(type, adapter=lambda x:x):
@@ -173,7 +175,7 @@ class Client:
 	cursor_default = None
 	cursor_capture = None
 
-	def __init__(self, resolution=Vector2i(800,600), host='localhost', port=1234, split="\n"):
+	def __init__(self, resolution, host, port, username, password, split="\n"):
 		global network_log
 		
 		self.log = Log('client')
@@ -184,8 +186,8 @@ class Client:
 		network_log.logger.addHandler(logging.NullHandler())
 		
 		# opengl must be initialized first
-		self.log.info("Initializing display (windowed at %(resolution)s)", dict(resolution='%dx%d'%resolution.xy()))
-		self._screen = pygame.display.set_mode(resolution.xy(), OPENGL|DOUBLEBUF|RESIZABLE)
+		self.log.info("Initializing display (windowed at %(resolution)s)", dict(resolution='%dx%d'%resolution))
+		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
 		pygame.display.set_caption('yamosg')
 
 		self.log.debug("OpenGL setup (version=\"%(version)s\", vendor=\"%(vendor)s\")", dict(version=glGetString(GL_VERSION), vendor=glGetString(GL_VENDOR)))
@@ -194,17 +196,19 @@ class Client:
 		Client.cursor_default = pygame.cursors.arrow
 		Client.cursor_capture = pygame.cursors.diamond
 		
-		self._resolution = resolution
+		self._resolution = Vector2i(resolution)
+		self._username = username
+		self._password = password
 		self._split = split
 		self._running = False
 		self._state = StateManager()
-		self._game = GameWidget(self, resolution)
-		self._container = Composite(Vector2i(0,0), resolution, children=[self._game])
+		self._game = GameWidget(self, self._resolution)
+		self._container = Composite(Vector2i(0,0), self._resolution, children=[self._game])
 		self._toolbar = Toolbar()
 		self._window = VBox()
 		self._window.add(self._toolbar, size=LayoutAttachment(Vector2i(1,0), Vector2i(0,25)))
 		self._window.add(self._container)
-		self._state.push(GameState(resolution, self._window))
+		self._state.push(GameState(self._resolution, self._window))
 		self._network = Network(self, host, port)
 		self._command_store = {}
 		self._command_queue = []
@@ -214,7 +218,7 @@ class Client:
 		self._capture_position = None
 
 		# resizing must be done after state has been created so the event is propagated proper.
-		self._resize(resolution)
+		self._resize(self._resolution)
 	
 	def add_window(self, win):
 		self._container.add(win)
@@ -422,7 +426,7 @@ class Client:
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
-		self.login(password='bar', username='foo')
+		self.login(username=self._username, password=self._password)
 		self._players = self.players()
 		self.list_of_entities()
 
@@ -450,14 +454,38 @@ def call(*args, **kwargs):
 	return client.call(*args, **kwargs)
 
 def run():
-	if os.path.exists('client.conf'):
-		logging.config.fileConfig('client.conf')
+	def resolution(string):
+		p = string.split('x')
+		if len(p) != 2:
+			raise argparse.ArgumentTypeError('not a valid resolution')
+		try:
+			p[0] = int(p[0])
+			p[1] = int(p[1])
+		except:
+			raise argparse.ArgumentTypeError('not a valid resolution')
+		return tuple(p)
+	
+	parser = argparse.ArgumentParser(description='Yamosg Client')
+	parser.add_argument('-u', '--username', default='foo')
+	parser.add_argument('-p', '--password', default='bar')
+	parser.add_argument('-r', '--resolution', type=resolution, default=(800,600))
+	parser.add_argument('-c', '--logconfig', default=resources.realpath('client.conf'))
+	parser.add_argument('host', metavar='HOST', nargs='?', default='localhost')
+	parser.add_argument('port', metavar='PORT', nargs='?', type=int, default='1234')
+
+	args = parser.parse_args()
+
+	if os.path.exists(args.logconfig):
+		print args.logconfig
+		logging.config.fileConfig(args.logconfig)
+	else:
+		print >> sys.stderr, 'logconfig', args.logconfig, 'not found, logging disabled'
 
 	log = Log()
 	log.info('Yamosg starting (%s)', pf.system())
 	pygame.display.init()
 	
-	client = Client()
+	client = Client(args.resolution, args.host, args.port, args.username, args.password)
 	signal(SIGINT, quit)
 
 	# create "superglobal" access to the client- and game instances
