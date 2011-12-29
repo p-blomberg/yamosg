@@ -21,6 +21,7 @@ from OpenGL.GLU import *
 import types, traceback
 import functools
 import resources
+import numpy
 
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
@@ -112,6 +113,7 @@ class GameWidget(FBOWidget):
 		self._panref = None
 		self._is_panning = False
 		self._is_selecting = False
+		self._viewport = numpy.array([0,0,0,0], numpy.int32)
 		
 		self._background = [None, None, None]
 		for i, filename in enumerate(['space_0.png', 'space_1.png', 'space_2.png']):
@@ -139,7 +141,7 @@ class GameWidget(FBOWidget):
 		return self._entities[key]
 
 	def _calc_view_matrix(self):
-		self._rect.w = self.size.x  * self._scale
+		self._rect.w = self.size.x * self._scale
 		self._rect.h = self.size.y * self._scale
 
 		glPushMatrix()
@@ -166,7 +168,8 @@ class GameWidget(FBOWidget):
 			view = self._view
 
 		# @todo GL_VIEWPORT is never changed, at least not until resizing.
-		viewport = glGetInteger(GL_VIEWPORT)
+		#viewport = glGetInteger(GL_VIEWPORT)
+		#print viewport, self._viewport
 
 		# The view is flipped, so Y must be flipped again.
 		# NO YOU!!
@@ -175,8 +178,8 @@ class GameWidget(FBOWidget):
 		#y = viewport[3]-point.y # [3] is the height of the viewport
 
 		# Get the min and max points
-		min = Vector3(gluUnProject(x, y, 0, view, self._projection, viewport))
-		max = Vector3(gluUnProject(x, y, 1, view, self._projection, viewport))
+		min = Vector3(gluUnProject(x, y, 0, view, self._projection, self._viewport))
+		max = Vector3(gluUnProject(x, y, 1, view, self._projection, self._viewport))
 
 		# This is a simplification of the general line-plane intersection.
 		# Since the plane normal is (0,0,1) and d=0, z is the only variable left.
@@ -334,6 +337,12 @@ class GameWidget(FBOWidget):
 			info = self._client.entity_info(entity.id)
 			self._client.add_window(EntityWindow(entity, info))
 			return
+
+	def on_resize(self, size, final):
+		FBOWidget.on_resize(self, size, final)
+		self._viewport[2] = size.x
+		self._viewport[3] = size.y
+		self._calc_view_matrix()
 	
 	#
 	# Rendering
