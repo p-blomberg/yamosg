@@ -22,7 +22,7 @@ class Container:
 	def add(self, widget, zorder=None):
 		widget.parent = self
 
-		self._children.insert(0, widget)
+		self._children.append(widget)
 		self.invalidate()
 		self.sort()
 
