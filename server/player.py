@@ -12,6 +12,7 @@ class Player:
 	def __init__(self, username, game, id=None, password=None, cash=1000000):
 		self.id = id or self._generate_id()
 		self.name = username
+		self.game = game
 		self.cash = cash
 		self.entities = list()
 		
@@ -117,6 +118,10 @@ class Player:
 	def buy(self, amount):
 		if self.can_afford(amount):
 			self.cash -= amount
+			
+			# Tell player how much cash he have left
+			self.game.unicast(self._client, 'CASH', self.cash)
+
 			return True
 		return False
 
