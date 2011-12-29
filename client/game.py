@@ -177,7 +177,7 @@ class GameWidget(FBOWidget):
 		y = point.y
 		#y = viewport[3]-point.y # [3] is the height of the viewport
 
-		self._viewport[3] = 625
+		self._viewport[3] = 600
 		#print x,y, self._viewport
 		# Get the min and max points
 		min = Vector3(gluUnProject(x, y, 0, view, self._projection, self._viewport))
