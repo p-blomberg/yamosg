@@ -426,7 +426,12 @@ class Client:
 	@expose
 	def Hello(self):
 		self.call('SET', 'ENCODER', 'json')
-		self.login(username=self._username, password=self._password)
+		try:
+			self.login(username=self._username, password=self._password)
+		except RuntimeError, e:
+			self.log.error(e)
+			self.quit()
+			return
 		self._players = self.players()
 		self.list_of_entities()
 
