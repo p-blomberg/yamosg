@@ -175,7 +175,7 @@ class Mineral(Entity):
 
 
 class CopperOre(Mineral):
-	pass
+	cost = 2
 
 class Miner(Ship):
 	max_speed=0.1
@@ -229,6 +229,7 @@ class Gateway(Station):
 	max_speed = 0.2
 	cost = 10000000
 	size = 10
+	max_cargo = 500
 	buildlist = {
 		"Station": Station,
 		"Ship": Ship,
