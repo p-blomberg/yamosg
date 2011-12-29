@@ -10,6 +10,7 @@ class Entity:
 	minable=False
 	max_cargo=0
 	buildlist={}
+	cargo_type_list = {}
 	
 	# used to autogenerate id
 	_id_counter = 0
@@ -55,7 +56,8 @@ class Entity:
 			"Velocity": self._velocity and self._velocity.xyz() or None,
 			"Minable": self.minable,
 			"Cargo": [(cargo.info(), amount) for cargo,amount in self.cargo.items()],
-			"Buildlist":self.buildlist.keys()
+			"Buildlist":self.buildlist.keys(),
+			"Cargo_type_list":self.cargo_type_list.keys()
 		}
 		return d
 
@@ -185,6 +187,9 @@ class Miner(Ship):
 	mining_speed=1.0
 	max_cargo = 50
 	cargo_type=None
+	cargo_type_list = {
+		"CopperOre": CopperOre
+	}
 
 	def __init__(self, *args, **kwargs):
 		Ship.__init__(self, *args, **kwargs)
