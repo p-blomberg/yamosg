@@ -32,8 +32,11 @@ class _Box(Container, Widget):
 		return left / n
 
 	def _resize_children(self, size, final, dx=None, dy=None):
+		""" Automatically resizes the children based on hints and available space """
+
+		# start at upper left position
 		x = 0.0
-		y = 0.0
+		y = size.y
 		for n, widget in enumerate(self.get_children()):
 			widget.pos.x = x
 			widget.pos.y = y
@@ -50,12 +53,14 @@ class _Box(Container, Widget):
 				iy = abs.y
 				widget.size = abs
 
+			widget.pos.y -= widget.size.y
+
 			# increase position
 			if dx is not None:
 				x += ix
 			if dy is not None:
-				y += iy
-					
+				y -= iy
+
 			widget.on_resize(widget.size, final)
 
 	def add(self, widget, size=None, position=None, zorder=None):
