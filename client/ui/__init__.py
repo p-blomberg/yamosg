@@ -206,7 +206,7 @@ class FBOWidget(Widget):
 				raise
 		
 		#print 'viewport:', int(self.width)
-		glViewport(0, 0, int(self.width), int(self.height));
+		#glViewport(0, 0, int(self.width), int(self.height));
 		
 		# load projection
 		glMatrixMode(GL_PROJECTION)
@@ -217,6 +217,6 @@ class FBOWidget(Widget):
 		glPushMatrix()
 		self.do_render()
 		glPopMatrix()
-		self.unbind_fbo()	
+		self.unbind_fbo()
 
 from button import Button
