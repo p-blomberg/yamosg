@@ -355,7 +355,7 @@ class GameWidget(FBOWidget):
 		# use the parent size (which is a composite)
 		#FBOWidget.on_resize(self, self.parent.size, final)
 		self._viewport[2] = self.parent.size.x
-		self._viewport[3] = self.parent.size.y
+		self._viewport[3] = int(self.parent.size.y)
 		self._calc_view_matrix()
 	
 	#
