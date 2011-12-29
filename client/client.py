@@ -227,7 +227,7 @@ class Client:
 		self._resolution = resolution
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		glOrtho(0, resolution.width, 0, resolution.height, -1.0, 1.0);
+		glOrtho(0, resolution.x, 0, resolution.y, -1.0, 1.0);
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
@@ -260,13 +260,13 @@ class Client:
 	@event(pygame.MOUSEMOTION)
 	def _mousemotion(self, event):
 		pos = Vector2i(event.pos)
-		pos.y = self._resolution.height - pos.y
+		pos.y = self._resolution.y - pos.y
 		self._state.on_mousemove(pos)
 	
 	@event(pygame.MOUSEBUTTONDOWN)
 	def _mousebuttondown(self, event):
 		pos = Vector2i(event.pos)
-		pos.y = self._resolution.height - pos.y
+		pos.y = self._resolution.y - pos.y
 
 		if self._capture_position is not None:
 			if event.button == 1:
@@ -284,7 +284,7 @@ class Client:
 	@event(pygame.MOUSEBUTTONUP)
 	def _mousebuttonup(self, event):
 		pos = Vector2i(event.pos)
-		pos.y = self._resolution.height - pos.y
+		pos.y = self._resolution.y - pos.y
 		self._state.on_buttonup(pos, event.button)
 	
 	def _render(self):

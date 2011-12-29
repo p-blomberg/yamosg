@@ -140,8 +140,8 @@ class GameWidget(FBOWidget):
 		return self._entities[key]
 
 	def _calc_view_matrix(self):
-		self._rect.w = self.size.width  * self._scale
-		self._rect.h = self.size.height * self._scale
+		self._rect.w = self.size.x  * self._scale
+		self._rect.h = self.size.y * self._scale
 
 		glPushMatrix()
 

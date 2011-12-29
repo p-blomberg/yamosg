@@ -20,10 +20,6 @@ class Vector2:
 		else:
 			self.x = self.__class__.datatype(x)
 			self.y = self.__class__.datatype(y)
-		
-		# since Vector2 is commonly used to describe resolution these aliases is used:
-		self.width = self.x
-		self.height = self.y
 	
 	def copy(self):
 		return self.__class__(self.x, self.y)
@@ -164,8 +160,6 @@ if __name__ == '__main__':
 			v = Vector2(1.0, 2.0) * 2.0
 			self.assertEqual(v.x, 2.0)
 			self.assertEqual(v.y, 4.0)
-			self.assertEqual(v.width, v.x)
-			self.assertEqual(v.height, v.y)
 			self.assertEqual(v[0], v.x)
 			self.assertEqual(v[1], v.y)
 			
