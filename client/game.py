@@ -402,6 +402,18 @@ class GameWidget(FBOWidget):
 	def visible(self, sorted=False):
 		r = self._rect
 		l = filter(lambda e: e.intersect_rect(r), self._entities.values())
+
+		def c(e1,e2):
+			if e1.type.name == "Planet":
+				if e2.type.name == "Planet":
+					return 0
+				else:
+					return -1
+			else:
+				return 0
+
+		if sorted:
+			l.sort(cmp=c)
 		return l
 	
 	@staticmethod
