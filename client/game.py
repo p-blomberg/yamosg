@@ -109,6 +109,8 @@ class EntityWindow(Window):
 class EntityStats(CairoWidget):
 	def __init__(self, info):
 		CairoWidget.__init__(self, Vector2i(0,0), Vector2i(1,1))
+		info['Minable'] and 'Yes' or 'No'
+		info['Cargo'] = ', '.join(['%s:%d' % (x['Type'],y) for x,y in info['Cargo']])
 		self._info = info
 		self._font = self.create_font('Monospace')
 
@@ -118,7 +120,7 @@ class EntityStats(CairoWidget):
 
 		text = ''
 		for k, v in self._info.items():
-			text += "%-10s: %s\n" % (k,v)
+			text += "%-11s: %s\n" % (k,v)
 
 		cr.move_to(5,0)
 		self.text(cr, text, self._font)
