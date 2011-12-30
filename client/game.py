@@ -452,46 +452,12 @@ class GameWidget(FBOWidget):
 		
 		self._render_background()
 
-		glDisable(GL_CULL_FACE)
-
-		# view matrix
+		# load view matrix
 		glLoadIdentity()
 		glMultMatrixd(self._view)
 
-		glColor4f(1,1,1,1)		
-		for e in self._entities.values():
-			# estimate the screenspace size to select rendering mode
-			ex = e.type.size / self._rect.w * self.size.x
-			ey = e.type.size / self._rect.h * self.size.y
-			ep = min(ex, ey)
-			
-			glPushMatrix()
-			glTranslate(e.position.x, e.position.y, e.position.z)
-
-			# Select different rendering styles depending of the screenspace it
-			# would occupy. It helps when the objects are very small.
-			if ep > MIN_SIZE_THRESHOLD:
-				self.draw_entity_full(e)
-			else:
-				self.draw_entity_marker(e)
-			
-			glPopMatrix()
-
-		if self._is_selecting:
-			a = self._selection_ref_a
-			b = self._selection_ref_b
-
-			glDisable(GL_TEXTURE_2D)
-			glColor4f(1,1,0,1)
-			glBegin(GL_LINE_STRIP)
-			glVertex3f(a.x, a.y, 0)
-			glVertex3f(a.x, b.y, 0)
-			glVertex3f(b.x, b.y, 0)
-			glVertex3f(b.x, a.y, 0)
-			glVertex3f(a.x, a.y, 0)
-			glEnd()
-			glColor4f(1,1,1,1)
-			glEnable(GL_TEXTURE_2D)
+		self._render_entities()
+		self._render_selection()
 
 		self.invalidate()
 	
@@ -534,3 +500,44 @@ class GameWidget(FBOWidget):
 		glMatrixMode(GL_PROJECTION)
 		glPopMatrix()
 		glMatrixMode(GL_MODELVIEW)
+
+	def _render_entities(self):
+		glDisable(GL_CULL_FACE)
+
+		glColor4f(1,1,1,1)		
+		for e in self._entities.values():
+			# estimate the screenspace size to select rendering mode
+			ex = e.type.size / self._rect.w * self.size.x
+			ey = e.type.size / self._rect.h * self.size.y
+			ep = min(ex, ey)
+			
+			glPushMatrix()
+			glTranslate(e.position.x, e.position.y, e.position.z)
+
+			# Select different rendering styles depending of the screenspace it
+			# would occupy. It helps when the objects are very small.
+			if ep > MIN_SIZE_THRESHOLD:
+				self.draw_entity_full(e)
+			else:
+				self.draw_entity_marker(e)
+			
+			glPopMatrix()
+
+	def _render_selection(self):
+		if not self._is_selecting:
+			return
+		
+		a = self._selection_ref_a
+		b = self._selection_ref_b
+
+		glDisable(GL_TEXTURE_2D)
+		glColor4f(1,1,0,1)
+		glBegin(GL_LINE_STRIP)
+		glVertex3f(a.x, a.y, 0)
+		glVertex3f(a.x, b.y, 0)
+		glVertex3f(b.x, b.y, 0)
+		glVertex3f(b.x, a.y, 0)
+		glVertex3f(a.x, a.y, 0)
+		glEnd()
+		glColor4f(1,1,1,1)
+		glEnable(GL_TEXTURE_2D)
