@@ -44,11 +44,14 @@ class TypeInfo:
 
 	def update(self):
 		info = rpc.typeinfo(self.name)
-		print info
+		self.max_cargo = info['max_cargo']
+		self.max_speed = info['max_speed']
+		self.max_minable = info['minable']
+		self.size = info['size']
 
 class Entity:
 	def __init__(self, Type, Id, Position, Cargo, Velocity, Minable, Owner, **kwargs):
-		self._type = TypeInfo.by_name(Type)
+		self.type = TypeInfo.by_name(Type)
 		self.id = Id
 		self.position = Vector3(*Position)
 		self._cargo = Cargo

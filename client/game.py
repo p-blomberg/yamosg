@@ -327,8 +327,8 @@ class GameWidget(FBOWidget):
 			p = e.position
 
 			# @todo @refactor AABB-AABB overlapping
-			b_min = p
-			b_max = p + Vector3(50,50,0) # @todo Hardcoded size @entsize
+			b_min = p - Vector3(0.5,0.5,0) * e.type.size
+			b_max = p + Vector3(0.5,0.5,0) * e.type.size # @todo Hardcoded size @entsize
 
 			if a_max.x <  b_min.x or a_min.x > b_max.x:
 				continue
@@ -406,29 +406,32 @@ class GameWidget(FBOWidget):
 			
 			glBindTexture(GL_TEXTURE_2D, e.sprite)
 
+			glScalef(e.type.size, e.type.size, 1.0)
+			#glScalef(50,50,1)
+			
 			glBegin(GL_QUADS)
 			glTexCoord2f(0, 0)
-			glVertex3f(0, 0, 0)
+			glVertex3f(-0.5, -0.5, 0)
 			
 			glTexCoord2f(0, 1)
-			glVertex3f(0, 50, 0)
+			glVertex3f(-0.5, 0.5, 0)
 			
 			glTexCoord2f(1, 1)
-			glVertex3f(50, 50, 0)
+			glVertex3f(0.5, 0.5, 0)
 			
 			glTexCoord2f(1, 0)
-			glVertex3f(50, 0, 0)
-			glEnd()
+			glVertex3f(0.5, -0.5, 0)
+			glEnd()			
 
 			if e.__selected:
 				glDisable(GL_TEXTURE_2D)
 				glColor4f(1,1,0,1)
 				glBegin(GL_LINE_STRIP)
-				glVertex3f(0, 0, 0)
-				glVertex3f(0, 50, 0)
-				glVertex3f(50, 50, 0)
-				glVertex3f(50, 0, 0)
-				glVertex3f(0, 0, 0)
+				glVertex3f(-0.5, -0.5, 0)
+				glVertex3f(-0.5, 0.5, 0)
+				glVertex3f(0.5, 0.5, 0)
+				glVertex3f(0.5, -0.5, 0)
+				glVertex3f(-0.5, -0.5, 0)
 				glEnd()
 				glColor4f(1,1,1,1)
 				glEnable(GL_TEXTURE_2D)
