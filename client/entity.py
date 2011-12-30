@@ -78,3 +78,19 @@ class Entity:
 	def update(self, info):
 		if 'Position' in info:
 			self.position = Vector3(*info['Position'])
+
+	def intersect_point(self, p):
+		if p.x < self.position.x - 0.5 * self.type.size: return False
+		if p.x > self.position.x + 0.5 * self.type.size: return False
+		if p.y < self.position.y - 0.5 * self.type.size: return False
+		if p.y > self.position.y + 0.5 * self.type.size: return False
+		return True
+
+	def intersect_rect(self, r):
+		print r.y, r.y+r.h, self.position.x + 0.5*self.type.size
+
+		if r.x     > self.position.x + 0.5 * self.type.size: return False
+		if r.x+r.w < self.position.x - 0.5 * self.type.size: return False
+		if r.y     > self.position.y + 0.5 * self.type.size: return False
+		if r.y+r.h < self.position.y - 0.5 * self.type.size: return False
+		return True
