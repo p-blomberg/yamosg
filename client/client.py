@@ -205,7 +205,7 @@ class Client:
 		self._state = StateManager()
 		self._game = GameWidget(self, self._resolution)
 		self._container = Composite(Vector2i(0,0), self._resolution, children=[self._game])
-		self._toolbar = Toolbar()
+		self._toolbar = Toolbar(self._game)
 		self._window = VBox()
 		self._window.add(self._toolbar, size=LayoutAttachment(Vector2i(1,0), Vector2i(0,25)))
 		self._window.add(self._container)
@@ -290,7 +290,7 @@ class Client:
 			func(self, adapter(event))
 		t = time()
 		if t-self._timer > 1.0:
-			print 'tick'
+			self._toolbar.invalidate()
 			self._timer = t
 
 	@event(pygame.MOUSEMOTION)

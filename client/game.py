@@ -124,7 +124,7 @@ class EntityStats(CairoWidget):
 
 		cr.move_to(5,0)
 		self.text(cr, text, self._font)
-
+	
 class GameWidget(FBOWidget):
 	def __init__(self, client, size):
 		FBOWidget.__init__(self, Vector2i(0,0), size)
@@ -174,6 +174,9 @@ class GameWidget(FBOWidget):
 
 	def entity_named(self, key):
 		return self._entities[key]
+
+	def position(self):
+		return self._camera.xyz()
 
 	def _calc_view_matrix(self):
 		""" Calculates a new view-matrix and the boundary of the z-plane. """
