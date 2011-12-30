@@ -92,3 +92,7 @@ class Entity:
 		if r.y     > self.position.y + 0.5 * self.type.size: return False
 		if r.y+r.h < self.position.y - 0.5 * self.type.size: return False
 		return True
+
+	def __repr__(self):
+		return '<Entity type=\"%s\" pos=\"%.2f %.2f %.2f\">' % ((self.type.name,) + self.position.xyz())
+
