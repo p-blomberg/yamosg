@@ -432,17 +432,16 @@ class GameWidget(FBOWidget):
 
 	def draw_entity_marker(self, e):
 		global MIN_SIZE_THRESHOLD
-		#ex = e.type.size / self._rect.w * self.size.x
 		scale = MIN_SIZE_THRESHOLD * self._rect.w / self.size.x
 		glScalef(scale, scale, 1.0)
-		#glScalef(e.type.size, e.type.size, 1.0)
-		print e.type.size, scale
 		
 		glDisable(GL_TEXTURE_2D)
+		glDisable(GL_DEPTH_TEST)
 		glColor4f(1,1,0,1)
 		self.draw_aabb()
 		glColor4f(1,1,1,1)
 		glEnable(GL_TEXTURE_2D)
+		glEnable(GL_DEPTH_TEST)
 	
 	def do_render(self):
 		global MIN_SIZE_THRESHOLD
@@ -504,7 +503,7 @@ class GameWidget(FBOWidget):
 	def _render_entities(self):
 		glDisable(GL_CULL_FACE)
 
-		glColor4f(1,1,1,1)		
+		glColor4f(1,1,1,1)
 		for e in self._entities.values():
 			# estimate the screenspace size to select rendering mode
 			ex = e.type.size / self._rect.w * self.size.x
