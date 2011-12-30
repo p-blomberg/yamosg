@@ -87,8 +87,6 @@ class Entity:
 		return True
 
 	def intersect_rect(self, r):
-		print r.y, r.y+r.h, self.position.x + 0.5*self.type.size
-
 		if r.x     > self.position.x + 0.5 * self.type.size: return False
 		if r.x+r.w < self.position.x - 0.5 * self.type.size: return False
 		if r.y     > self.position.y + 0.5 * self.type.size: return False

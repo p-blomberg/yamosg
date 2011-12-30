@@ -402,7 +402,6 @@ class GameWidget(FBOWidget):
 	def visible(self, sorted=False):
 		r = self._rect
 		l = filter(lambda e: e.intersect_rect(r), self._entities.values())
-		print l
 		return l
 	
 	@staticmethod
