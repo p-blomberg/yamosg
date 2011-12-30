@@ -418,7 +418,6 @@ class GameWidget(FBOWidget):
 	def draw_entity_full(cls, e):
 		""" Draw entity as a regular sprite """
 
-		print 'rendering', e, 'using sprite'
 		glBindTexture(GL_TEXTURE_2D, e.sprite)
 		glScalef(e.type.size, e.type.size, 1.0)
 		
@@ -432,7 +431,6 @@ class GameWidget(FBOWidget):
 			glEnable(GL_TEXTURE_2D)
 
 	def draw_entity_marker(self, e):
-		print 'rendering', e, 'using marker'
 		global MIN_SIZE_THRESHOLD
 		#ex = e.type.size / self._rect.w * self.size.x
 		scale = MIN_SIZE_THRESHOLD * self._rect.w / self.size.x
