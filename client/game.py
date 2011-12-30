@@ -415,33 +415,33 @@ class GameWidget(FBOWidget):
 		glEnd()
 
 	@classmethod
-	def draw_entity_full(cls, e):
+	def draw_entity_full(cls, e, p):
 		""" Draw entity as a regular sprite """
 
 		glBindTexture(GL_TEXTURE_2D, e.sprite)
 		glScalef(e.type.size, e.type.size, 1.0)
-		
-		cls.draw_quad()
-			
-		if e.__selected:
+
+		if p == 0:
+			cls.draw_quad()	
+		elif p == 1 and e.__selected:
 			glDisable(GL_TEXTURE_2D)
 			glColor4f(1,1,0,1)
 			cls.draw_aabb()
 			glColor4f(1,1,1,1)
 			glEnable(GL_TEXTURE_2D)
 
-	def draw_entity_marker(self, e):
+	def draw_entity_marker(self, e, p):
+		if p != 1: return
+		
 		global MIN_SIZE_THRESHOLD
 		scale = MIN_SIZE_THRESHOLD * self._rect.w / self.size.x
 		glScalef(scale, scale, 1.0)
-		
+
 		glDisable(GL_TEXTURE_2D)
-		glDisable(GL_DEPTH_TEST)
 		glColor4f(1,1,0,1)
 		self.draw_aabb()
 		glColor4f(1,1,1,1)
 		glEnable(GL_TEXTURE_2D)
-		glEnable(GL_DEPTH_TEST)
 	
 	def do_render(self):
 		global MIN_SIZE_THRESHOLD
@@ -455,9 +455,13 @@ class GameWidget(FBOWidget):
 		glLoadIdentity()
 		glMultMatrixd(self._view)
 
-		self._render_entities()
+		glPushAttrib(GL_ENABLE_BIT)
+		glEnable(GL_DEPTH_TEST)
+		self._render_entities(p=0)
+		self._render_entities(p=1)
 		self._render_selection()
-
+		glPopAttrib()
+		
 		self.invalidate()
 	
 	def _render_background(self):
@@ -500,7 +504,11 @@ class GameWidget(FBOWidget):
 		glPopMatrix()
 		glMatrixMode(GL_MODELVIEW)
 
-	def _render_entities(self):
+	def _render_entities(self, p):
+		""" Renders all visible entities using pass P.
+		    Pass 0: Geometry
+			Pass 1: Selections + markers
+		"""
 		glDisable(GL_CULL_FACE)
 
 		glColor4f(1,1,1,1)
@@ -516,9 +524,9 @@ class GameWidget(FBOWidget):
 			# Select different rendering styles depending of the screenspace it
 			# would occupy. It helps when the objects are very small.
 			if ep > MIN_SIZE_THRESHOLD:
-				self.draw_entity_full(e)
+				self.draw_entity_full(e, p)
 			else:
-				self.draw_entity_marker(e)
+				self.draw_entity_marker(e, p)
 			
 			glPopMatrix()
 
