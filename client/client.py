@@ -187,7 +187,7 @@ class Client:
 		
 		# opengl must be initialized first
 		self.log.info("Initializing display (windowed at %(resolution)s)", dict(resolution='%dx%d'%resolution))
-		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF|RESIZABLE)
+		self._screen = pygame.display.set_mode(resolution, OPENGL|DOUBLEBUF)
 		pygame.display.set_caption('yamosg')
 
 		self.log.debug("OpenGL setup (version=\"%(version)s\", vendor=\"%(vendor)s\")", dict(version=glGetString(GL_VERSION), vendor=glGetString(GL_VENDOR)))
