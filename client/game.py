@@ -29,6 +29,9 @@ type_icon = {
 	'Station': 'textures/icon/gateway.png',
 	'Miner': 'textures/icon/miner.png',
 }
+
+MIN_SIZE_THRESHOLD = 15
+
 _ACTION_LUT = {}
 class EntityWindow(Window):
 	def action(name, icon):
@@ -391,8 +394,61 @@ class GameWidget(FBOWidget):
 	#
 	# Rendering
 	#
+
+	@staticmethod
+	def draw_quad():
+		glBegin(GL_QUADS)
+		glTexCoord2f(0, 0); glVertex3f(-0.5, -0.5, 0)
+		glTexCoord2f(0, 1);	glVertex3f(-0.5,  0.5, 0)
+		glTexCoord2f(1, 1);	glVertex3f( 0.5,  0.5, 0)
+		glTexCoord2f(1, 0);	glVertex3f( 0.5, -0.5, 0)
+		glEnd()
+
+	@staticmethod
+	def draw_aabb():
+		glBegin(GL_LINE_STRIP)
+		glVertex3f(-0.5, -0.5, 0)
+		glVertex3f(-0.5,  0.5, 0)
+		glVertex3f( 0.5,  0.5, 0)
+		glVertex3f( 0.5, -0.5, 0)
+		glVertex3f(-0.5, -0.5, 0)
+		glEnd()
+
+	@classmethod
+	def draw_entity_full(cls, e):
+		""" Draw entity as a regular sprite """
+
+		print 'rendering', e, 'using sprite'
+		glBindTexture(GL_TEXTURE_2D, e.sprite)
+		glScalef(e.type.size, e.type.size, 1.0)
+		
+		cls.draw_quad()
+			
+		if e.__selected:
+			glDisable(GL_TEXTURE_2D)
+			glColor4f(1,1,0,1)
+			cls.draw_aabb()
+			glColor4f(1,1,1,1)
+			glEnable(GL_TEXTURE_2D)
+
+	def draw_entity_marker(self, e):
+		print 'rendering', e, 'using marker'
+		global MIN_SIZE_THRESHOLD
+		#ex = e.type.size / self._rect.w * self.size.x
+		scale = MIN_SIZE_THRESHOLD * self._rect.w / self.size.x
+		glScalef(scale, scale, 1.0)
+		#glScalef(e.type.size, e.type.size, 1.0)
+		print e.type.size, scale
+		
+		glDisable(GL_TEXTURE_2D)
+		glColor4f(1,1,0,1)
+		self.draw_aabb()
+		glColor4f(1,1,1,1)
+		glEnable(GL_TEXTURE_2D)
 	
 	def do_render(self):
+		global MIN_SIZE_THRESHOLD
+		
 		glClearColor(0,0,0,1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		
@@ -404,45 +460,22 @@ class GameWidget(FBOWidget):
 		glLoadIdentity()
 		glMultMatrixd(self._view)
 
-		#glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
-		#gluLookAt(0.0001,100,0,    0,0,0,   0,1,0)
-
 		glColor4f(1,1,1,1)		
 		for e in self._entities.values():
+			# estimate the screenspace size to select rendering mode
+			ex = e.type.size / self._rect.w * self.size.x
+			ey = e.type.size / self._rect.h * self.size.y
+			ep = min(ex, ey)
+			
 			glPushMatrix()
 			glTranslate(e.position.x, e.position.y, e.position.z)
-			
-			glBindTexture(GL_TEXTURE_2D, e.sprite)
 
-			glScalef(e.type.size, e.type.size, 1.0)
-			#glScalef(50,50,1)
-			
-			glBegin(GL_QUADS)
-			glTexCoord2f(0, 0)
-			glVertex3f(-0.5, -0.5, 0)
-			
-			glTexCoord2f(0, 1)
-			glVertex3f(-0.5, 0.5, 0)
-			
-			glTexCoord2f(1, 1)
-			glVertex3f(0.5, 0.5, 0)
-			
-			glTexCoord2f(1, 0)
-			glVertex3f(0.5, -0.5, 0)
-			glEnd()			
-
-			if e.__selected:
-				glDisable(GL_TEXTURE_2D)
-				glColor4f(1,1,0,1)
-				glBegin(GL_LINE_STRIP)
-				glVertex3f(-0.5, -0.5, 0)
-				glVertex3f(-0.5, 0.5, 0)
-				glVertex3f(0.5, 0.5, 0)
-				glVertex3f(0.5, -0.5, 0)
-				glVertex3f(-0.5, -0.5, 0)
-				glEnd()
-				glColor4f(1,1,1,1)
-				glEnable(GL_TEXTURE_2D)
+			# Select different rendering styles depending of the screenspace it
+			# would occupy. It helps when the objects are very small.
+			if ep > MIN_SIZE_THRESHOLD:
+				self.draw_entity_full(e)
+			else:
+				self.draw_entity_marker(e)
 			
 			glPopMatrix()
 
