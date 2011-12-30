@@ -18,6 +18,7 @@ import socket, threading, traceback
 import json
 from signal import signal, SIGINT
 from select import select
+from time import time
 from common.command import parse, parse_tokens, Command
 from common.vector import Vector2i, Vector3
 from state import Initial, StateManager
@@ -216,6 +217,7 @@ class Client:
 		self._playerid = None
 		self._players = {}
 		self._capture_position = None
+		self._timer = 0
 
 		# resizing must be done after state has been created so the event is propagated proper.
 		self._resize(self._resolution)
@@ -286,6 +288,10 @@ class Client:
 			if func is None:
 				continue
 			func(self, adapter(event))
+		t = time()
+		if t-self._timer > 1.0:
+			print 'tick'
+			self._timer = t
 
 	@event(pygame.MOUSEMOTION)
 	def _mousemotion(self, event):
