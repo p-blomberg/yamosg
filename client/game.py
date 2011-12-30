@@ -130,6 +130,7 @@ class GameWidget(FBOWidget):
 		self._entities = {}
 		self._selection = [] # current selected entities
 		self._scale = 1.0
+		self._camera = Vector3(0,0,50)
 		self._rect = Rect(0,0,0,0)
 		self._panstart = None # position where the panning has started
 		self._panref = None
@@ -177,7 +178,7 @@ class GameWidget(FBOWidget):
 		
 		glPushMatrix()
 		glLoadIdentity()
-		glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
+		glTranslate(-self._camera.x, -self._camera.y, -self._camera.z)
 		self._view = glGetDouble(GL_MODELVIEW_MATRIX)
 		glPopMatrix()
 
@@ -185,16 +186,18 @@ class GameWidget(FBOWidget):
 		# the z-plane yet.
 		if self._viewport[2] == 0:
 			return
-		
+
 		min = self.unproject(Vector2i(0,0))
 		max = self.unproject(self.size)
+		self._rect.x = min.x
+		self._rect.y = max.y
 		self._rect.w = max.x - min.x
 		self._rect.h = min.y - max.y
 
 	def _transform_position(self, pos):
 		p = pos.copy()
-		p.x += self._rect.x
-		p.y += self._rect.y
+		p.x += self._camera.x
+		p.y += self._camera.y
 		return p
 
 	def unproject(self, point, view=None):
@@ -284,8 +287,9 @@ class GameWidget(FBOWidget):
 		b = self.unproject(ref)
 
 		delta = b-a
-		self._rect.x -= delta.x
-		self._rect.y -= delta.y
+		self._camera.x -= delta.x
+		self._camera.y -= delta.y
+		self._camera.z = 50 + self._scale
 		self._calc_view_matrix()
 
 	#
@@ -296,7 +300,7 @@ class GameWidget(FBOWidget):
 		self._is_panning = True
 		self._panstart_screen = pos.copy()
 		self._panstart = self.unproject(pos)
-		self._panref = self._rect.copy()
+		self._panref = self._camera.copy()
 		self._panrefview = copy(self._view)
 		self.focus_lock()
 
@@ -307,8 +311,8 @@ class GameWidget(FBOWidget):
 
 	def on_pan_move(self, pos):
 		rel = self.unproject(pos,self._panrefview) - self._panstart
-		self._rect.x = self._panref.x - rel.x
-		self._rect.y = self._panref.y - rel.y
+		self._camera.x = self._panref.x - rel.x
+		self._camera.y = self._panref.y - rel.y
 		self._calc_view_matrix()
 
 	#
@@ -395,6 +399,12 @@ class GameWidget(FBOWidget):
 	# Rendering
 	#
 
+	def visible(self, sorted=False):
+		r = self._rect
+		l = filter(lambda e: e.intersect_rect(r), self._entities.values())
+		print l
+		return l
+	
 	@staticmethod
 	def draw_quad():
 		glBegin(GL_QUADS)
@@ -457,8 +467,9 @@ class GameWidget(FBOWidget):
 
 		glPushAttrib(GL_ENABLE_BIT)
 		glEnable(GL_DEPTH_TEST)
-		self._render_entities(p=0)
-		self._render_entities(p=1)
+		e = self.visible(sorted=True)
+		self._render_entities(e, p=0)
+		self._render_entities(e, p=1)
 		self._render_selection()
 		glPopAttrib()
 		
@@ -477,8 +488,8 @@ class GameWidget(FBOWidget):
 		for i,s in enumerate([0.00010, 0.00007, 0.00004]):
 			glBindTexture(GL_TEXTURE_2D, self._background[i])
 			t = Rect(
-				self._rect.x * s,
-				self._rect.y * s,
+				self._camera.x * s,
+				self._camera.y * s,
 				1.0 + i * 0.4,
 				1.0 + i * 0.6)
 			glBegin(GL_QUADS)
@@ -504,7 +515,7 @@ class GameWidget(FBOWidget):
 		glPopMatrix()
 		glMatrixMode(GL_MODELVIEW)
 
-	def _render_entities(self, p):
+	def _render_entities(self, entities, p):
 		""" Renders all visible entities using pass P.
 		    Pass 0: Geometry
 			Pass 1: Selections + markers
@@ -512,7 +523,7 @@ class GameWidget(FBOWidget):
 		glDisable(GL_CULL_FACE)
 
 		glColor4f(1,1,1,1)
-		for e in self._entities.values():
+		for e in entities:
 			# estimate the screenspace size to select rendering mode
 			ex = e.type.size / self._rect.w * self.size.x
 			ey = e.type.size / self._rect.h * self.size.y
