@@ -25,6 +25,10 @@ import common.resources as resources
 def load(path):
 	return cairo.ImageSurface.create_from_png(os.path.join('../textures', path))
 
+type_icon = {
+	'Station': 'textures/icon/gateway.png',
+	'Miner': 'textures/icon/miner.png',
+}
 _ACTION_LUT = {}
 class EntityWindow(Window):
 	def action(name, icon):
@@ -62,7 +66,7 @@ class EntityWindow(Window):
 			build = []
 			for type in info['Buildlist']:
 				callback = functools.partial(EntityWindow.on_build, self, what=type)
-				build.append(Button(Icon(filename='textures/tiger.svg'), callback=callback))
+				build.append(Button(Icon(filename=type_icon.get(type, 'textures/tiger.svg')), callback=callback))
 			grid = Grid(3, 3, *build)
 			tabs.append(Tab('Build', grid))
 

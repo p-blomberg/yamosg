@@ -61,6 +61,10 @@ class Entity:
 			self.sprite = load_sprite('jupiter.png')
 		elif Type == 'Gateway':
 			self.sprite = load_sprite('gateway.png')
+		elif Type == 'Miner':
+			self.sprite = load_sprite('prospector.png')
+		elif Type == 'Silo':
+			self.sprite = load_sprite('silo.png')
 
 	def __str__(self):
 		return '<Entity pos=%s>' % (str(self.position))
