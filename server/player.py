@@ -4,13 +4,14 @@
 import entity
 from common.vector import Vector3
 import hashlib
+import sqlite3
 
 class Player:
 	_counter = 0
 	__salt = 'yamosg_salt_omg'
 	
 	def __init__(self, username, game, id=None, password=None, cash=1000000):
-		self.id = id or self._generate_id()
+		self.id = id
 		self.name = username
 		self.game = game
 		self.cash = cash
@@ -27,9 +28,8 @@ class Player:
 		self.entities.append(gateway)
 		game.add_entity(gateway)
 	
-	def _generate_id(self):
-		Player._counter += 1
-		return Player._counter
+	def set_id(self, id):
+		self.id = id
 	
 	def serialize(self):
 		return {
@@ -137,3 +137,27 @@ class Player:
 
 	def tick(self, key_tick):
 		pass
+
+	def persist(self):
+		self.game._c.execute("""
+			UPDATE players SET cash = :cash
+		""", {"cash": self.cash})
+		self.game._db.commit()
+
+def create(name, password, game):
+	player = Player(name, game)
+	player.set_password(password)
+
+	d = player.serialize()
+	d['password'] = sqlite3.Binary(d['password'])
+	game._c.execute("""
+		INSERT INTO players (
+			username, password, cash
+		) VALUES (
+			:username, :password, :cash
+		)
+	""", d)
+	player.set_id(game._c.lastrowid)
+	game._db.commit()
+
+	return player

@@ -25,6 +25,7 @@ import socket
 import traceback
 import json
 import inspect
+import sqlite3
 
 
 
@@ -187,8 +188,8 @@ class Game:
 		self._c.execute('PRAGMA foreign_keys = ON')
 		self._c.execute("""
 			CREATE TABLE IF NOT EXISTS players (
-				id INTEGER UNIQUE NOT NULL,
-				username TEXT PRIMARY KEY,
+				id INTEGER PRIMARY KEY NOT NULL,
+				username TEXT UNIQUE,
 				password BLOB NOT NULL,
 				cash INTEGER NOT NULL
 			)""")
@@ -290,26 +291,6 @@ class Game:
 	
 	def add_player(self, player):
 		self._players[player.name] = player
-		self.player_persist()
-	
-	def player_persist(self):
-		import sqlite3
-		
-		# temporary player storage @tempstore
-		self._c.execute('DELETE from players')
-		self._db.commit()
-		for player in self._players.values():
-			d = player.serialize()
-			d['password'] = sqlite3.Binary(d['password'])
-			
-			self._c.execute("""
-				INSERT INTO players (
-					id, username, password, cash
-				) VALUES (
-					:id, :username, :password, :cash
-				)
-			""", d)
-		self._db.commit()
 	
 	def player_by_id(self, id):
 		"""
@@ -365,8 +346,7 @@ class Game:
 			raise CommandError, 'Username already exists'
 		
 		# create
-		p = player.Player(name, self)
-		p.set_password(password)
+		p = player.create(name, password, self)
 		
 		# store
 		self.add_player(p)
@@ -440,6 +420,6 @@ class Game:
 			raise CommandError, 'Belongs to other player'
 
 		response = ent.action(action, args)
-		self.player_persist()
+		player.persist()
 		
 		return response

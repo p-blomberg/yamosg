@@ -148,17 +148,20 @@ class Planet(Entity):
 		self.size=size
 		self.mass=2000*size
 
+# abstract
 class Ship(Entity):
 	max_speed = 1
 	cost = 40000
 	size = 0.1
 	mass = 300
 
+# abstract
 class Station(Entity):
 	cost = 250000
 	size = 10
 	mass = 5000
 
+# abstract
 class StorageStation(Station):
 	def load(self, ship_id):
 		entity = self.game.entity_by_id(ship_id)
@@ -172,6 +175,13 @@ class Silo(StorageStation):
 	size = 8
 	max_cargo = 5000
 	mass = 7000
+
+class HugeSilo(StorageStation):
+	max_speed = 0.1
+	cost = 1500000
+	size = 42
+	max_cargo = 80000
+	mass = 100000
 
 class Mineral(Entity):
 	size = 0.001
