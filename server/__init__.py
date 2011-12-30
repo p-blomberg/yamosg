@@ -200,7 +200,8 @@ class Game:
 		# Create world
 		p=entity.Planet(Vector3(30,30,0), 20, self)
 		cargo={
-			entity.CopperOre(container=p, owner=None, game=self): 600
+			entity.CopperOre(container=p, owner=None, game=self): 600,
+			entity.SpaceCoffee(container=p, owner=None, game=self): 100
 		}
 		p.cargo=cargo
 		self.add_entity(p)

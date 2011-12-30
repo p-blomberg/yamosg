@@ -195,6 +195,9 @@ class Mineral(Entity):
 class CopperOre(Mineral):
 	cost = 2
 
+class SpaceCoffee(Mineral):
+	cost = 15
+
 class Miner(Ship):
 	max_speed=0.1
 	size=0.2
@@ -203,7 +206,8 @@ class Miner(Ship):
 	max_cargo = 50
 	cargo_type=None
 	cargo_type_list = {
-		"CopperOre": CopperOre
+		"CopperOre": CopperOre,
+		"SpaceCoffee": SpaceCoffee
 	}
 
 	def __init__(self, *args, **kwargs):
