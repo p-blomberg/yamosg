@@ -170,16 +170,23 @@ class GameWidget(FBOWidget):
 		return self._entities[key]
 
 	def _calc_view_matrix(self):
-		self._rect.w = self.size.x * self._scale
-		self._rect.h = self.size.y * self._scale
-
+		""" Calculates a new view-matrix and the boundary of the z-plane. """
+		
 		glPushMatrix()
-
 		glLoadIdentity()
 		glTranslate(-self._rect.x, -self._rect.y, -50 - self._scale)
 		self._view = glGetDouble(GL_MODELVIEW_MATRIX)
-		
 		glPopMatrix()
+
+		# minor hack, if the viewport hasn't been setup yet we cannot determine
+		# the z-plane yet.
+		if self._viewport[2] == 0:
+			return
+		
+		min = self.unproject(Vector2i(0,0))
+		max = self.unproject(self.size)
+		self._rect.w = max.x - min.x
+		self._rect.h = min.y - max.y
 
 	def _transform_position(self, pos):
 		p = pos.copy()
@@ -209,6 +216,7 @@ class GameWidget(FBOWidget):
 		self._viewport[3] = 600
 		#print x,y, self._viewport
 		# Get the min and max points
+
 		min = Vector3(gluUnProject(x, y, 0, view, self._projection, self._viewport))
 		max = Vector3(gluUnProject(x, y, 1, view, self._projection, self._viewport))
 
