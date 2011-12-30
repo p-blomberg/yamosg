@@ -6,7 +6,7 @@ import sys
 
 class Entity:
 	max_speed=None
-	size=None
+	size=1
 	mass=None
 	minable=False
 	max_cargo=0
@@ -142,6 +142,7 @@ class Entity:
 
 class Planet(Entity):
 	minable=True
+	size=100
 
 	def __init__(self, position, size, game, **kwargs):
 		Entity.__init__(self, position, game, **kwargs)
@@ -209,7 +210,7 @@ class SpaceCoffee(Mineral):
 	cost = 15
 
 class Miner(Ship):
-	max_speed=0.1
+	max_speed=3
 	size=0.2
 	cost=50000
 	mining_speed=1.0
